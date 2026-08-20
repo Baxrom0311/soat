@@ -1,0 +1,60 @@
+# macOS
+.DS_Store
+
+# --- Python (server/) ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+server/.env
+
+# --- Node / Expo (mobile-app/, web-dashboard/) ---
+node_modules/
+.expo/
+dist/
+web-build/
+dist-ssr/
+*.tsbuildinfo
+expo-env.d.ts
+.metro-health-check*
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.local
+
+# mobile-app/android IS tracked (hand-maintained native module code lives there),
+# but its own build output / local machine config is not.
+mobile-app/android/**/build/
+mobile-app/android/.gradle/
+mobile-app/android/**/.cxx/
+mobile-app/android/local.properties
+mobile-app/ios/
+
+# Firebase / signing credentials (maxfiy, repoga tushmasin)
+mobile-app/google-services.json
+mobile-app/firebase-service-account.json
+mobile-app/GoogleService-Info.plist
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# --- Android/Gradle (watch app: app/, build.gradle.kts, ...) ---
+build/
+.gradle/
+.cxx/
+local.properties
+*.apk
+*.aab
+
+# --- ESP32 (PlatformIO) ---
+esp32-firmware/.pio/
+esp32-firmware/src/config.h
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.claude/

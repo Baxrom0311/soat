@@ -1,0 +1,49 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders (android/ IS tracked now — hand-maintained native
+# module code lives there; see root .gitignore for its build-output excludes)
+/ios
+
+# Firebase / service account credentials (maxfiy, git repoga tushmasin)
+google-services.json
+firebase-service-account.json
+GoogleService-Info.plist
+
+
+/screenshots

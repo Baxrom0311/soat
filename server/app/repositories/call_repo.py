@@ -1,0 +1,106 @@
+"""DB access for the Call table."""
+
+from datetime import datetime, timezone
+
+from sqlalchemy import func, select, text, update
+from sqlalchemy.orm import Session
+
+from app.models import Call, Device, Room
+
+
+def create(
+    db: Session, clinic_id: int, *, room_id: int, device_id: int, press_id: str | None = None
+) -> Call:
+    call = Call(
+        clinic_id=clinic_id, room_id=room_id, device_id=device_id, status="active", press_id=press_id
+    )
+    db.add(call)
+    db.flush()
+    return call
+
+
+def get_by_press_id(db: Session, clinic_id: int, press_id: str) -> Call | None:
+    return db.scalar(select(Call).where(Call.press_id == press_id, Call.clinic_id == clinic_id))
+
+
+def get(db: Session, clinic_id: int, call_id: int) -> Call | None:
+    return db.scalar(select(Call).where(Call.id == call_id, Call.clinic_id == clinic_id))
+
+
+def lock_room(db: Session, clinic_id: int, room_id: int) -> None:
+    """Serializes concurrent call ingestion for one room via the two-int advisory lock
+    (RF buttons retransmit, so near-simultaneous duplicate POSTs are the norm).
+    Held until the surrounding transaction commits or rolls back."""
+    db.execute(
+        text("SELECT pg_advisory_xact_lock((:clinic_id)::int, (:room_id)::int)"),
+        {"clinic_id": clinic_id, "room_id": room_id},
+    )
+
+
+def get_active_by_room(db: Session, clinic_id: int, room_id: int) -> Call | None:
+    return db.scalar(
+        select(Call)
+        .where(Call.clinic_id == clinic_id, Call.room_id == room_id, Call.status == "active")
+        .order_by(Call.created_at.desc())
+        .limit(1)
+    )
+
+
+def get_latest_by_room(db: Session, clinic_id: int, room_id: int) -> Call | None:
+    return db.scalar(
+        select(Call)
+        .where(Call.clinic_id == clinic_id, Call.room_id == room_id)
+        .order_by(Call.created_at.desc())
+        .limit(1)
+    )
+
+
+def count_active(db: Session) -> int:
+    return db.scalar(select(func.count()).select_from(Call).where(Call.status == "active"))
+
+
+def count_active_by_clinic(db: Session) -> dict[int, int]:
+    """One grouped query for the superadmin clinics list (avoids a COUNT per clinic)."""
+    rows = db.execute(
+        select(Call.clinic_id, func.count()).where(Call.status == "active").group_by(Call.clinic_id)
+    ).all()
+    return {clinic_id: count for clinic_id, count in rows}
+
+
+def list_active_with_room_by_clinic(db: Session, clinic_id: int) -> list[tuple[Call, Room]]:
+    rows = db.execute(
+        select(Call, Room)
+        .join(Room, Call.room_id == Room.id)
+        .where(Call.clinic_id == clinic_id, Call.status == "active")
+        .order_by(Call.created_at.asc())
+    ).all()
+    return [(call, room) for call, room in rows]
+
+
+def list_history_with_room_device_by_clinic(
+    db: Session, clinic_id: int, *, limit: int
+) -> list[tuple[Call, Room, Device]]:
+    rows = db.execute(
+        select(Call, Room, Device)
+        .join(Room, Call.room_id == Room.id)
+        .join(Device, Call.device_id == Device.id)
+        .where(Call.clinic_id == clinic_id)
+        .order_by(Call.created_at.desc())
+        .limit(limit)
+    ).all()
+    return [(call, room, device) for call, room, device in rows]
+
+
+def acknowledge_if_active(db: Session, call_id: int, *, acknowledged_by: str) -> bool:
+    """Atomic check-and-set: only flips an *active* call, so two concurrent acks can't
+    both succeed (the loser sees rowcount 0 and surfaces a 409)."""
+    result = db.execute(
+        update(Call)
+        .where(Call.id == call_id, Call.status == "active")
+        .values(
+            status="acknowledged",
+            acknowledged_at=datetime.now(timezone.utc),
+            acknowledged_by=acknowledged_by,
+        )
+    )
+    return result.rowcount == 1
