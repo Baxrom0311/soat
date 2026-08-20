@@ -51,7 +51,6 @@ local.properties
 
 # --- ESP32 (PlatformIO) ---
 esp32-firmware/.pio/
-esp32-firmware/src/config.h
 
 # Editor
 .vscode/*
