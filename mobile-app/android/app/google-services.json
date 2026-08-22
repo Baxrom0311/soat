@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "818187266875",
+    "project_id": "nursecall-boos-uz",
+    "storage_bucket": "nursecall-boos-uz.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:818187266875:android:b82b2362e1a5185e59a51e",
+        "android_client_info": {
+          "package_name": "uz.boos.nursecall"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2Bv_IdzN0zhVnwRhW-nV1zn0wJ1B3j3g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

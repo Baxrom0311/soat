@@ -40,10 +40,10 @@ yarn-error.*
 # module code lives there; see root .gitignore for its build-output excludes)
 /ios
 
-# Firebase / service account credentials (maxfiy, git repoga tushmasin)
-google-services.json
+# Firebase service-account (server-side maxfiy kalit) — repoga tushmasin.
+# google-services.json/GoogleService-Info.plist esa mijoz-tomon config, APK ichiga
+# baribir qo'shiladi — EAS build shuni talab qiladi, shuning uchun istisno qilinmaydi.
 firebase-service-account.json
-GoogleService-Info.plist
 
 
 /screenshots

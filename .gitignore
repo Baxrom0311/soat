@@ -30,10 +30,11 @@ mobile-app/android/**/.cxx/
 mobile-app/android/local.properties
 mobile-app/ios/
 
-# Firebase / signing credentials (maxfiy, repoga tushmasin)
-mobile-app/google-services.json
+# Firebase service-account (server-side maxfiy kalit) — repoga tushmasin.
+# google-services.json/GoogleService-Info.plist esa mijoz-tomon config (APK ichiga
+# baribir qo'shiladi) — EAS build arxivi buni talab qiladi, shuning uchun bu yerda
+# istisno QILINMAYDI (avvalroq shu narsa EAS build'ni "fayl topilmadi" bilan buzgan edi).
 mobile-app/firebase-service-account.json
-mobile-app/GoogleService-Info.plist
 *.jks
 *.p8
 *.p12
