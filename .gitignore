@@ -49,6 +49,8 @@ build/
 local.properties
 *.apk
 *.aab
+*.keystore
+keystore.properties
 
 # --- ESP32 (PlatformIO) ---
 esp32-firmware/.pio/

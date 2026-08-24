@@ -196,6 +196,7 @@ export function AdminClinicsTab() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [newName, setNewName] = useState('');
   const [createError, setCreateError] = useState('');
+  const [creating, setCreating] = useState(false);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
@@ -227,12 +228,15 @@ export function AdminClinicsTab() {
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
     setCreateError('');
+    setCreating(true);
     try {
       await api.createAdminClinic({ name: newName });
       setNewName('');
-      load();
+      await load();
     } catch (err) {
       setCreateError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
+    } finally {
+      setCreating(false);
     }
   }
 
@@ -278,11 +282,11 @@ export function AdminClinicsTab() {
         </h3>
         <form className="inline-form" onSubmit={handleCreate}>
           <input type="text" placeholder="Klinika nomi (masalan Shifo klinikasi)" required value={newName} onChange={(e) => setNewName(e.target.value)} />
-          <button type="submit" className="btn btn-primary">
-            Qo'shish
+          <button type="submit" className="btn btn-primary" disabled={creating}>
+            {creating ? '...' : "Qo'shish"}
           </button>
         </form>
-        <p className="form-error">{createError}</p>
+        {createError && <p className="form-error">{createError}</p>}
       </div>
 
       {loadError && <p className="form-error">{loadError}</p>}

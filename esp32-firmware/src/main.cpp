@@ -268,10 +268,11 @@ void connectToWiFi() {
   WiFiManager wm;
   wm.setConfigPortalTimeout(PORTAL_TIMEOUT_SEC);
 
-  // Hali biriktirilmagan qurilmada DEVICE_ID bo'sh bo'lishi mumkin — shu
-  // holatda AP nomi uchun chip ID ishlatiladi (baribir noyob).
-  String apLabel = g_provisioned ? g_deviceId : String(g_chipId);
-  String apName = String("NurseCall-") + apLabel;
+  // SETUP_AP_NAME to'ldirilgan bo'lsa aynan shu ishlatiladi; bo'sh bo'lsa
+  // (ko'p qurilmali o'rnatishlarda noyob bo'lishi uchun) chip ID'ga qaytiladi.
+  String apName = String(SETUP_AP_NAME).length() > 0
+      ? String(SETUP_AP_NAME)
+      : String("NurseCall-") + (g_provisioned ? g_deviceId : String(g_chipId));
   Serial.printf("WiFi'ga ulanmoqda (saqlangan sozlamalar; bo'lmasa portal: %s)...\n", apName.c_str());
 
   // MUHIM: portal ochilsa autoConnect() bir necha daqiqagacha bloklanadi —

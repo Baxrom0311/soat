@@ -24,7 +24,9 @@
 
 // ---- Sozlash captive-portali (WiFiManager) ----
 // Birinchi yoqilganda (yoki BOOT tugmasi bilan WiFi reset qilingandan keyin)
-// qurilma "NurseCall-<DEVICE_ID>" nomli AP ochadi. Shu AP'ga ulanish paroli:
+// qurilma shu nomli AP ochadi. Bo'sh qoldirilsa, standart "NurseCall-<chip ID>" ishlatiladi.
+#define SETUP_AP_NAME ""
+// Shu AP'ga ulanish paroli (kamida 8 belgi):
 #define SETUP_AP_PASSWORD "nursecall123"
 
 // ---- Backend server ----

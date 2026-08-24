@@ -112,9 +112,10 @@ class Device(Base):
     # plaintext kept somewhere to hand back to the ESP32 over /announce. Only ever set
     # for chip_id-claimed devices, and scrubbed once the delivery window closes.
     pending_key_plaintext: Mapped[str | None] = mapped_column(String, nullable=True)
-    # Last time the plaintext key above was handed to the ESP32 over /announce. The
-    # 15-minute delivery security window is measured from (and slides forward on each
-    # retry within) this timestamp; NULL means the key has never been delivered yet.
+    # Last time the plaintext key above was handed to the ESP32 over /announce, kept
+    # for observability only. The delivery window itself is a fixed deadline measured
+    # from created_at (claim time) -- see discovered_device_service.announce -- so this
+    # does NOT gate anything; it must not be used to decide whether the window is open.
     key_delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

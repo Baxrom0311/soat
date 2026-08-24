@@ -24,10 +24,6 @@ if not os.getenv("JWT_SECRET"):
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "1440"))
 
-# Repeat presses of the same room's button within this window are treated as one call
-# (RF buttons retransmit and panicked patients mash the button).
-CALL_DEDUPE_SECONDS = int(os.getenv("CALL_DEDUPE_SECONDS", "10"))
-
 # A device counts as online if its last heartbeat/call arrived within this window.
 DEVICE_ONLINE_WINDOW_SECONDS = int(os.getenv("DEVICE_ONLINE_WINDOW_SECONDS", "180"))
 

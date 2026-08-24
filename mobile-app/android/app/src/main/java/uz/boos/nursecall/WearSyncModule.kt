@@ -1,5 +1,6 @@
 package uz.boos.nursecall
 
+import android.util.Log
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
@@ -8,6 +9,7 @@ import com.google.android.gms.wearable.Wearable
 import java.nio.charset.StandardCharsets
 
 private const val TOKEN_PATH = "/soat/auth_token"
+private const val TAG = "WearSyncDebug"
 
 class WearSyncModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
     override fun getName() = "WearSync"
@@ -24,6 +26,7 @@ class WearSyncModule(reactContext: ReactApplicationContext) : ReactContextBaseJa
         val messageClient = Wearable.getMessageClient(reactApplicationContext)
         Wearable.getNodeClient(reactApplicationContext).connectedNodes
             .addOnSuccessListener { nodes ->
+                Log.d(TAG, "connectedNodes: ${nodes.map { "${it.displayName}(${it.id}, nearby=${it.isNearby})" }}")
                 if (nodes.isEmpty()) {
                     promise.resolve(false)
                     return@addOnSuccessListener
@@ -34,12 +37,17 @@ class WearSyncModule(reactContext: ReactApplicationContext) : ReactContextBaseJa
                 nodes.forEach { node ->
                     messageClient.sendMessage(node.id, TOKEN_PATH, payload)
                         .addOnCompleteListener { task ->
-                            if (task.isSuccessful) anySucceeded = true
+                            if (task.isSuccessful) {
+                                anySucceeded = true
+                                Log.d(TAG, "sendMessage OK to ${node.displayName}")
+                            } else {
+                                Log.e(TAG, "sendMessage FAILED to ${node.displayName}", task.exception)
+                            }
                             remaining -= 1
                             if (remaining == 0) promise.resolve(anySucceeded)
                         }
                 }
             }
-            .addOnFailureListener { promise.resolve(false) }
+            .addOnFailureListener { e -> Log.e(TAG, "connectedNodes FAILED", e); promise.resolve(false) }
     }
 }

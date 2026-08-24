@@ -15,9 +15,16 @@ export function StaffTab() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<StaffRole>('nurse');
   const [error, setError] = useState('');
+  const [loadError, setLoadError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   async function load() {
-    setStaff(await api.getStaff());
+    setLoadError('');
+    try {
+      setStaff(await api.getStaff());
+    } catch (err) {
+      setLoadError(err instanceof ApiError ? err.message : "Xodimlarni yuklab bo'lmadi");
+    }
   }
 
   useEffect(() => {
@@ -27,15 +34,18 @@ export function StaffTab() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
+    setSubmitting(true);
     try {
       await api.createStaff({ name, email, password, role });
       setName('');
       setEmail('');
       setPassword('');
       setRole('nurse');
-      load();
+      await load();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -70,36 +80,45 @@ export function StaffTab() {
               <option value="nurse">Hamshira</option>
               <option value="admin">Admin</option>
             </select>
-            <button type="submit" className="btn btn-primary">
-              Qo'shish
+            <button type="submit" className="btn btn-primary" disabled={submitting}>
+              {submitting ? '...' : "Qo'shish"}
             </button>
           </form>
-          <p className="form-error">{error}</p>
+          {error && <p className="form-error">{error}</p>}
         </div>
       )}
 
-      <div className="table-wrap glass">
-        <table>
-          <thead>
-            <tr>
-              <th>Ism</th>
-              <th>Email</th>
-              <th>Rol</th>
-            </tr>
-          </thead>
-          <tbody>
-            {staff.map((s) => (
-              <tr key={s.id}>
-                <td>{s.name}</td>
-                <td>{s.email}</td>
-                <td>
-                  <span className="role-pill">{s.role}</span>
-                </td>
+      {loadError ? (
+        <div className="form-error">
+          {loadError}{' '}
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => load()}>
+            Qayta urinish
+          </button>
+        </div>
+      ) : (
+        <div className="table-wrap glass">
+          <table>
+            <thead>
+              <tr>
+                <th>Ism</th>
+                <th>Email</th>
+                <th>Rol</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {staff.map((s) => (
+                <tr key={s.id}>
+                  <td>{s.name}</td>
+                  <td>{s.email}</td>
+                  <td>
+                    <span className="role-pill">{s.role}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   );
 }

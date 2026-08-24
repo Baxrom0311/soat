@@ -15,11 +15,21 @@ function fmtTime(iso: string): string {
 interface UnassignedTabProps {
   signals: UnassignedSignal[];
   refreshSignals: () => Promise<void>;
+  markLocalMutation: () => void;
 }
 
-function SignalRow({ signal, rooms, onBound }: { signal: UnassignedSignal; rooms: Room[]; onBound: () => void }) {
+function SignalRow({
+  signal,
+  rooms,
+  onBound,
+}: {
+  signal: UnassignedSignal;
+  rooms: Room[];
+  onBound: () => void;
+}) {
   const [roomId, setRoomId] = useState<string>(rooms[0] ? String(rooms[0].id) : '');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   // Rows can mount while rooms are still loading; once they arrive, pick the first one
   // so the visible selection and the submitted value can't diverge (room_id 0 bug).
@@ -29,11 +39,14 @@ function SignalRow({ signal, rooms, onBound }: { signal: UnassignedSignal; rooms
 
   async function bind() {
     setError('');
+    setSubmitting(true);
     try {
       await api.createButton({ ev1527_code: signal.ev1527_code, room_id: Number(roomId) });
       onBound();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Xato');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -52,8 +65,8 @@ function SignalRow({ signal, rooms, onBound }: { signal: UnassignedSignal; rooms
             </option>
           ))}
         </select>
-        <button className="bind-btn" onClick={bind} type="button" disabled={!roomId}>
-          Bog'lash
+        <button className="bind-btn" onClick={bind} type="button" disabled={!roomId || submitting}>
+          {submitting ? '...' : "Bog'lash"}
         </button>
         {rooms.length === 0 && <p className="form-error">Avval "Xonalar" bo'limida xona yarating</p>}
         {error && <p className="form-error">{error}</p>}
@@ -62,21 +75,32 @@ function SignalRow({ signal, rooms, onBound }: { signal: UnassignedSignal; rooms
   );
 }
 
-export function UnassignedTab({ signals, refreshSignals }: UnassignedTabProps) {
+export function UnassignedTab({ signals, refreshSignals, markLocalMutation }: UnassignedTabProps) {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [buttons, setButtons] = useState<ButtonBinding[]>([]);
+  const [loadError, setLoadError] = useState('');
   const [unbindError, setUnbindError] = useState('');
 
   const loadButtons = useCallback(async () => {
     setButtons(await api.getButtons());
   }, []);
 
-  useEffect(() => {
-    api.getRooms().then(setRooms).catch(() => {});
-    loadButtons().catch(() => {});
+  const loadAll = useCallback(async () => {
+    setLoadError('');
+    try {
+      const [roomsData] = await Promise.all([api.getRooms(), loadButtons()]);
+      setRooms(roomsData);
+    } catch (err) {
+      setLoadError(err instanceof ApiError ? err.message : "Ma'lumotlarni yuklab bo'lmadi");
+    }
   }, [loadButtons]);
 
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
+
   async function handleBound() {
+    markLocalMutation();
     await refreshSignals();
     loadButtons().catch(() => {});
   }
@@ -92,6 +116,7 @@ export function UnassignedTab({ signals, refreshSignals }: UnassignedTabProps) {
     setUnbindError('');
     try {
       await api.deleteButton(binding.id);
+      markLocalMutation();
       loadButtons().catch(() => {});
     } catch (err) {
       setUnbindError(err instanceof ApiError ? err.message : 'Xato');
@@ -110,6 +135,14 @@ export function UnassignedTab({ signals, refreshSignals }: UnassignedTabProps) {
           bo'ladi, keyin uni xonaga bog'lang.
         </p>
       </div>
+      {loadError && (
+        <div className="form-error" style={{ marginBottom: 12 }}>
+          {loadError}{' '}
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => loadAll()}>
+            Qayta urinish
+          </button>
+        </div>
+      )}
       <div className="table-wrap glass">
         <table>
           <thead>

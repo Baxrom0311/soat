@@ -8,10 +8,12 @@ of -- the websocket broadcast. Push delivery is a side effect: it must never blo
 fail the response to the calling ESP32 device.
 
 Ingestion is deduplicated per room under a Postgres advisory lock: a press while the
-room already has an active call, or within CALL_DEDUPE_SECONDS of the room's latest
-call, returns the existing call (deduplicated=true) with no new row, push, or broadcast.
-A client-supplied press_id additionally makes firmware retries idempotent regardless of
-how much later they land (lost-response + late retry must not create a phantom call).
+room already has an active call returns that existing call (deduplicated=true) with no
+new row, push, or broadcast. A client-supplied press_id additionally makes firmware
+retries idempotent regardless of how much later they land (lost-response + late retry
+must not create a phantom call). There is deliberately no further time-window fallback
+once the active call is gone (acknowledged) -- a new press at that point is a genuinely
+new call and must always alert staff, even if it happens moments after the last one.
 
 The two async entrypoints exist only to await the websocket broadcast; every blocking
 piece (bcrypt device-key verification ~100-300ms, all SQLAlchemy work) runs in the
@@ -19,13 +21,12 @@ threadpool via run_in_threadpool so a button press can never stall the event loo
 and with it every other request and websocket -- for the duration of a bcrypt check.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from fastapi import BackgroundTasks, HTTPException
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 
-from app.core.config import CALL_DEDUPE_SECONDS
 from app.repositories import button_repo, call_repo, device_repo, unassigned_repo
 from app.schemas.call import ActiveCallOut, AckOut, CallCreateOut, HistoryCallOut
 from app.services import push_service
@@ -80,19 +81,24 @@ def _ingest_sync(
     if press_id:
         existing = call_repo.get_by_press_id(db, device.clinic_id, press_id)
     if existing is None:
+        # The only real dedupe case left after press_id: a call is already active for
+        # this room (RF retransmit / mashed button while nobody has acknowledged yet).
+        # There used to be a further time-window fallback onto the room's *latest*
+        # call regardless of status -- but get_active_by_room above already returns
+        # any still-active call, so that fallback only ever matched an *acknowledged*
+        # one, silently swallowing a genuine new press with no call, no push, no
+        # broadcast. Removed: a spurious extra call is far safer than a missed one.
         existing = call_repo.get_active_by_room(db, device.clinic_id, room.id)
-    if existing is None:
-        latest = call_repo.get_latest_by_room(db, device.clinic_id, room.id)
-        if latest is not None and datetime.now(timezone.utc) - latest.created_at < timedelta(
-            seconds=CALL_DEDUPE_SECONDS
-        ):
-            existing = latest
     if existing is not None:
         # Fold the repeat press into the existing call: no new row, no push, no broadcast.
+        # Room/floor come from the existing call's OWN room, not the just-resolved
+        # `room` above: a press_id match can be an old call whose button has since
+        # been rebound to a different room, and the response must describe the call
+        # actually being referenced, not wherever the button currently points.
         out = CallCreateOut(
             call_id=existing.id,
-            room_number=room.room_number,
-            floor=room.floor,
+            room_number=existing.room.room_number,
+            floor=existing.room.floor,
             created_at=existing.created_at,
             deduplicated=True,
         )
@@ -181,7 +187,7 @@ def _ack_sync(db: Session, clinic_id: int, call_id: int, *, acknowledged_by: str
     call = call_repo.get(db, clinic_id, call_id)
     if call is None:
         raise HTTPException(status_code=404, detail="Call not found")
-    if not call_repo.acknowledge_if_active(db, call_id, acknowledged_by=acknowledged_by):
+    if not call_repo.acknowledge_if_active(db, clinic_id, call_id, acknowledged_by=acknowledged_by):
         db.rollback()
         raise HTTPException(status_code=409, detail="Call already acknowledged")
     db.commit()

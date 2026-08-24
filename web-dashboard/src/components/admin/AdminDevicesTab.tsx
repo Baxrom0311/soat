@@ -138,6 +138,8 @@ function ClaimDeviceModal({
             type="number"
             placeholder="Qavat"
             required
+            min={0}
+            step={1}
             value={floor}
             onChange={(e) => setFloor(e.target.value)}
           />
@@ -257,14 +259,21 @@ export function AdminDevicesTab() {
   const [deviceId, setDeviceId] = useState('');
   const [floor, setFloor] = useState('');
   const [error, setError] = useState('');
+  const [loadError, setLoadError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState<AdminDeviceCreateResponse | null>(null);
 
   async function loadDevices(clinicId: string) {
-    setDevices(await api.getAdminDevices(clinicId ? Number(clinicId) : undefined));
+    try {
+      setDevices(await api.getAdminDevices(clinicId ? Number(clinicId) : undefined));
+      setLoadError('');
+    } catch (err) {
+      setLoadError(err instanceof ApiError ? err.message : "Qurilmalarni yuklab bo'lmadi");
+    }
   }
 
   useEffect(() => {
-    api.getAdminClinics().then(setClinics);
+    api.getAdminClinics().then(setClinics).catch(() => setLoadError("Klinikalar ro'yxatini yuklab bo'lmadi"));
   }, []);
 
   useEffect(() => {
@@ -274,6 +283,7 @@ export function AdminDevicesTab() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
+    setSubmitting(true);
     try {
       const data = await api.createAdminDevice({
         clinic_id: Number(formClinic),
@@ -283,9 +293,11 @@ export function AdminDevicesTab() {
       setCreated(data);
       setDeviceId('');
       setFloor('');
-      loadDevices(filterClinic);
+      await loadDevices(filterClinic);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -323,14 +335,16 @@ export function AdminDevicesTab() {
             type="number"
             placeholder="Qavat"
             required
+            min={0}
+            step={1}
             value={floor}
             onChange={(e) => setFloor(e.target.value)}
           />
-          <button type="submit" className="btn btn-primary">
-            Qo'shish
+          <button type="submit" className="btn btn-primary" disabled={submitting}>
+            {submitting ? '...' : "Qo'shish"}
           </button>
         </form>
-        <p className="form-error">{error}</p>
+        {error && <p className="form-error">{error}</p>}
       </div>
 
       <div className="filter-row">
@@ -350,39 +364,48 @@ export function AdminDevicesTab() {
         </select>
       </div>
 
-      <div className="table-wrap glass">
-        <table>
-          <thead>
-            <tr>
-              <th>Klinika</th>
-              <th>device_id</th>
-              <th>Qavat</th>
-              <th>Holat</th>
-              <th>Oxirgi ko'rilgan</th>
-              <th>Yaratildi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {devices.map((d) => (
-              <tr key={d.id}>
-                <td>{d.clinic_name}</td>
-                <td>{d.device_id}</td>
-                <td>{d.floor}</td>
-                <td>
-                  <span className={`online-badge ${d.online ? 'online' : 'offline'}`}>
-                    <span className="dot" />
-                    {d.online ? 'Onlayn' : 'Oflayn'}
-                  </span>
-                </td>
-                <td title={d.last_seen_at ? fmtTime(d.last_seen_at) : undefined}>
-                  {d.last_seen_at ? relTime(d.last_seen_at) : '—'}
-                </td>
-                <td>{fmtTime(d.created_at)}</td>
+      {loadError ? (
+        <div className="form-error">
+          {loadError}{' '}
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => loadDevices(filterClinic)}>
+            Qayta urinish
+          </button>
+        </div>
+      ) : (
+        <div className="table-wrap glass">
+          <table>
+            <thead>
+              <tr>
+                <th>Klinika</th>
+                <th>device_id</th>
+                <th>Qavat</th>
+                <th>Holat</th>
+                <th>Oxirgi ko'rilgan</th>
+                <th>Yaratildi</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {devices.map((d) => (
+                <tr key={d.id}>
+                  <td>{d.clinic_name}</td>
+                  <td>{d.device_id}</td>
+                  <td>{d.floor}</td>
+                  <td>
+                    <span className={`online-badge ${d.online ? 'online' : 'offline'}`}>
+                      <span className="dot" />
+                      {d.online ? 'Onlayn' : 'Oflayn'}
+                    </span>
+                  </td>
+                  <td title={d.last_seen_at ? fmtTime(d.last_seen_at) : undefined}>
+                    {d.last_seen_at ? relTime(d.last_seen_at) : '—'}
+                  </td>
+                  <td>{fmtTime(d.created_at)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {created && <DeviceKeyModal created={created} onClose={() => setCreated(null)} />}
     </section>

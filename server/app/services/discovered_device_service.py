@@ -9,6 +9,7 @@ can save it to NVS and switch to normal authenticated operation -- no manual
 device_id/key entry, no re-flashing.
 """
 
+import secrets
 import time
 from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
@@ -56,9 +57,13 @@ def announce(db: Session, *, chip_id: str, client_ip: str) -> AnnounceOut:
     if device is None:
         return AnnounceOut(claimed=False)
 
-    window_open = device.key_delivered_at is None or (
-        now - device.key_delivered_at <= timedelta(minutes=KEY_DELIVERY_WINDOW_MINUTES)
-    )
+    # Bounded from claim time (created_at), NOT from key_delivered_at: the latter used
+    # to be updated on every successful delivery, which turned this into an idle
+    # timeout an attacker could keep alive forever by polling every <15 minutes. A
+    # fixed deadline from the actual claim still tolerates the ESP32 retrying after a
+    # lost response, but the window genuinely closes 15 minutes after the device was
+    # claimed, no matter how many times /announce is called in the meantime.
+    window_open = now - device.created_at <= timedelta(minutes=KEY_DELIVERY_WINDOW_MINUTES)
     if not window_open:
         # Window closed: the ESP32 should already have picked up its key on an earlier
         # call. Scrub the plaintext so it doesn't linger in the DB any longer than it
@@ -96,7 +101,10 @@ def claim(
     if clinic_repo.get(db, clinic_id) is None:
         raise HTTPException(status_code=404, detail="Clinic not found")
 
-    final_device_id = device_id or f"floor{floor}-esp32-{chip_id[-6:]}"
+    # The auto-generated suffix must NOT embed any part of chip_id: chip_id is the
+    # secret needed to steal a device's key via /announce (see the security window
+    # above), and device_id is visible to every clinic staff member via GET /devices.
+    final_device_id = device_id or f"floor{floor}-esp32-{secrets.token_hex(4)}"
     # device_service handles key generation/hashing and the duplicate device_id 409;
     # chip_id set here is what makes the next /announce call hand the key back.
     device, _plaintext_key = device_service.register_device(

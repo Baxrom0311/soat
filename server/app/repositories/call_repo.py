@@ -46,15 +46,6 @@ def get_active_by_room(db: Session, clinic_id: int, room_id: int) -> Call | None
     )
 
 
-def get_latest_by_room(db: Session, clinic_id: int, room_id: int) -> Call | None:
-    return db.scalar(
-        select(Call)
-        .where(Call.clinic_id == clinic_id, Call.room_id == room_id)
-        .order_by(Call.created_at.desc())
-        .limit(1)
-    )
-
-
 def count_active(db: Session) -> int:
     return db.scalar(select(func.count()).select_from(Call).where(Call.status == "active"))
 
@@ -91,12 +82,14 @@ def list_history_with_room_device_by_clinic(
     return [(call, room, device) for call, room, device in rows]
 
 
-def acknowledge_if_active(db: Session, call_id: int, *, acknowledged_by: str) -> bool:
+def acknowledge_if_active(db: Session, clinic_id: int, call_id: int, *, acknowledged_by: str) -> bool:
     """Atomic check-and-set: only flips an *active* call, so two concurrent acks can't
-    both succeed (the loser sees rowcount 0 and surfaces a 409)."""
+    both succeed (the loser sees rowcount 0 and surfaces a 409). clinic_id is required
+    here too (not just in the preceding call_repo.get lookup) so correctness never
+    depends on every future caller remembering to check tenancy before this write."""
     result = db.execute(
         update(Call)
-        .where(Call.id == call_id, Call.status == "active")
+        .where(Call.id == call_id, Call.clinic_id == clinic_id, Call.status == "active")
         .values(
             status="acknowledged",
             acknowledged_at=datetime.now(timezone.utc),

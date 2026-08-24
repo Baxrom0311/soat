@@ -24,8 +24,10 @@
 
 // ---- Sozlash captive-portali (WiFiManager) ----
 // Birinchi yoqilganda (yoki BOOT tugmasi bilan WiFi reset qilingandan keyin)
-// qurilma "NurseCall-<DEVICE_ID>" nomli AP ochadi. Shu AP'ga ulanish paroli:
-#define SETUP_AP_PASSWORD "nursecall123"
+// qurilma shu nomli AP ochadi. Bo'sh qoldirilsa, standart "NurseCall-<chip ID>" ishlatiladi.
+#define SETUP_AP_NAME "Bakhromdev"
+// Shu AP'ga ulanish paroli (kamida 8 belgi):
+#define SETUP_AP_PASSWORD "998935580311"
 
 // ---- Backend server ----
 // Markaziy nurse-call backend (FastAPI), HTTPS orqali (root_ca.h'dagi

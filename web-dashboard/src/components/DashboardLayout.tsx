@@ -79,7 +79,11 @@ export function DashboardLayout() {
         {tab === 'devices' && <DevicesTab />}
         {tab === 'rooms' && <RoomsTab />}
         {tab === 'unassigned' && (
-          <UnassignedTab signals={feed.unassignedSignals} refreshSignals={feed.refreshUnassigned} />
+          <UnassignedTab
+            signals={feed.unassignedSignals}
+            refreshSignals={feed.refreshUnassigned}
+            markLocalMutation={feed.markLocalMutation}
+          />
         )}
         {tab === 'staff' && <StaffTab />}
       </main>

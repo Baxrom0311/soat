@@ -64,11 +64,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const session = useMemo<AuthSession | null>(() => {
     if (!token) return null;
-    const stored = getSession();
-    if (stored) return stored;
-    // Sessions created before role/name were persisted: fall back to JWT claims.
+    // role/clinic_id must always come from the signed JWT, never from the plain
+    // localStorage session blob: that blob is ordinary unsigned JSON a user can
+    // rewrite in devtools to render a higher-privilege layout client-side (the
+    // backend independently re-derives role from the JWT on every request, so this
+    // was only a UI-structure disclosure, not a data leak -- but it's a cheap,
+    // worthwhile guard). The cached session is only trusted for cosmetic display
+    // fields (name) that carry no authorization weight.
     const p = decodeJwtPayload<JwtPayload>(token);
-    return p ? { role: p.role, name: p.name || p.email || '', clinic_id: p.clinic_id ?? null } : null;
+    if (!p) return null;
+    const stored = getSession();
+    const name = stored && stored.role === p.role ? stored.name : p.name || p.email || '';
+    return { role: p.role, name, clinic_id: p.clinic_id ?? null };
   }, [token]);
 
   const value = useMemo(

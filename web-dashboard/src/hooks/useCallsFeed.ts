@@ -93,6 +93,15 @@ export function useCallsFeed(token: string | null) {
     setUnassignedSignals(data.map((s) => ({ ...s, ev1527_code: String(s.ev1527_code) })));
   }, []);
 
+  // Any REST mutation that changes what refreshUnassigned()/refreshActive() would
+  // return (bind/unbind a button, delete a room, etc.) must call this right after the
+  // request succeeds, the same way ackCall does below -- otherwise an in-flight poll
+  // GET started *before* the mutation can resolve *after* it and overwrite the fresh
+  // state with stale pre-mutation data.
+  const markLocalMutation = useCallback(() => {
+    lastWsEventAt.current = Date.now();
+  }, []);
+
   const ackCall = useCallback(async (callId: number) => {
     await api.ackCall(callId);
     lastWsEventAt.current = Date.now(); // local mutation: protect it from in-flight snapshots too
@@ -139,9 +148,14 @@ export function useCallsFeed(token: string | null) {
         const msg = JSON.parse(evt.data) as WsMessage;
         lastWsEventAt.current = Date.now();
         if (msg.type === 'new_call') {
-          setActiveCalls((prev) => new Map(prev).set(msg.call.call_id, msg.call));
+          setActiveCalls((prev) => {
+            // The 5s poll fallback can independently observe and beep for the same
+            // call right before this WS push lands (e.g. around a WS reconnect) --
+            // only alert here if this call id is genuinely new to us.
+            if (!prev.has(msg.call.call_id)) beep();
+            return new Map(prev).set(msg.call.call_id, msg.call);
+          });
           refreshHistory().catch(() => {});
-          beep();
         } else if (msg.type === 'ack') {
           setActiveCalls((prev) => {
             const next = new Map(prev);
@@ -180,5 +194,15 @@ export function useCallsFeed(token: string | null) {
     };
   }, [token, refreshActive, refreshHistory, refreshUnassigned]);
 
-  return { activeCalls, history, unassignedSignals, connStatus, ackCall, refreshActive, refreshHistory, refreshUnassigned };
+  return {
+    activeCalls,
+    history,
+    unassignedSignals,
+    connStatus,
+    ackCall,
+    refreshActive,
+    refreshHistory,
+    refreshUnassigned,
+    markLocalMutation,
+  };
 }

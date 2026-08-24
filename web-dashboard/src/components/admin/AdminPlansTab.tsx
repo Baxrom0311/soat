@@ -16,6 +16,7 @@ export function AdminPlansTab() {
   const [months, setMonths] = useState('1');
   const [maxDevices, setMaxDevices] = useState('');
   const [createError, setCreateError] = useState('');
+  const [creating, setCreating] = useState(false);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editPrice, setEditPrice] = useState('');
@@ -40,6 +41,7 @@ export function AdminPlansTab() {
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
     setCreateError('');
+    setCreating(true);
     try {
       await api.createPlan({
         name,
@@ -51,9 +53,11 @@ export function AdminPlansTab() {
       setPrice('');
       setMonths('1');
       setMaxDevices('');
-      load();
+      await load();
     } catch (err) {
       setCreateError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
+    } finally {
+      setCreating(false);
     }
   }
 
@@ -154,11 +158,11 @@ export function AdminPlansTab() {
             value={maxDevices}
             onChange={(e) => setMaxDevices(e.target.value)}
           />
-          <button type="submit" className="btn btn-primary">
-            Qo'shish
+          <button type="submit" className="btn btn-primary" disabled={creating}>
+            {creating ? '...' : "Qo'shish"}
           </button>
         </form>
-        <p className="form-error">{createError}</p>
+        {createError && <p className="form-error">{createError}</p>}
       </div>
 
       {loadError && <p className="form-error">{loadError}</p>}
