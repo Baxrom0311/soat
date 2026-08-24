@@ -16,6 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -62,9 +63,21 @@ class CallMonitorService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
-        pollJob?.cancel()
+        // scope.cancel() (not just pollJob.cancel()) so `while (scope.isActive)` in
+        // pollLoop is actually meaningful, and any future coroutine launched on `scope`
+        // is guaranteed to be torn down here too.
+        scope.cancel()
         wakeLock?.release()
+        wakeLock = null
         super.onDestroy()
+    }
+
+    /** Tears down the foreground service + wake lock immediately instead of leaving
+     * them dangling after the poll loop exits (OUTDATED, or any other early return). */
+    private fun shutDown() {
+        wakeLock?.release()
+        wakeLock = null
+        stopSelf()
     }
 
     private suspend fun pollLoop() {
@@ -75,6 +88,7 @@ class CallMonitorService : Service() {
         try {
             if (BuildConfig.VERSION_CODE < ApiClient.fetchMinWatchVersion(applicationContext)) {
                 CallState.status.value = ConnectionStatus.OUTDATED
+                shutDown()
                 return
             }
         } catch (_: Exception) {
@@ -95,9 +109,15 @@ class CallMonitorService : Service() {
 
                 val activeIds = calls.map { it.callId }.toSet()
                 if (firstPollDone) {
+                    // Mark alerted only AFTER notifyNewCall succeeds: if it throws, the
+                    // call ID must stay out of alreadyAlerted so the next poll retries
+                    // it, instead of the call being silently dropped for its lifetime.
                     calls.filter { it.callId !in alreadyAlerted }.forEach { call ->
-                        alreadyAlerted.add(call.callId)
-                        notifyNewCall(call)
+                        try {
+                            notifyNewCall(call)
+                            alreadyAlerted.add(call.callId)
+                        } catch (_: Exception) {
+                        }
                     }
                     // Tasdiqlanmagan chaqiruv bo'lsa, har pollda qayta tebranadi —
                     // bitta qisqa buzz hamshira e'tiborsiz qolib ketishi mumkin.

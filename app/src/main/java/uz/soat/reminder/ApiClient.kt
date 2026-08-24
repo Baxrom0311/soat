@@ -50,15 +50,21 @@ object ApiClient {
             if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
             val body = response.body?.string() ?: "[]"
             val arr = JSONArray(body)
-            return (0 until arr.length()).map { i ->
-                val o = arr.getJSONObject(i)
-                Call(
-                    callId = o.getInt("call_id"),
-                    roomNumber = o.getString("room_number"),
-                    floor = o.getInt("floor"),
-                    createdAt = o.getString("created_at"),
-                    status = o.getString("status")
-                )
+            // Skip only the malformed element, not the whole batch: one bad record
+            // must never blank out every other genuinely active call in the response.
+            return (0 until arr.length()).mapNotNull { i ->
+                try {
+                    val o = arr.getJSONObject(i)
+                    Call(
+                        callId = o.getInt("call_id"),
+                        roomNumber = o.getString("room_number"),
+                        floor = o.getInt("floor"),
+                        createdAt = o.getString("created_at"),
+                        status = o.getString("status")
+                    )
+                } catch (_: org.json.JSONException) {
+                    null
+                }
             }
         }
     }
