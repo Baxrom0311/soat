@@ -25,7 +25,7 @@ import {
   unregisterPushToken,
 } from './src/api';
 import { registerForPushNotificationsAsync } from './src/notifications';
-import { requestIgnoreBatteryOptimizations } from './src/battery';
+import { requestAutoStartPermission, requestIgnoreBatteryOptimizations } from './src/battery';
 import { syncTokenToWatch } from './src/wearSync';
 import { ThemeProvider, useTheme } from './src/ThemeContext';
 
@@ -67,6 +67,10 @@ function AppContent() {
         pushTokenRef.current = token;
         await savePushToken(token);
         await requestIgnoreBatteryOptimizations();
+        // Xiaomi/Vivo/Oppo/Huawei/Infinix kabi OEM'larda push-bildirishnoma
+        // yetib bormasligining eng keng tarqalgan sababi — yuqoridagi standart
+        // Android intent buni qamrab olmaydigan OEM-maxsus "Autostart" cheklovi.
+        await requestAutoStartPermission();
       }
     } catch (err) {
       // Push ro'yxatdan o'tkazish muvaffaqiyatsiz bo'lsa ham ilova ishlashda davom etadi
