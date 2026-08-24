@@ -35,6 +35,7 @@
 #include <RCSwitch.h>
 #include <esp_task_wdt.h>
 #include <Preferences.h>
+#include <time.h>
 
 #include "config.h"
 #include "root_ca.h"
@@ -55,6 +56,14 @@ static const uint32_t PORTAL_TIMEOUT_SEC = 180;
 // sozlamalari o'chiriladi (o'rnatuvchi qurilmani boshqa klinikaga ko'chirsa).
 static const int BOOT_BUTTON_PIN = 0;
 static const uint32_t FACTORY_RESET_HOLD_MS = 5000;
+
+// mbedTLS TLS handshake root CA sertifikatining notBefore/notAfter maydonlarini
+// tizim soatiga solishtirib tekshiradi. NTP bilan sinxronlanmasa, ESP32 soati
+// bootdan keyin ~1970 atrofida qoladi va HAR BIR HTTPS chaqiruv "sertifikat hali
+// yaroqli emas" bilan ABADIY muvaffaqiyatsiz bo'ladi — WiFi ulangan ko'rinsa ham.
+static const uint32_t NTP_SYNC_TIMEOUT_MS = 15000;
+// 2024-01-01 UTC dan oldingi vaqt = hali NTP bilan sinxronlanmagan degani.
+static const time_t NTP_SANE_EPOCH = 1704067200;
 
 // ---- Zero-touch provisioning (qurilma kashf qilish/biriktirish) ----
 // Qurilma dashboard'da hali biriktirilmagan bo'lsa, config.h'dagi qo'lda
@@ -96,8 +105,25 @@ struct QueuedPress {
   unsigned long code;
   char pressId[48];
 };
-static const int CALL_QUEUE_DEPTH = 16;
+// makePressId() "<device_id>-<8hex><8hex>\0" formatini pressId[48] ga yozadi:
+// device_id_len + 1 + 8 + 8 + 1 <= 48 => device_id_len <= 30. Bir bayt zaxira
+// bilan 29 -- undan uzun device_id snprintf tomonidan jimgina kesilib,
+// press_id'ning noyoblik kafolatini zaiflashtiradi.
+static const size_t MAX_DEVICE_ID_LEN = 29;
+// 16 -> 48: bitta yuborish urinishi ~10s cho'zilishi mumkin (5s connect + 5s
+// read), shu oraliqda ko'p bemor bir vaqtda bossa navbat to'lib, eng yangi
+// bosishlar jimgina tashlab yuborilardi. Kattaroq chuqurlik bu holatni deyarli
+// yo'qqa chiqaradi (48 ta struct ~2.5KB — ESP32 uchun arzimas xotira narxi).
+static const int CALL_QUEUE_DEPTH = 48;
 static QueueHandle_t callQueue = nullptr;
+
+// pollAnnounce() (networkTask, core 0) qurilma biriktirilganda RF interruptni
+// to'g'ridan-to'g'ri o'zi yoqmaydi -- shu bayroqni ko'taradi, uni faqat loop()
+// (core 1) ko'rib mySwitch.enableReceive() chaqiradi. attachInterrupt() qaysi
+// core'dan chaqirilsa, RF ISR o'sha core'ga bog'lanib qoladi; buni networkTask'dan
+// chaqirish RF qabulni core 0'dagi bloklovchi HTTPS ishlariga bog'lab qo'yardi --
+// fayl boshidagi ikki-core arxitektura kafolatini buzardi.
+static volatile bool g_needsEnableReceive = false;
 
 // Serverga yuborish natijasi: qayta urinishga arziydimi yoki yo'qmi.
 // 401 (kalit noto'g'ri) va 404 (kod noma'lum) — doimiy xatolar; tarmoq
@@ -118,7 +144,10 @@ struct PendingCall {
   unsigned long firstAttemptMs;
   uint8_t attempts;
 };
-static const size_t PENDING_QUEUE_SIZE = 8;
+// 8 -> 32: bir necha daqiqalik tarmoq uzilishida 8+ bemor chaqirsa, eng eski
+// (ehtimol eng shoshilinch) chaqiruv navbatga yangi joy ochish uchun jimgina
+// tashlab yuborilardi. Kattaroq chuqurlik buni deyarli yo'qqa chiqaradi.
+static const size_t PENDING_QUEUE_SIZE = 32;
 static PendingCall pendingQueue[PENDING_QUEUE_SIZE];
 static size_t pendingHead = 0;  // eng eski yozuv indeksi
 static size_t pendingCount = 0;
@@ -126,6 +155,8 @@ static size_t pendingCount = 0;
 void checkWiFiFactoryReset();
 void connectToWiFi();
 void ensureWiFiConnected();
+void syncTimeWithNtp();
+String readCappedResponse(HTTPClient &http);
 void computeChipId();
 void loadProvisioningState();
 void clearProvisioningState();
@@ -165,6 +196,7 @@ void setup() {
   esp_task_wdt_add(NULL);
 
   connectToWiFi();
+  syncTimeWithNtp();
 
   callQueue = xQueueCreate(CALL_QUEUE_DEPTH, sizeof(QueuedPress));
   // Tarmoq ishlari core 0'da (WiFi stack ham shu yerda), loop() core 1'da qoladi.
@@ -184,6 +216,15 @@ void setup() {
 void loop() {
   esp_task_wdt_reset();
   ensureWiFiConnected();
+
+  // Qurilma zero-touch orqali endigina biriktirilgan bo'lsa: RF interruptni
+  // shu (core 1) core'dan o'zimiz yoqamiz, networkTask (core 0) emas -- shu
+  // fayl boshidagi ikki-core arxitektura kafolatini saqlab qolish uchun.
+  if (g_needsEnableReceive) {
+    g_needsEnableReceive = false;
+    mySwitch.enableReceive(RF_RECEIVER_PIN);
+    Serial.printf("RF receiver GPIO%d pinda tinglanmoqda...\n", RF_RECEIVER_PIN);
+  }
 
   if (mySwitch.available()) {
     unsigned long code = mySwitch.getReceivedValue();
@@ -215,7 +256,13 @@ void loop() {
     press.code = code;
     makePressId(press.pressId, sizeof(press.pressId));
 
-    if (xQueueSend(callQueue, &press, 0) != pdTRUE) {
+    // 0 timeout o'rniga qisqa (50ms) chegaralangan kutish: navbat 48 chuqurlikda
+    // deyarli hech qachon to'lmaydi, lekin to'lib qolgan nodir holatda ham
+    // networkTask'ga bitta slot bo'shatishga ozgina imkon beradi -- signalni
+    // darhol tashlab yuborishdan ko'ra xavfsizroq. RCSwitch bitta dekodlangan
+    // qiymatni ISR darajasida saqlaydi, shuning uchun 50ms bu buferni yo'qotish
+    // xavfini sezilarli darajada oshirmaydi.
+    if (xQueueSend(callQueue, &press, pdMS_TO_TICKS(50)) != pdTRUE) {
       Serial.println("OGOHLANTIRISH: chaqiruv navbati to'la, signal tashlab yuborildi!");
     }
   }
@@ -293,6 +340,31 @@ void connectToWiFi() {
 
   Serial.println();
   Serial.printf("WiFi ulandi. IP manzil: %s\n", WiFi.localIP().toString().c_str());
+}
+
+// WiFi ulangandan keyin, birinchi HTTPS chaqiruvdan OLDIN vaqtni NTP orqali
+// sinxronlaydi -- aks holda TLS sertifikat tekshiruvi ~1970 yildagi soatga
+// solishtirib "hali yaroqli emas" deb abadiy rad etadi. Timeout bilan
+// chegaralangan: NTP portlari klinika tarmog'ida bloklangan bo'lsa ham qurilma
+// abadiy osilib qolmaydi -- shunchaki ogohlantirib davom etadi (keyingi HTTPS
+// chaqiruvlar muvaffaqiyatsiz bo'lib, odatdagi retry-navbat orqali qayta uriniladi).
+void syncTimeWithNtp() {
+  configTime(0, 0, "pool.ntp.org", "time.google.com");
+  Serial.print("NTP orqali vaqt sinxronlanmoqda");
+
+  unsigned long startMs = millis();
+  while (time(nullptr) < NTP_SANE_EPOCH) {
+    esp_task_wdt_reset();
+    if (millis() - startMs > NTP_SYNC_TIMEOUT_MS) {
+      Serial.println("\nOGOHLANTIRISH: NTP vaqt sinxronizatsiyasi vaqti tugadi -- TLS chaqiruvlar muvaffaqiyatsiz bo'lishi mumkin.");
+      return;
+    }
+    delay(250);
+    Serial.print(".");
+  }
+
+  time_t now = time(nullptr);
+  Serial.printf("\nVaqt sinxronlandi: %s", ctime(&now));
 }
 
 // Loop ichida chaqiriladi: agar WiFi uzilib qolgan bo'lsa, qayta ulanishga
@@ -410,7 +482,7 @@ void pollAnnounce(unsigned long nowMs) {
     return;
   }
 
-  String response = http.getString();
+  String response = readCappedResponse(http);
   http.end();
 
   if (httpCode != 200) {
@@ -446,6 +518,17 @@ void pollAnnounce(unsigned long nowMs) {
     Serial.println("OGOHLANTIRISH: device_key bo'sh qaytdi (kutilmagan holat). Qayta urinishda davom etilmoqda.");
     return;
   }
+  if (strlen(newDeviceId) > MAX_DEVICE_ID_LEN) {
+    // makePressId() "%s-%08x%08x" formatida g_deviceId'ni 48 baytli buferga
+    // yozadi -- juda uzun device_id snprintf tomonidan jimgina kesib
+    // tashlanadi va press_id'ning noyoblik kafolati zaiflashadi. Bunday
+    // qurilmani biriktirmasdan, qayta urinishda davom etamiz.
+    Serial.printf(
+        "XATO: server juda uzun device_id qaytardi (%u belgi, max %u) -- press_id kesilib "
+        "ketmasligi uchun rad etildi. Qayta urinishda davom etilmoqda.\n",
+        (unsigned)strlen(newDeviceId), (unsigned)MAX_DEVICE_ID_LEN);
+    return;
+  }
 
   Preferences prefs;
   prefs.begin(PROVISION_NVS_NAMESPACE, false);
@@ -459,8 +542,10 @@ void pollAnnounce(unsigned long nowMs) {
 
   Serial.printf("Qurilma biriktirildi! device_id=%s, endi asosiy rejimda ishlayapti\n", newDeviceId);
 
-  mySwitch.enableReceive(RF_RECEIVER_PIN);
-  Serial.printf("RF receiver GPIO%d pinda tinglanmoqda...\n", RF_RECEIVER_PIN);
+  // mySwitch.enableReceive() bu yerda (networkTask, core 0) emas -- loop()
+  // (core 1) da chaqiriladi, chunki attachInterrupt() RF ISR'ni chaqirgan
+  // core'ga bog'laydi. Shu bayroq loop()'ga signal beradi.
+  g_needsEnableReceive = true;
 }
 
 // Kod DEDUPE_WINDOW_MS ichida qayta kelsa true — tugma bosilganda RF remote
@@ -469,6 +554,7 @@ void pollAnnounce(unsigned long nowMs) {
 // navbatga tushadi. Yangi kod eng eski yozuv o'rniga yoziladi.
 bool isDuplicate(unsigned long code, unsigned long nowMs) {
   size_t oldestIdx = 0;
+  unsigned long oldestAgeMs = 0;
   for (size_t i = 0; i < DEBOUNCE_TABLE_SIZE; i++) {
     if (debounceTable[i].code == code) {
       if (nowMs - debounceTable[i].lastSentAtMs < (unsigned long)DEDUPE_WINDOW_MS) {
@@ -477,7 +563,13 @@ bool isDuplicate(unsigned long code, unsigned long nowMs) {
       debounceTable[i].lastSentAtMs = nowMs;
       return false;
     }
-    if (debounceTable[i].lastSentAtMs < debounceTable[oldestIdx].lastSentAtMs) {
+    // Xom lastSentAtMs qiymatlarini to'g'ridan-to'g'ri solishtirish millis()
+    // ~49.7 kunlik overflow chegarasida xronologik tartibni teskari qilib
+    // qo'yishi mumkin edi. Ayirma asosidagi "yosh" hisobi unsigned
+    // arifmetika tufayli overflow'ga chidamli.
+    unsigned long ageMs = nowMs - debounceTable[i].lastSentAtMs;
+    if (ageMs >= oldestAgeMs) {
+      oldestAgeMs = ageMs;
       oldestIdx = i;
     }
   }
@@ -490,6 +582,23 @@ bool isDuplicate(unsigned long code, unsigned long nowMs) {
 // takroriy yuborishni taniydi (javob yo'qolganda ham dublikat bo'lmaydi).
 void makePressId(char *out, size_t outSize) {
   snprintf(out, outSize, "%s-%08x%08x", g_deviceId.c_str(), (unsigned)esp_random(), (unsigned)millis());
+}
+
+// http.getString() javob tanasini hech qanday hajm chegarasiz to'liq String'ga
+// yuklaydi. Backend'ning o'zi kichik JSON javob qaytaradi, lekin noto'g'ri
+// ishlagan/almashtirilgan server (yoki shu ildiz sertifikatiga ishonadigan
+// boshqa xost) o'zboshimchalik bilan katta javob yuborsa, bu ESP32 heap'ini
+// tugatib qo'yishi mumkin edi. Ma'lum (Content-Length'dan) va katta bo'lsa,
+// o'qimasdan rad etamiz; noma'lum uzunlik (chunked) bo'lsa odatdagidek o'qiladi.
+static const int MAX_RESPONSE_BYTES = 8192;
+
+String readCappedResponse(HTTPClient &http) {
+  int len = http.getSize();
+  if (len > MAX_RESPONSE_BYTES) {
+    Serial.printf("OGOHLANTIRISH: server javobi juda katta (%d bayt), o'qilmadi.\n", len);
+    return String();
+  }
+  return http.getString();
 }
 
 // ---- Tarmoq taski (core 0) ----
@@ -567,7 +676,7 @@ SendResult sendCallToServer(unsigned long code, const char *pressId) {
   SendResult result;
 
   if (httpCode > 0) {
-    String response = http.getString();
+    String response = readCappedResponse(http);
     if (httpCode == 201) {
       Serial.printf("OK (201): chaqiruv qabul qilindi. Javob: %s\n", response.c_str());
       result = SEND_OK;

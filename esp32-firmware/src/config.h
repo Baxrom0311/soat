@@ -71,4 +71,4 @@
 // qayta uriniladi. PENDING_MAX_AGE_MS'dan eskirgan yozuvlar ogohlantirish
 // bilan tashlab yuboriladi (juda kech yetib borgan chaqiruv foydasiz).
 #define RETRY_INTERVAL_MS 5000
-#define PENDING_MAX_AGE_MS 120000
+#define PENDING_MAX_AGE_MS 1800000

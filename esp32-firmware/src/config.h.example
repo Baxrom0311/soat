@@ -69,6 +69,8 @@
 // Server vaqtincha yetib bo'lmas holatda bo'lsa (tarmoq uzilishi, 5xx),
 // chaqiruv yo'qolmasligi uchun navbatga tushadi va har RETRY_INTERVAL_MS'da
 // qayta uriniladi. PENDING_MAX_AGE_MS'dan eskirgan yozuvlar ogohlantirish
-// bilan tashlab yuboriladi (juda kech yetib borgan chaqiruv foydasiz).
+// bilan tashlab yuboriladi. 30 daqiqa (kechikkan chaqiruv ham hamshirani
+// yo'qotilgandan ko'ra ko'proq xabardor qiladi — "hech qachon"dan ko'ra
+// "kech" yaxshiroq).
 #define RETRY_INTERVAL_MS 5000
-#define PENDING_MAX_AGE_MS 120000
+#define PENDING_MAX_AGE_MS 1800000
