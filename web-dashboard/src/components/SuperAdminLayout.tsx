@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { ChangePasswordModal } from './ChangePasswordModal';
 import { ClinicIcon, DevicesIcon, LogoIcon, LogoutIcon, OverviewIcon, PlanIcon } from './Icons';
 import { ThemeToggle } from './ThemeToggle';
 import { AdminClinicsTab } from './admin/AdminClinicsTab';
@@ -20,6 +21,7 @@ const TABS: { key: TabKey; label: string; Icon: typeof OverviewIcon }[] = [
 export function SuperAdminLayout() {
   const { session, logout } = useAuth();
   const [tab, setTab] = useState<TabKey>('overview');
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   const userChip = session ? `${session.name} (${session.role})` : '';
 
@@ -36,6 +38,9 @@ export function SuperAdminLayout() {
           <div className="nav-right">
             <ThemeToggle />
             <span className="user-chip">{userChip}</span>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowPasswordModal(true)} type="button">
+              Parol
+            </button>
             <button className="btn btn-ghost btn-sm" onClick={logout} type="button">
               <LogoutIcon />
               Chiqish
@@ -43,6 +48,8 @@ export function SuperAdminLayout() {
           </div>
         </div>
       </header>
+
+      {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
 
       <nav className="tabs-wrap">
         <div className="tabs glass">

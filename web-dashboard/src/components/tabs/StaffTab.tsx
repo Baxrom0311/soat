@@ -18,6 +18,15 @@ export function StaffTab() {
   const [loadError, setLoadError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editRole, setEditRole] = useState<StaffRole>('nurse');
+  const [editPassword, setEditPassword] = useState('');
+  const [editError, setEditError] = useState('');
+  const [editBusy, setEditBusy] = useState(false);
+  const [rowError, setRowError] = useState('');
+
   async function load() {
     setLoadError('');
     try {
@@ -46,6 +55,45 @@ export function StaffTab() {
       setError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function startEdit(s: Staff) {
+    setEditingId(s.id);
+    setEditName(s.name);
+    setEditEmail(s.email);
+    setEditRole(s.role);
+    setEditPassword('');
+    setEditError('');
+  }
+
+  async function saveEdit(staffId: number) {
+    setEditError('');
+    setEditBusy(true);
+    try {
+      await api.updateStaff(staffId, {
+        name: editName,
+        email: editEmail,
+        role: editRole,
+        ...(editPassword ? { password: editPassword } : {}),
+      });
+      setEditingId(null);
+      await load();
+    } catch (err) {
+      setEditError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
+    } finally {
+      setEditBusy(false);
+    }
+  }
+
+  async function remove(s: Staff) {
+    setRowError('');
+    if (!window.confirm(`"${s.name}" (${s.email}) o'chirilsinmi? Bu amalni ortga qaytarib bo'lmaydi.`)) return;
+    try {
+      await api.deleteStaff(s.id);
+      await load();
+    } catch (err) {
+      setRowError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
     }
   }
 
@@ -88,6 +136,8 @@ export function StaffTab() {
         </div>
       )}
 
+      {rowError && <p className="form-error">{rowError}</p>}
+
       {loadError ? (
         <div className="form-error">
           {loadError}{' '}
@@ -103,18 +153,89 @@ export function StaffTab() {
                 <th>Ism</th>
                 <th>Email</th>
                 <th>Rol</th>
+                {isAdmin && <th>Amallar</th>}
               </tr>
             </thead>
             <tbody>
-              {staff.map((s) => (
-                <tr key={s.id}>
-                  <td>{s.name}</td>
-                  <td>{s.email}</td>
-                  <td>
-                    <span className="role-pill">{s.role}</span>
-                  </td>
-                </tr>
-              ))}
+              {staff.map((s) =>
+                editingId === s.id ? (
+                  <tr key={s.id}>
+                    <td>
+                      <input
+                        type="text"
+                        className="table-input"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="email"
+                        className="table-input"
+                        value={editEmail}
+                        onChange={(e) => setEditEmail(e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <select
+                        className="bind-select"
+                        value={editRole}
+                        onChange={(e) => setEditRole(e.target.value as StaffRole)}
+                      >
+                        <option value="nurse">Hamshira</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input
+                        type="password"
+                        className="table-input"
+                        placeholder="Yangi parol (ixtiyoriy)"
+                        value={editPassword}
+                        onChange={(e) => setEditPassword(e.target.value)}
+                      />
+                      <div className="row-actions">
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => saveEdit(s.id)}
+                          disabled={editBusy}
+                          type="button"
+                        >
+                          Saqlash
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => setEditingId(null)}
+                          type="button"
+                        >
+                          Bekor
+                        </button>
+                      </div>
+                      {editError && <p className="form-error">{editError}</p>}
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={s.id}>
+                    <td>{s.name}</td>
+                    <td>{s.email}</td>
+                    <td>
+                      <span className="role-pill">{s.role}</span>
+                    </td>
+                    {isAdmin && (
+                      <td>
+                        <div className="row-actions">
+                          <button className="btn btn-ghost btn-sm" onClick={() => startEdit(s)} type="button">
+                            Tahrirlash
+                          </button>
+                          <button className="btn btn-ghost btn-sm" onClick={() => remove(s)} type="button">
+                            O'chirish
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                )
+              )}
             </tbody>
           </table>
         </div>

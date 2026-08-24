@@ -15,6 +15,27 @@ def get_by_email(db: Session, email: str) -> Staff | None:
     return db.scalar(select(Staff).where(Staff.email == email))
 
 
+def get_by_id(db: Session, staff_id: int) -> Staff | None:
+    """Unscoped lookup by primary key -- only for self-service actions (change own
+    password) where the caller's own JWT staff_id is trusted; everything clinic-facing
+    must go through get() below instead."""
+    return db.get(Staff, staff_id)
+
+
+def get(db: Session, clinic_id: int, staff_id: int) -> Staff | None:
+    return db.scalar(select(Staff).where(Staff.id == staff_id, Staff.clinic_id == clinic_id))
+
+
+def count_admins(db: Session, clinic_id: int) -> int:
+    return db.scalar(
+        select(func.count()).select_from(Staff).where(Staff.clinic_id == clinic_id, Staff.role == "admin")
+    )
+
+
+def delete(db: Session, staff: Staff) -> None:
+    db.delete(staff)
+
+
 def count_by_clinic(db: Session) -> dict[int, int]:
     """One grouped query for the superadmin clinics list (avoids a COUNT per clinic)."""
     rows = db.execute(

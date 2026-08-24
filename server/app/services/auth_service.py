@@ -68,3 +68,13 @@ def refresh(db: Session, *, user: CurrentUser) -> LoginOut:
         staff_id=user.staff_id, clinic_id=user.clinic_id, role=user.role, email=user.email, name=user.name
     )
     return LoginOut(access_token=token, role=user.role, name=user.name, clinic_id=user.clinic_id)
+
+
+def change_own_password(db: Session, *, staff_id: int, current_password: str, new_password: str) -> None:
+    staff = staff_repo.get_by_id(db, staff_id)
+    if staff is None or not verify_password(current_password, staff.password_hash):
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+    if len(new_password) < 8:
+        raise HTTPException(status_code=422, detail="Password must be at least 8 characters")
+    staff.password_hash = hash_password(new_password)
+    db.commit()

@@ -11,3 +11,8 @@ class LoginOut(BaseModel):
     role: str
     name: str
     clinic_id: int | None  # null for superadmin
+
+
+class ChangePasswordIn(BaseModel):
+    current_password: str
+    new_password: str

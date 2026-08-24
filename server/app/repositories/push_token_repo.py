@@ -44,3 +44,8 @@ def delete(db: Session, *, clinic_id: int, staff_id: int, token: str) -> None:
 def delete_by_token(db: Session, token: str) -> None:
     """Used by the Expo push cleanup pass when Expo reports DeviceNotRegistered."""
     db.execute(sa_delete(PushToken).where(PushToken.expo_push_token == token))
+
+
+def delete_all_for_staff(db: Session, staff_id: int) -> None:
+    """Staff deletion must clear these first: staff_id has no ON DELETE CASCADE."""
+    db.execute(sa_delete(PushToken).where(PushToken.staff_id == staff_id))

@@ -3,6 +3,7 @@ control, billing (plans + payments) and the cross-clinic fleet views. Everything
 is deliberately NOT clinic-scoped — the /api/v1/admin router gates access with
 require_superadmin."""
 
+import secrets
 from datetime import datetime, timezone
 
 from fastapi import HTTPException
@@ -28,6 +29,7 @@ from app.schemas.admin import (
     PaymentOut,
     PlanOut,
 )
+from app.core.security import hash_password
 from app.services import device_service, staff_service
 
 VALID_SUBSCRIPTION_STATUSES = ("trial", "active", "suspended")
@@ -244,6 +246,25 @@ def create_clinic_admin(db: Session, clinic_id: int, *, email: str, password: st
         raise HTTPException(status_code=404, detail="Clinic not found")
     # staff_service handles the duplicate-email 409 and password hashing
     return staff_service.create_staff(db, clinic_id, email=email, password=password, role="admin", name=name)
+
+
+def list_clinic_staff(db: Session, clinic_id: int) -> list[Staff]:
+    if clinic_repo.get(db, clinic_id) is None:
+        raise HTTPException(status_code=404, detail="Clinic not found")
+    return staff_service.list_staff(db, clinic_id)
+
+
+def reset_staff_password(db: Session, clinic_id: int, staff_id: int) -> str:
+    """Recovery path for a clinic locked out of its only admin account: generates a
+    fresh random password, returns it once (never stored/logged in plaintext), the
+    same one-time-reveal pattern already used for device API keys."""
+    staff = staff_repo.get(db, clinic_id, staff_id)
+    if staff is None:
+        raise HTTPException(status_code=404, detail="Staff not found")
+    new_password = secrets.token_urlsafe(9)
+    staff.password_hash = hash_password(new_password)
+    db.commit()
+    return new_password
 
 
 # ---------------------------------------------------------------- Payments

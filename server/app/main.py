@@ -2,10 +2,12 @@ import logging
 from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
 
-from app.database import Base, engine
+from app.core.config import ENVIRONMENT
+from app.database import Base, SessionLocal, engine
 from app.routers import admin, auth, buttons, calls, clinic, devices, meta, push_tokens, rooms, staff, unassigned, ws
 
 # Uvicorn only configures its own "uvicorn.*" loggers by default; without this, the
@@ -15,7 +17,30 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Nurse Call Backend (multi-tenant)")
+_docs_enabled = ENVIRONMENT != "production"
+app = FastAPI(
+    title="Nurse Call Backend (multi-tenant)",
+    docs_url="/docs" if _docs_enabled else None,
+    redoc_url="/redoc" if _docs_enabled else None,
+    openapi_url="/openapi.json" if _docs_enabled else None,
+)
+
+
+@app.get("/health", include_in_schema=False)
+def health():
+    # Cheap enough to hit every few seconds from an uptime monitor, but still proves
+    # the one dependency that actually matters (DB reachability) rather than just
+    # "the process is alive", which a process supervisor already tells you for free.
+    try:
+        db = SessionLocal()
+        try:
+            db.execute(text("SELECT 1"))
+        finally:
+            db.close()
+    except Exception:
+        return JSONResponse(status_code=503, content={"status": "error", "db": "unreachable"})
+    return {"status": "ok"}
+
 
 app.include_router(auth.router)
 app.include_router(meta.router)

@@ -10,6 +10,13 @@ class StaffCreate(BaseModel):
     name: str
 
 
+class StaffUpdate(BaseModel):
+    name: str | None = None
+    email: EmailStr | None = None
+    role: str | None = None
+    password: str | None = None
+
+
 class StaffOut(BaseModel):
     id: int
     email: str

@@ -122,6 +122,21 @@ class AdminClinicAdminOut(BaseModel):
     role: str
 
 
+class AdminClinicStaffOut(BaseModel):
+    id: int
+    email: str
+    name: str
+    role: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class AdminPasswordResetOut(BaseModel):
+    new_password: str
+
+
 class AdminDeviceCreate(BaseModel):
     clinic_id: int
     device_id: str

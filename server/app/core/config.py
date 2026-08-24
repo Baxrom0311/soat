@@ -7,6 +7,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# "production" (default) hides the auto-generated Swagger/ReDoc/OpenAPI schema --
+# every endpoint's shape (including admin/superadmin routes) is otherwise public to
+# anyone who requests /docs. Set ENVIRONMENT=development locally to see it again.
+ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
+
 DATABASE_URL = os.getenv(
     "DATABASE_URL", "postgresql+psycopg://baxrom@127.0.0.1:5432/soat_nursecall"
 )
@@ -28,8 +33,8 @@ JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "1440"))
 DEVICE_ONLINE_WINDOW_SECONDS = int(os.getenv("DEVICE_ONLINE_WINDOW_SECONDS", "180"))
 
 # Zero-touch ESP32 discovery/claim (see app.services.discovered_device_service).
-# How long after a claim the device's plaintext key stays fetchable over /devices/announce
-# (measured from -- and extended by -- each successful delivery, i.e. an idle timeout).
+# How long after a claim the device's plaintext key stays fetchable over /devices/announce.
+# Fixed deadline from claim time (Device.created_at) -- NOT extended by repeat calls.
 KEY_DELIVERY_WINDOW_MINUTES = int(os.getenv("KEY_DELIVERY_WINDOW_MINUTES", "15"))
 # A discovered-but-unclaimed chip counts as "online" for the superadmin list if it
 # announced itself within this window.

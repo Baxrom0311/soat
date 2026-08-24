@@ -7,10 +7,12 @@ from app.schemas.admin import (
     AdminClinicAdminOut,
     AdminClinicCreate,
     AdminClinicListItem,
+    AdminClinicStaffOut,
     AdminClinicUpdate,
     AdminDeviceCreate,
     AdminDeviceOut,
     AdminOverviewOut,
+    AdminPasswordResetOut,
     PaymentCreate,
     PaymentOut,
     PlanCreate,
@@ -112,6 +114,17 @@ def create_clinic_admin(clinic_id: int, body: AdminClinicAdminCreate, db: Sessio
         db, clinic_id, email=body.email, password=body.password, name=body.name
     )
     return AdminClinicAdminOut(id=staff.id, email=staff.email, name=staff.name, role=staff.role)
+
+
+@router.get("/clinics/{clinic_id}/staff", response_model=list[AdminClinicStaffOut])
+def list_clinic_staff(clinic_id: int, db: Session = Depends(get_db)):
+    return admin_service.list_clinic_staff(db, clinic_id)
+
+
+@router.post("/clinics/{clinic_id}/staff/{staff_id}/reset-password", response_model=AdminPasswordResetOut)
+def reset_staff_password(clinic_id: int, staff_id: int, db: Session = Depends(get_db)):
+    new_password = admin_service.reset_staff_password(db, clinic_id, staff_id)
+    return AdminPasswordResetOut(new_password=new_password)
 
 
 @router.get("/devices", response_model=list[AdminDeviceOut])

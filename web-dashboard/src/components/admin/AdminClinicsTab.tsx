@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { api, ApiError } from '../../api/client';
-import type { AdminClinic, EffectiveStatus, Payment, Plan, SubscriptionStatus } from '../../api/types';
+import type { AdminClinic, EffectiveStatus, Payment, Plan, Staff, SubscriptionStatus } from '../../api/types';
 import { PlusIcon } from '../Icons';
 
 const STATUS_LABEL: Record<EffectiveStatus, string> = {
@@ -191,6 +191,98 @@ function PaymentModal({ clinic, onClose, onSaved }: { clinic: AdminClinic; onClo
   );
 }
 
+function ClinicStaffModal({ clinic, onClose }: { clinic: AdminClinic; onClose: () => void }) {
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [loadError, setLoadError] = useState('');
+  const [resetting, setResetting] = useState<number | null>(null);
+  const [revealed, setRevealed] = useState<{ staffId: number; password: string } | null>(null);
+  const [error, setError] = useState('');
+
+  async function load() {
+    setLoadError('');
+    try {
+      setStaff(await api.getClinicStaff(clinic.id));
+    } catch (err) {
+      setLoadError(err instanceof ApiError ? err.message : "Xodimlarni yuklab bo'lmadi");
+    }
+  }
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function resetPassword(staffId: number) {
+    if (!window.confirm("Bu xodimning paroli yangi, tasodifiy parolga almashtiriladi. Davom etilsinmi?")) return;
+    setError('');
+    setResetting(staffId);
+    try {
+      const { new_password } = await api.resetStaffPassword(clinic.id, staffId);
+      setRevealed({ staffId, password: new_password });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
+    } finally {
+      setResetting(null);
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal glass" onClick={(e) => e.stopPropagation()}>
+        <h3>Xodimlar — {clinic.name}</h3>
+        <p className="modal-sub">
+          Xodim parolini unutgan bo'lsa, shu yerdan yangi (tasodifiy) parol generatsiya qilib, unga
+          yetkazing — u keyin o'zi "Parol" tugmasi orqali o'zgartirib olishi mumkin.
+        </p>
+        {error && <p className="form-error">{error}</p>}
+        {loadError ? (
+          <p className="form-error">{loadError}</p>
+        ) : (
+          <table className="pay-history">
+            <thead>
+              <tr>
+                <th>Ism</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Amal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {staff.map((s) => (
+                <tr key={s.id}>
+                  <td>{s.name}</td>
+                  <td>{s.email}</td>
+                  <td>{s.role}</td>
+                  <td>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      type="button"
+                      disabled={resetting === s.id}
+                      onClick={() => resetPassword(s.id)}
+                    >
+                      Parolni tiklash
+                    </button>
+                    {revealed && revealed.staffId === s.id && (
+                      <p className="modal-success">
+                        Yangi parol: <code className="key-code">{revealed.password}</code>
+                      </p>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <div className="modal-actions">
+          <button className="btn btn-primary" onClick={onClose} type="button">
+            Yopish
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AdminClinicsTab() {
   const [clinics, setClinics] = useState<AdminClinic[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -208,6 +300,7 @@ export function AdminClinicsTab() {
 
   const [adminModal, setAdminModal] = useState<AdminClinic | null>(null);
   const [payModal, setPayModal] = useState<AdminClinic | null>(null);
+  const [staffModal, setStaffModal] = useState<AdminClinic | null>(null);
   const [loadError, setLoadError] = useState('');
 
   async function load() {
@@ -394,6 +487,9 @@ export function AdminClinicsTab() {
                       <button className="btn btn-ghost btn-sm" onClick={() => setAdminModal(c)} type="button">
                         Admin
                       </button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => setStaffModal(c)} type="button">
+                        Xodimlar
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -404,6 +500,7 @@ export function AdminClinicsTab() {
       </div>
 
       {adminModal && <AddAdminModal clinic={adminModal} onClose={() => setAdminModal(null)} />}
+      {staffModal && <ClinicStaffModal clinic={staffModal} onClose={() => setStaffModal(null)} />}
       {payModal && (
         <PaymentModal
           clinic={payModal}

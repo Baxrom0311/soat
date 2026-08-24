@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCallsFeed } from '../hooks/useCallsFeed';
+import { ChangePasswordModal } from './ChangePasswordModal';
 import { CallsIcon, DevicesIcon, LogoIcon, LogoutIcon, RoomsIcon, StaffIcon, UnassignedIcon } from './Icons';
 import { ThemeToggle } from './ThemeToggle';
 import { CallsTab } from './tabs/CallsTab';
@@ -28,6 +29,7 @@ const CONN_LABEL: Record<string, string> = {
 export function DashboardLayout() {
   const { token, session, logout } = useAuth();
   const [tab, setTab] = useState<TabKey>('calls');
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const feed = useCallsFeed(token);
 
   const userChip = session ? `${session.name} (${session.role})` : '';
@@ -50,6 +52,9 @@ export function DashboardLayout() {
             <span className="nav-divider" />
             <ThemeToggle />
             <span className="user-chip">{userChip}</span>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowPasswordModal(true)} type="button">
+              Parol
+            </button>
             <button className="btn btn-ghost btn-sm" onClick={logout} type="button">
               <LogoutIcon />
               Chiqish
@@ -57,6 +62,8 @@ export function DashboardLayout() {
           </div>
         </div>
       </header>
+
+      {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
 
       <nav className="tabs-wrap">
         <div className="tabs glass">

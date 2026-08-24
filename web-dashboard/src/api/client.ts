@@ -135,6 +135,17 @@ export const api = {
   getStaff: () => request<Staff[]>('/api/v1/staff'),
   createStaff: (input: { email: string; password: string; role: string; name: string }) =>
     request<Staff>('/api/v1/staff', { method: 'POST', body: JSON.stringify(input) }),
+  updateStaff: (
+    staffId: number,
+    input: Partial<{ name: string; email: string; role: string; password: string }>
+  ) => request<Staff>(`/api/v1/staff/${staffId}`, { method: 'PATCH', body: JSON.stringify(input) }),
+  deleteStaff: (staffId: number) => request<void>(`/api/v1/staff/${staffId}`, { method: 'DELETE' }),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<void>('/api/v1/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+    }),
 
   getRooms: () => request<Room[]>('/api/v1/rooms'),
   createRoom: (input: { room_number: string; floor: number }) =>
@@ -217,6 +228,12 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
+  getClinicStaff: (clinicId: number) => request<Staff[]>(`/api/v1/admin/clinics/${clinicId}/staff`),
+  resetStaffPassword: (clinicId: number, staffId: number) =>
+    request<{ new_password: string }>(
+      `/api/v1/admin/clinics/${clinicId}/staff/${staffId}/reset-password`,
+      { method: 'POST' }
+    ),
   getAdminDevices: (clinicId?: number) =>
     request<AdminDevice[]>(
       clinicId ? `/api/v1/admin/devices?clinic_id=${clinicId}` : '/api/v1/admin/devices'
