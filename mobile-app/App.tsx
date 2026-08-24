@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, Platform, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, AppState, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import * as Application from 'expo-application';
@@ -54,9 +54,12 @@ function AppContent() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [focusCallId, setFocusCallId] = useState<number | null>(null);
   const pushTokenRef = useRef<string | null>(null);
+  const registeringRef = useRef(false);
 
   const registerPush = useCallback(async () => {
     if (pushTokenRef.current) return; // allaqachon muvaffaqiyatli ro'yxatdan o'tgan
+    if (registeringRef.current) return; // allaqachon davom etayotgan urinish bor
+    registeringRef.current = true;
     try {
       const token = await registerForPushNotificationsAsync();
       if (token) {
@@ -70,6 +73,8 @@ function AppContent() {
       // (foydalanuvchi hali ham ilovani ochib chaqiruvlarni ko'ra oladi) — retry-interval
       // va foreground hodisasi keyinroq qayta urinadi.
       console.warn('Push ro\'yxatdan o\'tkazish muvaffaqiyatsiz:', err);
+    } finally {
+      registeringRef.current = false;
     }
   }, []);
 
@@ -89,7 +94,6 @@ function AppContent() {
   // eski bo'lsa, hech narsa (login ham) ishlamay, faqat yangilash xabari chiqadi —
   // eski buildlar API'ni buzadigan o'zgarish bilan jim yiqilib qolmasligi uchun.
   useEffect(() => {
-    if (Platform.OS !== 'android') return;
     (async () => {
       try {
         const { min_mobile_version } = await getVersionInfo();
