@@ -46,10 +46,6 @@ def get_active_by_room(db: Session, clinic_id: int, room_id: int) -> Call | None
     )
 
 
-def count_active(db: Session) -> int:
-    return db.scalar(select(func.count()).select_from(Call).where(Call.status == "active"))
-
-
 def count_active_by_clinic(db: Session) -> dict[int, int]:
     """One grouped query for the superadmin clinics list (avoids a COUNT per clinic)."""
     rows = db.execute(

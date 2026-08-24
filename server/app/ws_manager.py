@@ -1,7 +1,10 @@
+import asyncio
 import json
 from datetime import datetime
 
 from fastapi import WebSocket
+
+SEND_TIMEOUT_SECONDS = 5
 
 
 def _json_default(value: object) -> str:
@@ -30,18 +33,25 @@ class ConnectionManager:
             conns.remove(ws)
 
     async def broadcast(self, clinic_id: int, message: dict) -> None:
+        """Fans out concurrently with a per-socket timeout so one stuck dashboard
+        connection can never delay delivery to the others (or, for callers that
+        await this directly, the HTTP response on the ingestion path)."""
         conns = self.active.get(clinic_id)
         if not conns:
             return
         payload = json.dumps(message, default=_json_default)
-        dead = []
-        for ws in conns:
+
+        async def _send(ws: WebSocket) -> WebSocket | None:
             try:
-                await ws.send_text(payload)
+                await asyncio.wait_for(ws.send_text(payload), timeout=SEND_TIMEOUT_SECONDS)
+                return None
             except Exception:
-                dead.append(ws)
+                return ws
+
+        dead = await asyncio.gather(*(_send(ws) for ws in conns), return_exceptions=False)
         for ws in dead:
-            self.disconnect(ws, clinic_id)
+            if ws is not None:
+                self.disconnect(ws, clinic_id)
 
 
 manager = ConnectionManager()

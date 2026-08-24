@@ -11,8 +11,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core import billing
+from app.core.deps import CurrentUser
 from app.models import Clinic, Device, Payment, Plan, Staff
 from app.repositories import (
+    audit_repo,
     call_repo,
     clinic_repo,
     device_repo,
@@ -25,12 +27,13 @@ from app.schemas.admin import (
     AdminClinicListItem,
     AdminDeviceOut,
     AdminOverviewOut,
+    AuditLogOut,
     ClinicBilling,
     PaymentOut,
     PlanOut,
 )
 from app.core.security import hash_password
-from app.services import device_service, staff_service
+from app.services import audit_service, device_service, staff_service
 
 VALID_SUBSCRIPTION_STATUSES = ("trial", "active", "suspended")
 
@@ -40,7 +43,9 @@ def overview(db: Session) -> AdminOverviewOut:
         clinics=clinic_repo.count_all(db),
         devices_total=device_repo.count_all(db),
         devices_online=device_repo.count_online_since(db, device_service.online_cutoff()),
-        active_calls_total=call_repo.count_active(db),
+        # Summing the per-clinic grouped counts (already needed elsewhere) instead of a
+        # separate unscoped COUNT(*) avoids a full-table scan with no usable index.
+        active_calls_total=sum(call_repo.count_active_by_clinic(db).values()),
     )
 
 
@@ -59,6 +64,8 @@ def create_plan(
     currency: str,
     billing_period_months: int,
     max_devices: int | None,
+    actor: CurrentUser,
+    ip_address: str | None = None,
 ) -> Plan:
     try:
         plan = plan_repo.create(
@@ -69,6 +76,16 @@ def create_plan(
             billing_period_months=billing_period_months,
             max_devices=max_devices,
         )
+        db.flush()
+        audit_service.record(
+            db,
+            actor,
+            action="plan.created",
+            target_type="plan",
+            target_id=plan.id,
+            after={"name": name, "price_amount": price_amount, "currency": currency},
+            ip_address=ip_address,
+        )
         db.commit()
     except IntegrityError:
         db.rollback()
@@ -77,7 +94,9 @@ def create_plan(
     return plan
 
 
-def update_plan(db: Session, plan_id: int, *, changes: dict) -> Plan:
+def update_plan(
+    db: Session, plan_id: int, *, changes: dict, actor: CurrentUser, ip_address: str | None = None
+) -> Plan:
     plan = plan_repo.get(db, plan_id)
     if plan is None:
         raise HTTPException(status_code=404, detail="Plan not found")
@@ -85,10 +104,21 @@ def update_plan(db: Session, plan_id: int, *, changes: dict) -> Plan:
     # max_devices is nullable (null == unlimited); a null for any NOT NULL column is a
     # no-op rather than a 500.
     nullable = {"max_devices"}
+    before = {field: getattr(plan, field) for field in changes}
     for field, value in changes.items():
         if value is None and field not in nullable:
             continue
         setattr(plan, field, value)
+    audit_service.record(
+        db,
+        actor,
+        action="plan.updated",
+        target_type="plan",
+        target_id=plan.id,
+        before=before,
+        after=changes,
+        ip_address=ip_address,
+    )
     try:
         db.commit()
     except IntegrityError:
@@ -98,7 +128,7 @@ def update_plan(db: Session, plan_id: int, *, changes: dict) -> Plan:
     return plan
 
 
-def delete_plan(db: Session, plan_id: int) -> None:
+def delete_plan(db: Session, plan_id: int, *, actor: CurrentUser, ip_address: str | None = None) -> None:
     plan = plan_repo.get(db, plan_id)
     if plan is None:
         raise HTTPException(status_code=404, detail="Plan not found")
@@ -110,6 +140,15 @@ def delete_plan(db: Session, plan_id: int) -> None:
             detail="Plan is assigned to clinics — archive it (is_active=false) instead of deleting",
         )
     try:
+        audit_service.record(
+            db,
+            actor,
+            action="plan.deleted",
+            target_type="plan",
+            target_id=plan.id,
+            before={"name": plan.name},
+            ip_address=ip_address,
+        )
         db.delete(plan)
         db.commit()
     except IntegrityError:
@@ -162,9 +201,9 @@ def _list_item(
     )
 
 
-def list_clinics(db: Session) -> list[AdminClinicListItem]:
+def list_clinics(db: Session, *, limit: int = 100, offset: int = 0) -> list[AdminClinicListItem]:
     now = datetime.now(timezone.utc)
-    clinics = clinic_repo.list_all(db)
+    clinics = clinic_repo.list_all(db, limit=limit, offset=offset)
     plans = plan_repo.get_map(db)
     staff_counts = staff_repo.count_by_clinic(db)
     device_counts = device_repo.count_by_clinic(db)
@@ -189,8 +228,13 @@ def _one_list_item(db: Session, clinic: Clinic) -> AdminClinicListItem:
     )
 
 
-def create_clinic(db: Session, *, name: str) -> AdminClinicListItem:
+def create_clinic(db: Session, *, name: str, actor: CurrentUser, ip_address: str | None = None) -> AdminClinicListItem:
     clinic = clinic_repo.create(db, name=name)
+    db.flush()
+    audit_service.record(
+        db, actor, action="clinic.created", target_type="clinic", target_id=clinic.id,
+        after={"name": name}, ip_address=ip_address,
+    )
     db.commit()
     db.refresh(clinic)
     return _one_list_item(db, clinic)
@@ -206,6 +250,8 @@ def update_clinic(
     clear_plan: bool,
     custom_price_amount: int | None,
     clear_custom_price: bool,
+    actor: CurrentUser,
+    ip_address: str | None = None,
 ) -> AdminClinicListItem:
     clinic = clinic_repo.get(db, clinic_id)
     if clinic is None:
@@ -214,6 +260,13 @@ def update_clinic(
         raise HTTPException(
             status_code=422, detail="subscription_status must be one of trial|active|suspended"
         )
+    before = {
+        "name": clinic.name,
+        "subscription_status": clinic.subscription_status,
+        "plan_id": clinic.plan_id,
+        "custom_price_amount": clinic.custom_price_amount,
+    }
+
     if name is not None:
         clinic.name = name
     if subscription_status is not None:
@@ -236,16 +289,36 @@ def update_clinic(
     elif custom_price_amount is not None:
         clinic.custom_price_amount = custom_price_amount
 
+    after = {
+        "name": clinic.name,
+        "subscription_status": clinic.subscription_status,
+        "plan_id": clinic.plan_id,
+        "custom_price_amount": clinic.custom_price_amount,
+    }
+    audit_service.record(
+        db, actor, action="clinic.updated", target_type="clinic", target_id=clinic.id,
+        before=before, after=after, ip_address=ip_address,
+    )
     db.commit()
     db.refresh(clinic)
     return _one_list_item(db, clinic)
 
 
-def create_clinic_admin(db: Session, clinic_id: int, *, email: str, password: str, name: str) -> Staff:
+def create_clinic_admin(
+    db: Session, clinic_id: int, *, email: str, password: str, name: str,
+    actor: CurrentUser, ip_address: str | None = None,
+) -> Staff:
     if clinic_repo.get(db, clinic_id) is None:
         raise HTTPException(status_code=404, detail="Clinic not found")
     # staff_service handles the duplicate-email 409 and password hashing
-    return staff_service.create_staff(db, clinic_id, email=email, password=password, role="admin", name=name)
+    staff = staff_service.create_staff(db, clinic_id, email=email, password=password, role="admin", name=name)
+    audit_service.record(
+        db, actor, action="staff.created", target_type="staff", target_id=staff.id,
+        after={"email": email, "name": name, "role": "admin", "clinic_id": clinic_id},
+        ip_address=ip_address,
+    )
+    db.commit()
+    return staff
 
 
 def list_clinic_staff(db: Session, clinic_id: int) -> list[Staff]:
@@ -254,7 +327,9 @@ def list_clinic_staff(db: Session, clinic_id: int) -> list[Staff]:
     return staff_service.list_staff(db, clinic_id)
 
 
-def reset_staff_password(db: Session, clinic_id: int, staff_id: int) -> str:
+def reset_staff_password(
+    db: Session, clinic_id: int, staff_id: int, *, actor: CurrentUser, ip_address: str | None = None
+) -> str:
     """Recovery path for a clinic locked out of its only admin account: generates a
     fresh random password, returns it once (never stored/logged in plaintext), the
     same one-time-reveal pattern already used for device API keys."""
@@ -263,6 +338,10 @@ def reset_staff_password(db: Session, clinic_id: int, staff_id: int) -> str:
         raise HTTPException(status_code=404, detail="Staff not found")
     new_password = secrets.token_urlsafe(9)
     staff.password_hash = hash_password(new_password)
+    audit_service.record(
+        db, actor, action="staff.password_reset", target_type="staff", target_id=staff.id,
+        after={"email": staff.email}, ip_address=ip_address,
+    )
     db.commit()
     return new_password
 
@@ -271,7 +350,8 @@ def reset_staff_password(db: Session, clinic_id: int, staff_id: int) -> str:
 
 
 def record_payment(
-    db: Session, clinic_id: int, *, amount: int, period_months: int, note: str | None, recorded_by: str | None
+    db: Session, clinic_id: int, *, amount: int, period_months: int, note: str | None,
+    recorded_by: str | None, actor: CurrentUser, ip_address: str | None = None,
 ) -> PaymentOut:
     # Row-locked read: two overlapping payments (double-click / retry) would otherwise
     # both read the same paid_until and one would overwrite the other, losing a period.
@@ -300,6 +380,12 @@ def record_payment(
         recorded_by=recorded_by,
         paid_until_after=new_paid_until,
     )
+    db.flush()
+    audit_service.record(
+        db, actor, action="payment.recorded", target_type="clinic", target_id=clinic_id,
+        after={"amount": amount, "period_months": period_months, "paid_until_after": new_paid_until.isoformat()},
+        ip_address=ip_address,
+    )
     db.commit()
     db.refresh(payment)
     return PaymentOut.model_validate(payment)
@@ -314,8 +400,10 @@ def list_payments(db: Session, clinic_id: int) -> list[PaymentOut]:
 # ---------------------------------------------------------------- Devices
 
 
-def list_fleet_devices(db: Session, clinic_id: int | None = None) -> list[AdminDeviceOut]:
-    rows = device_repo.list_with_clinic(db, clinic_id)
+def list_fleet_devices(
+    db: Session, clinic_id: int | None = None, *, limit: int = 200, offset: int = 0
+) -> list[AdminDeviceOut]:
+    rows = device_repo.list_with_clinic(db, clinic_id, limit=limit, offset=offset)
     return [
         AdminDeviceOut(
             id=device.id,
@@ -331,9 +419,22 @@ def list_fleet_devices(db: Session, clinic_id: int | None = None) -> list[AdminD
     ]
 
 
-def register_fleet_device(db: Session, *, clinic_id: int, device_id: str, floor: int) -> tuple[Device, str]:
+def list_audit_logs(db: Session, *, limit: int = 100, offset: int = 0) -> list[AuditLogOut]:
+    return [AuditLogOut.model_validate(row) for row in audit_repo.list_recent(db, limit=limit, offset=offset)]
+
+
+def register_fleet_device(
+    db: Session, *, clinic_id: int, device_id: str, floor: int,
+    actor: CurrentUser, ip_address: str | None = None,
+) -> tuple[Device, str]:
     if clinic_repo.get(db, clinic_id) is None:
         raise HTTPException(status_code=404, detail="Clinic not found")
     # device_service handles key generation/hashing, the plan device-limit 409 and the
-    # duplicate device_id 409
-    return device_service.register_device(db, clinic_id, device_id=device_id, floor=floor)
+    # duplicate device_id 409, and commits its own transaction
+    device, plaintext_key = device_service.register_device(db, clinic_id, device_id=device_id, floor=floor)
+    audit_service.record(
+        db, actor, action="device.registered", target_type="device", target_id=device.id,
+        after={"device_id": device_id, "clinic_id": clinic_id, "floor": floor}, ip_address=ip_address,
+    )
+    db.commit()
+    return device, plaintext_key

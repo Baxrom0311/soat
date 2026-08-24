@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 
 from app.core.deps import CurrentUser, get_db, require_superadmin
@@ -13,6 +13,7 @@ from app.schemas.admin import (
     AdminDeviceOut,
     AdminOverviewOut,
     AdminPasswordResetOut,
+    AuditLogOut,
     PaymentCreate,
     PaymentOut,
     PlanCreate,
@@ -28,6 +29,10 @@ router = APIRouter(
 )
 
 
+def _ip(request: Request) -> str | None:
+    return request.client.host if request.client else None
+
+
 @router.get("/overview", response_model=AdminOverviewOut)
 def overview(db: Session = Depends(get_db)):
     return admin_service.overview(db)
@@ -40,7 +45,10 @@ def list_plans(db: Session = Depends(get_db)):
 
 
 @router.post("/plans", response_model=PlanOut, status_code=201)
-def create_plan(body: PlanCreate, db: Session = Depends(get_db)):
+def create_plan(
+    body: PlanCreate, request: Request,
+    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+):
     return admin_service.create_plan(
         db,
         name=body.name,
@@ -48,31 +56,51 @@ def create_plan(body: PlanCreate, db: Session = Depends(get_db)):
         currency=body.currency,
         billing_period_months=body.billing_period_months,
         max_devices=body.max_devices,
+        actor=user,
+        ip_address=_ip(request),
     )
 
 
 @router.patch("/plans/{plan_id}", response_model=PlanOut)
-def update_plan(plan_id: int, body: PlanUpdate, db: Session = Depends(get_db)):
-    return admin_service.update_plan(db, plan_id, changes=body.model_dump(exclude_unset=True))
+def update_plan(
+    plan_id: int, body: PlanUpdate, request: Request,
+    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+):
+    return admin_service.update_plan(
+        db, plan_id, changes=body.model_dump(exclude_unset=True), actor=user, ip_address=_ip(request)
+    )
 
 
 @router.delete("/plans/{plan_id}", status_code=204)
-def delete_plan(plan_id: int, db: Session = Depends(get_db)):
-    admin_service.delete_plan(db, plan_id)
+def delete_plan(
+    plan_id: int, request: Request,
+    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+):
+    admin_service.delete_plan(db, plan_id, actor=user, ip_address=_ip(request))
 
 
 @router.get("/clinics", response_model=list[AdminClinicListItem])
-def list_clinics(db: Session = Depends(get_db)):
-    return admin_service.list_clinics(db)
+def list_clinics(
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+):
+    return admin_service.list_clinics(db, limit=limit, offset=offset)
 
 
 @router.post("/clinics", response_model=AdminClinicListItem, status_code=201)
-def create_clinic(body: AdminClinicCreate, db: Session = Depends(get_db)):
-    return admin_service.create_clinic(db, name=body.name)
+def create_clinic(
+    body: AdminClinicCreate, request: Request,
+    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+):
+    return admin_service.create_clinic(db, name=body.name, actor=user, ip_address=_ip(request))
 
 
 @router.patch("/clinics/{clinic_id}", response_model=AdminClinicListItem)
-def update_clinic(clinic_id: int, body: AdminClinicUpdate, db: Session = Depends(get_db)):
+def update_clinic(
+    clinic_id: int, body: AdminClinicUpdate, request: Request,
+    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+):
     return admin_service.update_clinic(
         db,
         clinic_id,
@@ -82,6 +110,8 @@ def update_clinic(clinic_id: int, body: AdminClinicUpdate, db: Session = Depends
         clear_plan=body.clear_plan,
         custom_price_amount=body.custom_price_amount,
         clear_custom_price=body.clear_custom_price,
+        actor=user,
+        ip_address=_ip(request),
     )
 
 
@@ -95,6 +125,7 @@ def list_payments(clinic_id: int, db: Session = Depends(get_db)):
 def record_payment(
     clinic_id: int,
     body: PaymentCreate,
+    request: Request,
     user: CurrentUser = Depends(require_superadmin),
     db: Session = Depends(get_db),
 ):
@@ -105,13 +136,19 @@ def record_payment(
         period_months=body.period_months,
         note=body.note,
         recorded_by=user.name or user.email,
+        actor=user,
+        ip_address=_ip(request),
     )
 
 
 @router.post("/clinics/{clinic_id}/admins", response_model=AdminClinicAdminOut, status_code=201)
-def create_clinic_admin(clinic_id: int, body: AdminClinicAdminCreate, db: Session = Depends(get_db)):
+def create_clinic_admin(
+    clinic_id: int, body: AdminClinicAdminCreate, request: Request,
+    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+):
     staff = admin_service.create_clinic_admin(
-        db, clinic_id, email=body.email, password=body.password, name=body.name
+        db, clinic_id, email=body.email, password=body.password, name=body.name,
+        actor=user, ip_address=_ip(request),
     )
     return AdminClinicAdminOut(id=staff.id, email=staff.email, name=staff.name, role=staff.role)
 
@@ -122,23 +159,46 @@ def list_clinic_staff(clinic_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/clinics/{clinic_id}/staff/{staff_id}/reset-password", response_model=AdminPasswordResetOut)
-def reset_staff_password(clinic_id: int, staff_id: int, db: Session = Depends(get_db)):
-    new_password = admin_service.reset_staff_password(db, clinic_id, staff_id)
+def reset_staff_password(
+    clinic_id: int, staff_id: int, request: Request,
+    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+):
+    new_password = admin_service.reset_staff_password(
+        db, clinic_id, staff_id, actor=user, ip_address=_ip(request)
+    )
     return AdminPasswordResetOut(new_password=new_password)
 
 
 @router.get("/devices", response_model=list[AdminDeviceOut])
-def list_devices(clinic_id: int | None = None, db: Session = Depends(get_db)):
-    return admin_service.list_fleet_devices(db, clinic_id)
+def list_devices(
+    clinic_id: int | None = None,
+    limit: int = Query(default=200, ge=1, le=1000),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+):
+    return admin_service.list_fleet_devices(db, clinic_id, limit=limit, offset=offset)
 
 
 @router.post("/devices", response_model=DeviceCreateOut, status_code=201)
-def create_device(body: AdminDeviceCreate, db: Session = Depends(get_db)):
+def create_device(
+    body: AdminDeviceCreate, request: Request,
+    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+):
     # plaintext_key is only ever returned here — it is not recoverable afterwards
     device, plaintext_key = admin_service.register_fleet_device(
-        db, clinic_id=body.clinic_id, device_id=body.device_id, floor=body.floor
+        db, clinic_id=body.clinic_id, device_id=body.device_id, floor=body.floor,
+        actor=user, ip_address=_ip(request),
     )
     return DeviceCreateOut(device_id=device.device_id, device_api_key=plaintext_key)
+
+
+@router.get("/audit-logs", response_model=list[AuditLogOut])
+def list_audit_logs(
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+):
+    return admin_service.list_audit_logs(db, limit=limit, offset=offset)
 
 
 @router.get("/discovered-devices", response_model=list[DiscoveredDeviceOut])

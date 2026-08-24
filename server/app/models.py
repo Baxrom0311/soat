@@ -1,10 +1,12 @@
 from datetime import datetime
 
 from sqlalchemy import (
+    JSON,
     BigInteger,
     Boolean,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     UniqueConstraint,
@@ -188,11 +190,17 @@ class PushToken(Base):
 
 class Call(Base):
     __tablename__ = "calls"
+    __table_args__ = (
+        # Backs the ingestion hot-path (get_active_by_room), the active-calls list, and
+        # call_history's ORDER BY created_at DESC all at once -- the highest-frequency
+        # query pattern in the app, so it must never fall back to a full table scan.
+        Index("ix_calls_clinic_status_created", "clinic_id", "status", "created_at"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     clinic_id: Mapped[int] = mapped_column(ForeignKey("clinics.id"), nullable=False, index=True)
-    room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id"), nullable=False)
-    device_id: Mapped[int] = mapped_column(ForeignKey("devices.id"), nullable=False)
+    room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id"), nullable=False, index=True)
+    device_id: Mapped[int] = mapped_column(ForeignKey("devices.id"), nullable=False, index=True)
     status: Mapped[str] = mapped_column(String, nullable=False, default="active")
     # Client-generated idempotency key: the ESP32 retry queue re-sends a press whose
     # response was lost; matching press_id returns the original call instead of a
@@ -205,3 +213,27 @@ class Call(Base):
     acknowledged_by: Mapped[str | None] = mapped_column(String, nullable=True)
 
     room: Mapped["Room"] = relationship()
+
+
+class AuditLog(Base):
+    """Append-only record of every superadmin/admin write action. Actor identity is
+    snapshotted (name/email/role) in addition to the FK so the log stays readable even
+    if the acting staff account is later deleted."""
+
+    __tablename__ = "audit_logs"
+    __table_args__ = (Index("ix_audit_logs_actor_created", "actor_id", "created_at"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    actor_id: Mapped[int | None] = mapped_column(ForeignKey("staff.id", ondelete="SET NULL"), nullable=True)
+    actor_name: Mapped[str] = mapped_column(String, nullable=False)
+    actor_email: Mapped[str] = mapped_column(String, nullable=False)
+    actor_role: Mapped[str] = mapped_column(String, nullable=False)
+    action: Mapped[str] = mapped_column(String, nullable=False, index=True)  # e.g. "clinic.suspended"
+    target_type: Mapped[str] = mapped_column(String, nullable=False)  # e.g. "clinic"
+    target_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    before: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    after: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
+    )

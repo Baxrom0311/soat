@@ -152,3 +152,20 @@ class AdminDeviceOut(BaseModel):
     created_at: datetime
     last_seen_at: datetime | None
     online: bool
+
+
+class AuditLogOut(BaseModel):
+    id: int
+    actor_name: str
+    actor_email: str
+    actor_role: str
+    action: str
+    target_type: str
+    target_id: int | None
+    before: dict | None
+    after: dict | None
+    ip_address: str | None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

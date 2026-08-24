@@ -19,9 +19,17 @@ def list_by_clinic(db: Session, clinic_id: int) -> list[Device]:
     )
 
 
-def list_with_clinic(db: Session, clinic_id: int | None = None) -> list[tuple[Device, Clinic]]:
+def list_with_clinic(
+    db: Session, clinic_id: int | None = None, *, limit: int = 200, offset: int = 0
+) -> list[tuple[Device, Clinic]]:
     """Superadmin fleet view: every device (optionally one clinic's) with its clinic row."""
-    stmt = select(Device, Clinic).join(Clinic, Device.clinic_id == Clinic.id).order_by(Device.id)
+    stmt = (
+        select(Device, Clinic)
+        .join(Clinic, Device.clinic_id == Clinic.id)
+        .order_by(Device.id)
+        .limit(limit)
+        .offset(offset)
+    )
     if clinic_id is not None:
         stmt = stmt.where(Device.clinic_id == clinic_id)
     rows = db.execute(stmt).all()

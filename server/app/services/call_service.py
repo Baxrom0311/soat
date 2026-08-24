@@ -21,6 +21,7 @@ threadpool via run_in_threadpool so a button press can never stall the event loo
 and with it every other request and websocket -- for the duration of a bcrypt check.
 """
 
+import asyncio
 from datetime import datetime, timezone
 
 from fastapi import BackgroundTasks, HTTPException
@@ -146,7 +147,9 @@ async def create_call_from_device(
         press_id=press_id,
     )
     if event is not None:
-        await manager.broadcast(clinic_id, event)
+        # Fire-and-forget: a slow/stuck dashboard socket must never delay the
+        # HTTP response to the ESP32 device that's waiting on this call to post.
+        asyncio.create_task(manager.broadcast(clinic_id, event))
     if out is None:
         raise HTTPException(status_code=404, detail="Unknown code")
     if push_args is not None and background_tasks is not None:
@@ -197,5 +200,5 @@ def _ack_sync(db: Session, clinic_id: int, call_id: int, *, acknowledged_by: str
 
 async def acknowledge_call(db: Session, clinic_id: int, call_id: int, *, acknowledged_by: str) -> AckOut:
     out = await run_in_threadpool(_ack_sync, db, clinic_id, call_id, acknowledged_by=acknowledged_by)
-    await manager.broadcast(clinic_id, {"type": "ack", "call_id": out.call_id})
+    asyncio.create_task(manager.broadcast(clinic_id, {"type": "ack", "call_id": out.call_id}))
     return out
