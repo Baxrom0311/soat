@@ -130,6 +130,16 @@ android {
                 keyAlias 'androiddebugkey'
                 keyPassword 'android'
             }
+            // AGP minSdk>=24 bo'lgani uchun standart holatda v1 (JAR) imzolashni
+            // o'chirib qo'yadi (v2 API 24+ uchun spetsifikatsiya bo'yicha yetarli).
+            // Lekin ba'zi og'ir o'zgartirilgan OEM firmware'lari (masalan Transsion/
+            // XOS) va uchinchi tomon sideload o'rnatuvchilari (APKMirror Installer
+            // kabi) v1 imzosi yo'qligida "Failed to close the package installer
+            // session" kabi tushunarsiz xatolar bilan o'rnatishni rad etadi. Barcha
+            // sxemalarni yoqish hech kimga zarar keltirmaydi, faqat moslikni oshiradi.
+            enableV1Signing true
+            enableV2Signing true
+            enableV3Signing true
         }
     }
     buildTypes {
