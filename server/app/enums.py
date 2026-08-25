@@ -44,4 +44,5 @@ class EffectiveStatus(StrEnum):
     TRIAL = "trial"
     ACTIVE = "active"
     SUSPENDED = "suspended"
+    GRACE = "grace"
     OVERDUE = "overdue"

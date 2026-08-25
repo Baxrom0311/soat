@@ -139,6 +139,7 @@ def record_payment(
         recorded_by=user.name or user.email,
         actor=user,
         ip_address=_ip(request),
+        idempotency_key=body.idempotency_key,
     )
 
 

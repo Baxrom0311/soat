@@ -44,6 +44,25 @@ DISCOVERED_DEVICE_ONLINE_WINDOW_SECONDS = int(os.getenv("DISCOVERED_DEVICE_ONLIN
 ANNOUNCE_RATE_LIMIT_MAX = int(os.getenv("ANNOUNCE_RATE_LIMIT_MAX", "20"))
 ANNOUNCE_RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("ANNOUNCE_RATE_LIMIT_WINDOW_SECONDS", "60"))
 
+# Per-clinic ceiling on call ingestion (POST /api/v1/calls), keyed by clinic_id once
+# the posting device's key has authenticated it -- a single clinic's misbehaving/
+# spoofed device (or a buggy retry loop) can only burn through its OWN budget, never
+# another clinic's, so one tenant's traffic can no longer degrade the whole platform.
+# Sized generously above any plausible real multi-patient burst (dozens of devices,
+# every button pressed within the same few seconds) with real headroom to spare.
+# The ESP32 firmware already treats a 429 as a retryable error (queues and retries
+# with backoff), so no firmware change is needed to make this safe to enable.
+CALL_INGEST_RATE_LIMIT_MAX = int(os.getenv("CALL_INGEST_RATE_LIMIT_MAX", "60"))
+CALL_INGEST_RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("CALL_INGEST_RATE_LIMIT_WINDOW_SECONDS", "10"))
+
+# Clinics past their paid-through date keep working for this many days before
+# access is actually blocked (billing.is_blocked) -- an abrupt cutoff the instant
+# paid_until passes looks like an outage to clinic staff, not a billing issue.
+# Manual suspension (subscription_status="suspended") is NOT affected by this and
+# still blocks immediately -- the grace period only softens the automatic,
+# payment-lapse path.
+BILLING_GRACE_PERIOD_DAYS = int(os.getenv("BILLING_GRACE_PERIOD_DAYS", "7"))
+
 # Minimum client build (Android versionCode / Wear versionCode) allowed to keep working.
 # Bump these after shipping a build that older clients must not silently keep using
 # (e.g. a breaking API change) — GET /api/v1/meta/version tells clients to self-block.

@@ -10,8 +10,6 @@ device_id/key entry, no re-flashing.
 """
 
 import secrets
-import time
-from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException
@@ -23,24 +21,21 @@ from app.core.config import (
     DISCOVERED_DEVICE_ONLINE_WINDOW_SECONDS,
     KEY_DELIVERY_WINDOW_MINUTES,
 )
+from app.core.rate_limit import SlidingWindowLimiter
 from app.repositories import clinic_repo, device_repo, discovered_device_repo
 from app.schemas.device import AnnounceOut, ClaimDeviceOut, DiscoveredDeviceOut
 from app.services import device_service
 
-# In-memory sliding-window limiter (per process), same shape as auth_service's login
-# limiter: /announce is unauthenticated (the ESP32 has no key yet), so IP throttling is
-# the only thing standing between it and being hammered.
-_announce_attempts: dict[str, deque[float]] = defaultdict(deque)
+# /announce is unauthenticated (the ESP32 has no key yet), so IP throttling is the
+# only thing standing between it and being hammered.
+_announce_limiter = SlidingWindowLimiter(
+    max_events=ANNOUNCE_RATE_LIMIT_MAX, window_seconds=ANNOUNCE_RATE_LIMIT_WINDOW_SECONDS
+)
 
 
 def _check_announce_rate(client_ip: str) -> None:
-    now = time.monotonic()
-    window = _announce_attempts[client_ip]
-    while window and now - window[0] > ANNOUNCE_RATE_LIMIT_WINDOW_SECONDS:
-        window.popleft()
-    if len(window) >= ANNOUNCE_RATE_LIMIT_MAX:
+    if not _announce_limiter.check(client_ip):
         raise HTTPException(status_code=429, detail="Too many announce requests, try again later")
-    window.append(now)
 
 
 def announce(db: Session, *, chip_id: str, client_ip: str) -> AnnounceOut:

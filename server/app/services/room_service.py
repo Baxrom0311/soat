@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models import Room
@@ -10,8 +11,12 @@ def list_rooms(db: Session, clinic_id: int) -> list[Room]:
 
 
 def create_room(db: Session, clinic_id: int, *, room_number: str, floor: int) -> Room:
-    room = room_repo.create(db, clinic_id, room_number=room_number, floor=floor)
-    db.commit()
+    try:
+        room = room_repo.create(db, clinic_id, room_number=room_number, floor=floor)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="This room number already exists in this clinic")
     db.refresh(room)
     return room
 
@@ -26,6 +31,10 @@ def update_room(
         room.room_number = room_number
     if floor is not None:
         room.floor = floor
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="This room number already exists in this clinic")
     db.refresh(room)
     return room

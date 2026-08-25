@@ -17,6 +17,7 @@ def create(
     note: str | None,
     recorded_by: str | None,
     paid_until_after: datetime | None,
+    idempotency_key: str | None = None,
 ) -> Payment:
     payment = Payment(
         clinic_id=clinic_id,
@@ -25,10 +26,17 @@ def create(
         note=note,
         recorded_by=recorded_by,
         paid_until_after=paid_until_after,
+        idempotency_key=idempotency_key,
     )
     db.add(payment)
     db.flush()
     return payment
+
+
+def get_by_idempotency_key(db: Session, clinic_id: int, idempotency_key: str) -> Payment | None:
+    return db.scalar(
+        select(Payment).where(Payment.clinic_id == clinic_id, Payment.idempotency_key == idempotency_key)
+    )
 
 
 def list_by_clinic(db: Session, clinic_id: int, *, limit: int = 100) -> list[Payment]:

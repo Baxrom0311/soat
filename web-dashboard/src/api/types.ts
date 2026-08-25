@@ -3,7 +3,7 @@ export type StaffRole = 'admin' | 'nurse' | 'superadmin';
 export type SubscriptionStatus = 'trial' | 'active' | 'suspended';
 
 /** What the superadmin UI shows per clinic — adds the auto-computed 'overdue'. */
-export type EffectiveStatus = 'trial' | 'active' | 'suspended' | 'overdue';
+export type EffectiveStatus = 'trial' | 'active' | 'suspended' | 'grace' | 'overdue';
 
 export interface Plan {
   id: number;

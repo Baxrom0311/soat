@@ -3,8 +3,12 @@
 definition. Everything takes a Clinic model instance and an explicit `now`.
 
 Access rules:
-  - A clinic is BLOCKED (staff get 402) when it is manually suspended OR its paid_until
-    has passed. Manual suspension always wins.
+  - A clinic is BLOCKED (staff get 402) when it is manually suspended, OR its
+    paid_until has passed AND the BILLING_GRACE_PERIOD_DAYS grace window since then
+    has also elapsed. Manual suspension always wins and is never softened by grace.
+  - A clinic that is overdue but still inside the grace window is NOT blocked yet --
+    staff keep working, but the superadmin dashboard shows "grace" instead of "active"
+    so the lapse is visible and can be followed up before it turns into a real outage.
   - "trial" clinics are never payment-gated (paid_until is ignored) so a brand-new
     clinic works before any billing is configured.
   - Device ingestion / heartbeat never go through this gate (they use device-key auth),
@@ -14,6 +18,7 @@ Access rules:
 
 from datetime import datetime, timedelta, timezone
 
+from app.core.config import BILLING_GRACE_PERIOD_DAYS
 from app.enums import EffectiveStatus, SubscriptionStatus
 
 
@@ -29,20 +34,31 @@ def is_overdue(clinic, now: datetime | None = None) -> bool:
     return clinic.paid_until < _now(now)
 
 
+def is_in_grace(clinic, now: datetime | None = None) -> bool:
+    """Overdue, but still within BILLING_GRACE_PERIOD_DAYS of paid_until -- staff
+    keep working, but the clinic should be shown/followed up as unpaid."""
+    if not is_overdue(clinic, now):
+        return False
+    return _now(now) <= clinic.paid_until + timedelta(days=BILLING_GRACE_PERIOD_DAYS)
+
+
 def is_blocked(clinic, now: datetime | None = None) -> bool:
     """True == staff requests must be rejected with 402."""
     if clinic.subscription_status == SubscriptionStatus.SUSPENDED:
         return True
-    return is_overdue(clinic, now)
+    if not is_overdue(clinic, now):
+        return False
+    return not is_in_grace(clinic, now)
 
 
 def effective_status(clinic, now: datetime | None = None) -> EffectiveStatus:
-    """What the superadmin UI shows: manual 'suspended' | 'overdue' (auto) | the raw
+    """What the superadmin UI shows: manual 'suspended' | 'overdue' (auto, grace period
+    elapsed) | 'grace' (auto, overdue but still within the grace window) | the raw
     'trial'/'active' status when the clinic is in good standing."""
     if clinic.subscription_status == SubscriptionStatus.SUSPENDED:
         return EffectiveStatus.SUSPENDED
     if is_overdue(clinic, now):
-        return EffectiveStatus.OVERDUE
+        return EffectiveStatus.GRACE if is_in_grace(clinic, now) else EffectiveStatus.OVERDUE
     return EffectiveStatus(clinic.subscription_status.value)
 
 

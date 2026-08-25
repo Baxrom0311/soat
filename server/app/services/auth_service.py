@@ -1,13 +1,11 @@
 """Login business logic. Self-serve registration is gone: clinics and their admin
 accounts are provisioned by the superadmin via /api/v1/admin."""
 
-import time
-from collections import defaultdict, deque
-
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.deps import CurrentUser
+from app.core.rate_limit import SlidingWindowLimiter
 from app.core.security import create_access_token, hash_password, verify_password
 from app.enums import SubscriptionStatus
 from app.repositories import clinic_repo, staff_repo
@@ -17,22 +15,17 @@ from app.schemas.auth import LoginOut
 # timing can't be used to enumerate which emails have accounts.
 _DUMMY_HASH = hash_password("timing-equalizer-not-a-real-password")
 
-# In-memory sliding-window limiter (per process): brute-force protection for login.
-# Keyed by ip+email so one attacker can't lock a victim out from a single address.
+# Brute-force protection for login. Keyed by ip+email so one attacker can't lock a
+# victim out from a single address.
 LOGIN_MAX_ATTEMPTS = 5
 LOGIN_WINDOW_SECONDS = 60
-_login_attempts: dict[str, deque[float]] = defaultdict(deque)
+_login_limiter = SlidingWindowLimiter(max_events=LOGIN_MAX_ATTEMPTS, window_seconds=LOGIN_WINDOW_SECONDS)
 
 
 def _check_login_rate(client_ip: str, email: str) -> None:
     key = f"{client_ip}:{email.lower()}"
-    now = time.monotonic()
-    window = _login_attempts[key]
-    while window and now - window[0] > LOGIN_WINDOW_SECONDS:
-        window.popleft()
-    if len(window) >= LOGIN_MAX_ATTEMPTS:
+    if not _login_limiter.check(key):
         raise HTTPException(status_code=429, detail="Too many login attempts, try again later")
-    window.append(now)
 
 
 def login(db: Session, *, email: str, password: str, client_ip: str = "unknown") -> LoginOut:

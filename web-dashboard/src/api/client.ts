@@ -224,7 +224,10 @@ export const api = {
   // ---- Payments (to'lovlar) ----
   getClinicPayments: (clinicId: number) =>
     request<Payment[]>(`/api/v1/admin/clinics/${clinicId}/payments`),
-  recordPayment: (clinicId: number, input: { amount: number; period_months: number; note?: string }) =>
+  recordPayment: (
+    clinicId: number,
+    input: { amount: number; period_months: number; note?: string; idempotency_key?: string }
+  ) =>
     request<Payment>(`/api/v1/admin/clinics/${clinicId}/payments`, {
       method: 'POST',
       body: JSON.stringify(input),

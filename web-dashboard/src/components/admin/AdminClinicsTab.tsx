@@ -8,6 +8,7 @@ const STATUS_LABEL: Record<EffectiveStatus, string> = {
   trial: 'Sinov',
   active: 'Faol',
   suspended: "To'xtatilgan",
+  grace: "To'lov kutilmoqda",
   overdue: "Muddat o'tgan",
 };
 
@@ -102,6 +103,10 @@ function PaymentModal({ clinic, onClose, onSaved }: { clinic: AdminClinic; onClo
   const [history, setHistory] = useState<Payment[]>([]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  // A retried/duplicated submit of the SAME attempt (network retry, or a double-click
+  // that slips past the busy-disabled button) must reuse this key so the backend can
+  // dedupe it; a genuinely NEW payment after a successful submit gets a fresh one.
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
 
   async function loadHistory() {
     try {
@@ -125,8 +130,10 @@ function PaymentModal({ clinic, onClose, onSaved }: { clinic: AdminClinic; onClo
         amount: Number(amount),
         period_months: Number(months) || 1,
         note: note || undefined,
+        idempotency_key: idempotencyKey,
       });
       setNote('');
+      setIdempotencyKey(crypto.randomUUID());
       await loadHistory();
       onSaved();
     } catch (err) {

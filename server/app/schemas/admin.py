@@ -49,6 +49,10 @@ class PaymentCreate(BaseModel):
     amount: int = Field(ge=0)
     period_months: int = Field(default=1, ge=1, le=60)
     note: str | None = None
+    # Client-generated (e.g. a UUID minted once per form-open): a retried/duplicated
+    # POST with the same key returns the original payment instead of recording and
+    # applying a second one. Optional -- omitting it just means no dedup protection.
+    idempotency_key: str | None = None
 
 
 class PaymentOut(BaseModel):

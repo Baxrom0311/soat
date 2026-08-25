@@ -78,6 +78,12 @@ class Payment(Base):
     period_months: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     note: Mapped[str | None] = mapped_column(String, nullable=True)
     recorded_by: Mapped[str | None] = mapped_column(String, nullable=True)  # superadmin name/email
+    # Client-generated idempotency key (same pattern as Call.press_id): a double
+    # submit -- a real double-click, or a browser retrying a POST whose response was
+    # lost -- returns the ALREADY-recorded payment instead of recording a second one
+    # and double-extending paid_until. NULL is allowed (unique still permits multiple
+    # NULLs) for any caller that doesn't send one.
+    idempotency_key: Mapped[str | None] = mapped_column(String, nullable=True, unique=True)
     paid_until_after: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     paid_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -109,6 +115,7 @@ class Staff(Base):
 
 class Room(Base):
     __tablename__ = "rooms"
+    __table_args__ = (UniqueConstraint("clinic_id", "room_number", name="uq_rooms_clinic_room_number"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     clinic_id: Mapped[int] = mapped_column(ForeignKey("clinics.id"), nullable=False, index=True)

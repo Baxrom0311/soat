@@ -347,7 +347,19 @@ def reset_staff_password(
 def record_payment(
     db: Session, clinic_id: int, *, amount: int, period_months: int, note: str | None,
     recorded_by: str | None, actor: CurrentUser, ip_address: str | None = None,
+    idempotency_key: str | None = None,
 ) -> PaymentOut:
+    # A network retry (or, less likely given the dashboard's own submit-guard, a real
+    # double-click) resending the exact same request must return the payment that
+    # already exists instead of recording -- and extending paid_until by -- a second
+    # time. The row-lock below only protects against two DIFFERENT concurrent
+    # payments racing each other; it does nothing for a sequential retry of the SAME
+    # one, which is what this check is for.
+    if idempotency_key is not None:
+        existing = payment_repo.get_by_idempotency_key(db, clinic_id, idempotency_key)
+        if existing is not None:
+            return PaymentOut.model_validate(existing)
+
     # Row-locked read: two overlapping payments (double-click / retry) would otherwise
     # both read the same paid_until and one would overwrite the other, losing a period.
     clinic = clinic_repo.get_for_update(db, clinic_id)
@@ -366,16 +378,28 @@ def record_payment(
     if clinic.subscription_status == SubscriptionStatus.TRIAL:
         clinic.subscription_status = SubscriptionStatus.ACTIVE
 
-    payment = payment_repo.create(
-        db,
-        clinic_id=clinic_id,
-        amount=amount,
-        period_months=period_months,
-        note=note,
-        recorded_by=recorded_by,
-        paid_until_after=new_paid_until,
-    )
-    db.flush()
+    try:
+        payment = payment_repo.create(
+            db,
+            clinic_id=clinic_id,
+            amount=amount,
+            period_months=period_months,
+            note=note,
+            recorded_by=recorded_by,
+            paid_until_after=new_paid_until,
+            idempotency_key=idempotency_key,
+        )
+        db.flush()
+    except IntegrityError:
+        # Lost the race to a concurrent request with the same key (the row-lock above
+        # only serializes access to the CLINIC row, not this insert) -- the other
+        # request's payment is the real one; return it instead of erroring.
+        db.rollback()
+        if idempotency_key is not None:
+            existing = payment_repo.get_by_idempotency_key(db, clinic_id, idempotency_key)
+            if existing is not None:
+                return PaymentOut.model_validate(existing)
+        raise
     audit_service.record(
         db, actor, action="payment.recorded", target_type="clinic", target_id=clinic_id,
         after={"amount": amount, "period_months": period_months, "paid_until_after": new_paid_until.isoformat()},

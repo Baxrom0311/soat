@@ -28,11 +28,20 @@ from fastapi import BackgroundTasks, HTTPException
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 
+from app.core.config import CALL_INGEST_RATE_LIMIT_MAX, CALL_INGEST_RATE_LIMIT_WINDOW_SECONDS
+from app.core.rate_limit import SlidingWindowLimiter
 from app.repositories import button_repo, call_repo, device_repo, unassigned_repo
 from app.schemas.call import ActiveCallOut, AckOut, CallCreateOut, HistoryCallOut
 from app.services import push_service
 from app.services.device_service import authenticate_device
 from app.ws_manager import manager
+
+# Keyed by clinic_id (only known once the posting device's key has authenticated it),
+# not by IP: devices behind the same clinic WiFi already share an IP, and the point
+# is to cap one TENANT's total ingestion rate, not one network address.
+_ingest_limiter = SlidingWindowLimiter(
+    max_events=CALL_INGEST_RATE_LIMIT_MAX, window_seconds=CALL_INGEST_RATE_LIMIT_WINDOW_SECONDS
+)
 
 
 def _ingest_sync(
@@ -46,6 +55,14 @@ def _ingest_sync(
     """All blocking work for one ingestion. Returns (out, clinic_id, ws_event, push_args);
     out None means unknown code -> the async wrapper broadcasts ws_event then raises 404."""
     device = authenticate_device(db, device_id=device_id, plaintext_key=plaintext_key)
+
+    if not _ingest_limiter.check(str(device.clinic_id)):
+        # Checked before touch_last_seen/any write on purpose: a rejected request
+        # does no DB work at all. 429, not a silent drop -- the ESP32 firmware
+        # already retries a 429 with backoff via its offline queue, so a real press
+        # is never lost, just delayed.
+        raise HTTPException(status_code=429, detail="Too many calls from this clinic, try again shortly")
+
     device_repo.touch_last_seen(db, device)
 
     match = button_repo.get_by_code(db, device.clinic_id, ev1527_code)
