@@ -142,6 +142,7 @@ svg { display: block; }
   flex: 0 0 auto;
 }
 .brand-mark svg { width: 17px; height: 17px; color: var(--accent-ink); }
+.brand-text { white-space: nowrap; }
 
 /* ================= THEME TOGGLE ================= */
 .theme-toggle {
@@ -419,7 +420,11 @@ input:focus, select:focus {
 
 /* ================= TABLES ================= */
 .table-wrap { overflow-x: auto; border-radius: 16px; }
-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 560px; }
+/* No fixed min-width: nowrap columns already force a wide table to scroll (see
+   .table-wrap) on their own content, but a genuinely narrow table (e.g. Rooms'
+   3 columns) should render at its natural width instead of being stretched
+   past the viewport on mobile for no reason. */
+table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
 th, td { text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
 th { color: var(--text-3); font-weight: 600; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.05em; font-family: var(--font-mono); }
 tbody tr { transition: background-color 0.15s ease; }
@@ -570,11 +575,12 @@ tbody tr:last-child td { border-bottom: none; }
 .billing-cell .price { font-weight: 700; }
 .billing-cell .muted { font-size: 0.72rem; color: var(--text-muted); }
 .billing-cell .price-override { color: var(--accent); }
-.pay-history { width: 100%; margin-top: 12px; }
-.pay-history th, .pay-history td { padding: 6px 8px; font-size: 0.82rem; }
+.pay-history-wrap { overflow-x: auto; margin-top: 12px; }
+.pay-history { width: 100%; }
+.pay-history th, .pay-history td { padding: 6px 8px; font-size: 0.82rem; white-space: nowrap; }
 
 /* ================= ADMIN TABLES ================= */
-.row-actions { display: flex; gap: 8px; }
+.row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .table-input {
   background: var(--surface-soft);
   border: 1px solid var(--border);
@@ -587,6 +593,7 @@ tbody tr:last-child td { border-bottom: none; }
 }
 .filter-row {
   display: flex; align-items: center; gap: 10px;
+  flex-wrap: wrap;
   margin-bottom: 14px;
   font-size: 0.85rem;
   color: var(--text-2);
@@ -617,7 +624,7 @@ tbody tr:last-child td { border-bottom: none; }
 }
 .modal .modal-sub { color: var(--text-2); font-size: 0.87rem; margin: 0 0 16px; }
 .modal-warn-icon { display: inline-block; vertical-align: -3px; width: 15px; height: 15px; color: var(--warn); margin-right: 6px; }
-.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 16px; }
 .modal-success { color: var(--ok); font-size: 0.9rem; margin: 0; }
 .key-code {
   display: block;
@@ -634,12 +641,24 @@ tbody tr:last-child td { border-bottom: none; }
 /* ================= RESPONSIVE ================= */
 @media (max-width: 640px) {
   .nav { padding: 10px 12px 0; }
-  .nav-inner { padding: 0 10px; height: 56px; }
+  /* Fixed height clipped a wrapped nav on narrow phones -- brand text, the
+     connection-status label and the divider are dropped below instead (kept:
+     the dot, theme toggle, Parol/Chiqish) so one row is enough without them,
+     but height stays flexible in case a translation ever runs long. */
+  .nav-inner { padding: 0 10px; height: auto; min-height: 56px; flex-wrap: wrap; row-gap: 6px; }
+  .nav-right { flex-wrap: wrap; justify-content: flex-end; row-gap: 6px; }
   .user-chip { display: none; }
+  .brand-text { display: none; }
+  .nav-divider { display: none; }
+  .conn span:last-child { display: none; }
   .wrap { padding: 18px 14px 40px; }
   .active-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
   .call-card .room { font-size: 1.4rem; }
   .auth-card { padding: 26px 22px; }
+  .modal { padding: 20px; }
+  .modal-actions { justify-content: stretch; }
+  .modal-actions .btn { flex: 1; justify-content: center; }
+  .table-input { width: 100%; min-width: 90px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

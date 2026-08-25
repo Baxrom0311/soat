@@ -38,7 +38,7 @@ export function AuthPage() {
           <span className="brand-mark">
             <LogoIcon />
           </span>
-          NurseCall
+          <span className="brand-text">NurseCall</span>
         </a>
         <ThemeToggle />
       </div>

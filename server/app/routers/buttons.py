@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.deps import CurrentUser, get_clinic_user, get_db, require_admin
-from app.schemas.button import ButtonCreate, ButtonOut
+from app.schemas.button import ButtonCreate, ButtonOut, ButtonUpdate
 from app.services import button_service
 
 router = APIRouter(prefix="/api/v1/buttons", tags=["buttons"])
@@ -20,6 +20,16 @@ async def create_button(
     db: Session = Depends(get_db),
 ):
     return await button_service.create_button(db, user.clinic_id, room_id=body.room_id, ev1527_code=body.ev1527_code)
+
+
+@router.patch("/{button_id}", response_model=ButtonOut)
+def update_button(
+    button_id: int,
+    body: ButtonUpdate,
+    user: CurrentUser = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    return button_service.update_button(db, user.clinic_id, button_id, room_id=body.room_id)
 
 
 @router.delete("/{button_id}", status_code=204)

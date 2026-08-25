@@ -159,10 +159,14 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
+  updateDevice: (devicePk: number, input: { floor: number }) =>
+    request<Device>(`/api/v1/devices/${devicePk}`, { method: 'PATCH', body: JSON.stringify(input) }),
 
   getButtons: () => request<ButtonBinding[]>('/api/v1/buttons'),
   createButton: (input: { ev1527_code: string; room_id: number }) =>
     request<ButtonBinding>('/api/v1/buttons', { method: 'POST', body: JSON.stringify(input) }),
+  updateButton: (id: number, input: { room_id: number }) =>
+    request<ButtonBinding>(`/api/v1/buttons/${id}`, { method: 'PATCH', body: JSON.stringify(input) }),
   deleteButton: (id: number) => request<void>(`/api/v1/buttons/${id}`, { method: 'DELETE' }),
 
   getUnassignedSignals: () => request<UnassignedSignal[]>('/api/v1/unassigned-signals'),
@@ -243,6 +247,11 @@ export const api = {
   createAdminDevice: (input: { clinic_id: number; device_id: string; floor: number }) =>
     request<AdminDeviceCreateResponse>('/api/v1/admin/devices', {
       method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  updateAdminDevice: (devicePk: number, input: { floor: number }) =>
+    request<AdminDevice>(`/api/v1/admin/devices/${devicePk}`, {
+      method: 'PATCH',
       body: JSON.stringify(input),
     }),
 

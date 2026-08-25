@@ -40,6 +40,23 @@ async def create_button(db: Session, clinic_id: int, *, room_id: int, ev1527_cod
     )
 
 
+def update_button(db: Session, clinic_id: int, button_id: int, *, room_id: int) -> ButtonOut:
+    """Rebinds an already-bound button to a different room, without a delete+recreate
+    round trip through the unassigned-signals list."""
+    button = button_repo.get(db, clinic_id, button_id)
+    if button is None:
+        raise HTTPException(status_code=404, detail="Button not found")
+    room = room_repo.get(db, clinic_id, room_id)
+    if room is None:
+        raise HTTPException(status_code=404, detail="Room not found")
+    button.room_id = room.id
+    db.commit()
+    db.refresh(button)
+    return ButtonOut(
+        id=button.id, room_id=room.id, room_number=room.room_number, floor=room.floor, ev1527_code=button.ev1527_code
+    )
+
+
 def delete_button(db: Session, clinic_id: int, button_id: int) -> None:
     # calls reference room_id/device_id (not the button), so history survives deletion
     button = button_repo.get(db, clinic_id, button_id)

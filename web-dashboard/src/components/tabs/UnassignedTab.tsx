@@ -75,9 +75,65 @@ function SignalRow({
   );
 }
 
+function EditButtonRoomRow({
+  binding,
+  rooms,
+  onDone,
+  onCancel,
+}: {
+  binding: ButtonBinding;
+  rooms: Room[];
+  onDone: () => void;
+  onCancel: () => void;
+}) {
+  const [roomId, setRoomId] = useState<string>(String(binding.room_id));
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function save() {
+    setError('');
+    setBusy(true);
+    try {
+      await api.updateButton(binding.id, { room_id: Number(roomId) });
+      onDone();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <tr>
+      <td>{binding.ev1527_code}</td>
+      <td colSpan={2}>
+        <select className="bind-select" value={roomId} onChange={(e) => setRoomId(e.target.value)}>
+          {rooms.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.room_number} ({r.floor}-qavat)
+            </option>
+          ))}
+        </select>
+      </td>
+      <td>
+        <div className="row-actions">
+          <button className="btn btn-primary btn-sm" onClick={save} disabled={busy} type="button">
+            Saqlash
+          </button>
+          <button className="btn btn-ghost btn-sm" onClick={onCancel} type="button">
+            Bekor
+          </button>
+        </div>
+        {error && <p className="form-error">{error}</p>}
+      </td>
+    </tr>
+  );
+}
+
 export function UnassignedTab({ signals, refreshSignals, markLocalMutation }: UnassignedTabProps) {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [buttons, setButtons] = useState<ButtonBinding[]>([]);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [loadError, setLoadError] = useState('');
   const [unbindError, setUnbindError] = useState('');
 
@@ -178,18 +234,36 @@ export function UnassignedTab({ signals, refreshSignals, markLocalMutation }: Un
             </tr>
           </thead>
           <tbody>
-            {buttons.map((b) => (
-              <tr key={b.id}>
-                <td>{b.ev1527_code}</td>
-                <td>{b.room_number}</td>
-                <td>{b.floor}</td>
-                <td>
-                  <button className="btn btn-ghost btn-sm" onClick={() => unbind(b)} type="button">
-                    Uzish
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {buttons.map((b) =>
+              editingId === b.id ? (
+                <EditButtonRoomRow
+                  key={b.id}
+                  binding={b}
+                  rooms={rooms}
+                  onCancel={() => setEditingId(null)}
+                  onDone={() => {
+                    setEditingId(null);
+                    loadButtons().catch(() => {});
+                  }}
+                />
+              ) : (
+                <tr key={b.id}>
+                  <td>{b.ev1527_code}</td>
+                  <td>{b.room_number}</td>
+                  <td>{b.floor}</td>
+                  <td>
+                    <div className="row-actions">
+                      <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(b.id)} type="button">
+                        Xonani o'zgartirish
+                      </button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => unbind(b)} type="button">
+                        Uzish
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )
+            )}
           </tbody>
         </table>
       </div>

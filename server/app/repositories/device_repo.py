@@ -54,6 +54,12 @@ def get(db: Session, clinic_id: int, device_id_pk: int) -> Device | None:
     return db.scalar(select(Device).where(Device.id == device_id_pk, Device.clinic_id == clinic_id))
 
 
+def get_by_id(db: Session, device_id_pk: int) -> Device | None:
+    """Unscoped lookup by primary key -- superadmin fleet view only, which already
+    operates across every clinic by design."""
+    return db.get(Device, device_id_pk)
+
+
 def get_by_device_id(db: Session, device_id: str) -> Device | None:
     return db.scalar(select(Device).where(Device.device_id == device_id))
 

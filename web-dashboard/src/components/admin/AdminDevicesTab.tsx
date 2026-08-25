@@ -263,6 +263,11 @@ export function AdminDevicesTab() {
   const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState<AdminDeviceCreateResponse | null>(null);
 
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editFloor, setEditFloor] = useState('');
+  const [editError, setEditError] = useState('');
+  const [editBusy, setEditBusy] = useState(false);
+
   async function loadDevices(clinicId: string) {
     try {
       setDevices(await api.getAdminDevices(clinicId ? Number(clinicId) : undefined));
@@ -298,6 +303,26 @@ export function AdminDevicesTab() {
       setError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function startEdit(d: AdminDevice) {
+    setEditingId(d.id);
+    setEditFloor(String(d.floor));
+    setEditError('');
+  }
+
+  async function saveEdit(devicePk: number) {
+    setEditError('');
+    setEditBusy(true);
+    try {
+      await api.updateAdminDevice(devicePk, { floor: Number(editFloor) });
+      setEditingId(null);
+      await loadDevices(filterClinic);
+    } catch (err) {
+      setEditError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
+    } finally {
+      setEditBusy(false);
     }
   }
 
@@ -382,26 +407,73 @@ export function AdminDevicesTab() {
                 <th>Holat</th>
                 <th>Oxirgi ko'rilgan</th>
                 <th>Yaratildi</th>
+                <th>Amal</th>
               </tr>
             </thead>
             <tbody>
-              {devices.map((d) => (
-                <tr key={d.id}>
-                  <td>{d.clinic_name}</td>
-                  <td>{d.device_id}</td>
-                  <td>{d.floor}</td>
-                  <td>
-                    <span className={`online-badge ${d.online ? 'online' : 'offline'}`}>
-                      <span className="dot" />
-                      {d.online ? 'Onlayn' : 'Oflayn'}
-                    </span>
-                  </td>
-                  <td title={d.last_seen_at ? fmtTime(d.last_seen_at) : undefined}>
-                    {d.last_seen_at ? relTime(d.last_seen_at) : '—'}
-                  </td>
-                  <td>{fmtTime(d.created_at)}</td>
-                </tr>
-              ))}
+              {devices.map((d) =>
+                editingId === d.id ? (
+                  <tr key={d.id}>
+                    <td>{d.clinic_name}</td>
+                    <td>{d.device_id}</td>
+                    <td>
+                      <input
+                        type="number"
+                        className="table-input"
+                        min={0}
+                        step={1}
+                        value={editFloor}
+                        onChange={(e) => setEditFloor(e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <span className={`online-badge ${d.online ? 'online' : 'offline'}`}>
+                        <span className="dot" />
+                        {d.online ? 'Onlayn' : 'Oflayn'}
+                      </span>
+                    </td>
+                    <td>{d.last_seen_at ? relTime(d.last_seen_at) : '—'}</td>
+                    <td>{fmtTime(d.created_at)}</td>
+                    <td>
+                      <div className="row-actions">
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => saveEdit(d.id)}
+                          disabled={editBusy}
+                          type="button"
+                        >
+                          Saqlash
+                        </button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)} type="button">
+                          Bekor
+                        </button>
+                      </div>
+                      {editError && <p className="form-error">{editError}</p>}
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={d.id}>
+                    <td>{d.clinic_name}</td>
+                    <td>{d.device_id}</td>
+                    <td>{d.floor}</td>
+                    <td>
+                      <span className={`online-badge ${d.online ? 'online' : 'offline'}`}>
+                        <span className="dot" />
+                        {d.online ? 'Onlayn' : 'Oflayn'}
+                      </span>
+                    </td>
+                    <td title={d.last_seen_at ? fmtTime(d.last_seen_at) : undefined}>
+                      {d.last_seen_at ? relTime(d.last_seen_at) : '—'}
+                    </td>
+                    <td>{fmtTime(d.created_at)}</td>
+                    <td>
+                      <button className="btn btn-ghost btn-sm" onClick={() => startEdit(d)} type="button">
+                        Tahrirlash
+                      </button>
+                    </td>
+                  </tr>
+                )
+              )}
             </tbody>
           </table>
         </div>

@@ -143,6 +143,10 @@ class AdminDeviceCreate(BaseModel):
     floor: int
 
 
+class AdminDeviceUpdate(BaseModel):
+    floor: int
+
+
 class AdminDeviceOut(BaseModel):
     id: int
     clinic_id: int

@@ -61,6 +61,23 @@ def list_devices(db: Session, clinic_id: int) -> list[DeviceOut]:
     ]
 
 
+def update_device_floor(db: Session, clinic_id: int, device_pk: int, *, floor: int) -> DeviceOut:
+    device = device_repo.get(db, clinic_id, device_pk)
+    if device is None:
+        raise HTTPException(status_code=404, detail="Device not found")
+    device.floor = floor
+    db.commit()
+    db.refresh(device)
+    return DeviceOut(
+        id=device.id,
+        device_id=device.device_id,
+        floor=device.floor,
+        last_seen_at=device.last_seen_at,
+        online=is_device_online(device.last_seen_at),
+        created_at=device.created_at,
+    )
+
+
 def register_device(
     db: Session, clinic_id: int, *, device_id: str, floor: int, chip_id: str | None = None
 ) -> tuple[Device, str]:

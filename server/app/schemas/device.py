@@ -13,6 +13,10 @@ class DeviceCreate(BaseModel):
     floor: int
 
 
+class DeviceUpdate(BaseModel):
+    floor: int
+
+
 class DeviceOut(BaseModel):
     id: int
     device_id: str

@@ -163,28 +163,30 @@ function PaymentModal({ clinic, onClose, onSaved }: { clinic: AdminClinic; onClo
         </form>
 
         {history.length > 0 && (
-          <table className="pay-history">
-            <thead>
-              <tr>
-                <th>Sana</th>
-                <th>Summa</th>
-                <th>Davr</th>
-                <th>Kim</th>
-                <th>Izoh</th>
-              </tr>
-            </thead>
-            <tbody>
-              {history.map((p) => (
-                <tr key={p.id}>
-                  <td>{fmtDate(p.paid_at)}</td>
-                  <td>{fmtMoney(p.amount, clinic.billing.currency)}</td>
-                  <td>{p.period_months} oy</td>
-                  <td>{p.recorded_by || '—'}</td>
-                  <td>{p.note || '—'}</td>
+          <div className="pay-history-wrap">
+            <table className="pay-history">
+              <thead>
+                <tr>
+                  <th>Sana</th>
+                  <th>Summa</th>
+                  <th>Davr</th>
+                  <th>Kim</th>
+                  <th>Izoh</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {history.map((p) => (
+                  <tr key={p.id}>
+                    <td>{fmtDate(p.paid_at)}</td>
+                    <td>{fmtMoney(p.amount, clinic.billing.currency)}</td>
+                    <td>{p.period_months} oy</td>
+                    <td>{p.recorded_by || '—'}</td>
+                    <td>{p.note || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
@@ -238,40 +240,42 @@ function ClinicStaffModal({ clinic, onClose }: { clinic: AdminClinic; onClose: (
         {loadError ? (
           <p className="form-error">{loadError}</p>
         ) : (
-          <table className="pay-history">
-            <thead>
-              <tr>
-                <th>Ism</th>
-                <th>Email</th>
-                <th>Rol</th>
-                <th>Amal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {staff.map((s) => (
-                <tr key={s.id}>
-                  <td>{s.name}</td>
-                  <td>{s.email}</td>
-                  <td>{s.role}</td>
-                  <td>
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      type="button"
-                      disabled={resetting === s.id}
-                      onClick={() => resetPassword(s.id)}
-                    >
-                      Parolni tiklash
-                    </button>
-                    {revealed && revealed.staffId === s.id && (
-                      <p className="modal-success">
-                        Yangi parol: <code className="key-code">{revealed.password}</code>
-                      </p>
-                    )}
-                  </td>
+          <div className="pay-history-wrap">
+            <table className="pay-history">
+              <thead>
+                <tr>
+                  <th>Ism</th>
+                  <th>Email</th>
+                  <th>Rol</th>
+                  <th>Amal</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {staff.map((s) => (
+                  <tr key={s.id}>
+                    <td>{s.name}</td>
+                    <td>{s.email}</td>
+                    <td>{s.role}</td>
+                    <td>
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        type="button"
+                        disabled={resetting === s.id}
+                        onClick={() => resetPassword(s.id)}
+                      >
+                        Parolni tiklash
+                      </button>
+                      {revealed && revealed.staffId === s.id && (
+                        <p className="modal-success">
+                          Yangi parol: <code className="key-code">{revealed.password}</code>
+                        </p>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
         <div className="modal-actions">
           <button className="btn btn-primary" onClick={onClose} type="button">

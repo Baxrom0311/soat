@@ -423,6 +423,33 @@ def list_audit_logs(db: Session, *, limit: int = 100, offset: int = 0) -> list[A
     return [AuditLogOut.model_validate(row) for row in audit_repo.list_recent(db, limit=limit, offset=offset)]
 
 
+def update_fleet_device_floor(
+    db: Session, device_pk: int, *, floor: int, actor: CurrentUser, ip_address: str | None = None
+) -> AdminDeviceOut:
+    device = device_repo.get_by_id(db, device_pk)
+    if device is None:
+        raise HTTPException(status_code=404, detail="Device not found")
+    clinic = clinic_repo.get(db, device.clinic_id)
+    before_floor = device.floor
+    device.floor = floor
+    audit_service.record(
+        db, actor, action="device.floor_updated", target_type="device", target_id=device.id,
+        before={"floor": before_floor}, after={"floor": floor}, ip_address=ip_address,
+    )
+    db.commit()
+    db.refresh(device)
+    return AdminDeviceOut(
+        id=device.id,
+        clinic_id=device.clinic_id,
+        clinic_name=clinic.name if clinic else "",
+        device_id=device.device_id,
+        floor=device.floor,
+        created_at=device.created_at,
+        last_seen_at=device.last_seen_at,
+        online=device_service.is_device_online(device.last_seen_at),
+    )
+
+
 def register_fleet_device(
     db: Session, *, clinic_id: int, device_id: str, floor: int,
     actor: CurrentUser, ip_address: str | None = None,

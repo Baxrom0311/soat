@@ -11,6 +11,7 @@ from app.schemas.admin import (
     AdminClinicUpdate,
     AdminDeviceCreate,
     AdminDeviceOut,
+    AdminDeviceUpdate,
     AdminOverviewOut,
     AdminPasswordResetOut,
     AuditLogOut,
@@ -190,6 +191,16 @@ def create_device(
         actor=user, ip_address=_ip(request),
     )
     return DeviceCreateOut(device_id=device.device_id, device_api_key=plaintext_key)
+
+
+@router.patch("/devices/{device_pk}", response_model=AdminDeviceOut)
+def update_device(
+    device_pk: int, body: AdminDeviceUpdate, request: Request,
+    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+):
+    return admin_service.update_fleet_device_floor(
+        db, device_pk, floor=body.floor, actor=user, ip_address=_ip(request)
+    )
 
 
 @router.get("/audit-logs", response_model=list[AuditLogOut])

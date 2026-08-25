@@ -8,6 +8,10 @@ class ButtonCreate(BaseModel):
     room_id: int
 
 
+class ButtonUpdate(BaseModel):
+    room_id: int
+
+
 class ButtonOut(BaseModel):
     id: int
     room_id: int

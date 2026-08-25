@@ -42,7 +42,7 @@ export function DashboardLayout() {
             <span className="brand-mark">
               <LogoIcon />
             </span>
-            NurseCall
+            <span className="brand-text">NurseCall</span>
           </a>
           <div className="nav-right">
             <div className="conn">

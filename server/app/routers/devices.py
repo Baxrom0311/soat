@@ -8,6 +8,7 @@ from app.schemas.device import (
     DeviceCreate,
     DeviceCreateOut,
     DeviceOut,
+    DeviceUpdate,
     HeartbeatIn,
     HeartbeatOut,
 )
@@ -32,6 +33,16 @@ def create_device(
         db, user.clinic_id, device_id=body.device_id, floor=body.floor
     )
     return DeviceCreateOut(device_id=device.device_id, device_api_key=plaintext_key)
+
+
+@router.patch("/{device_pk}", response_model=DeviceOut)
+def update_device(
+    device_pk: int,
+    body: DeviceUpdate,
+    user: CurrentUser = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    return device_service.update_device_floor(db, user.clinic_id, device_pk, floor=body.floor)
 
 
 @router.post("/heartbeat", response_model=HeartbeatOut)

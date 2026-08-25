@@ -82,6 +82,7 @@ export interface Room {
 }
 
 export interface Device {
+  id: number;
   device_id: string;
   floor: number;
   created_at: string;
