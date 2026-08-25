@@ -184,8 +184,8 @@ export function AdminPlansTab() {
             {plans.map((p) =>
               editingId === p.id ? (
                 <tr key={p.id}>
-                  <td>{p.name}</td>
-                  <td>
+                  <td data-label="Nomi">{p.name}</td>
+                  <td data-label="Narx">
                     <input
                       type="number"
                       min={0}
@@ -194,8 +194,8 @@ export function AdminPlansTab() {
                       onChange={(e) => setEditPrice(e.target.value)}
                     />
                   </td>
-                  <td>{p.billing_period_months} oy</td>
-                  <td>
+                  <td data-label="Davr">{p.billing_period_months} oy</td>
+                  <td data-label="Maks. qurilma">
                     <input
                       type="number"
                       min={1}
@@ -205,8 +205,8 @@ export function AdminPlansTab() {
                       onChange={(e) => setEditMax(e.target.value)}
                     />
                   </td>
-                  <td>{p.is_active ? 'Faol' : 'Arxiv'}</td>
-                  <td>
+                  <td data-label="Holat">{p.is_active ? 'Faol' : 'Arxiv'}</td>
+                  <td data-label="Amallar">
                     <div className="row-actions">
                       <button className="btn btn-primary btn-sm" onClick={() => saveEdit(p.id)} type="button">
                         Saqlash
@@ -220,16 +220,16 @@ export function AdminPlansTab() {
                 </tr>
               ) : (
                 <tr key={p.id}>
-                  <td>{p.name}</td>
-                  <td>{fmtMoney(p.price_amount, p.currency)}</td>
-                  <td>{p.billing_period_months} oy</td>
-                  <td>{p.max_devices === null ? 'Cheksiz' : p.max_devices}</td>
-                  <td>
+                  <td data-label="Nomi">{p.name}</td>
+                  <td data-label="Narx">{fmtMoney(p.price_amount, p.currency)}</td>
+                  <td data-label="Davr">{p.billing_period_months} oy</td>
+                  <td data-label="Maks. qurilma">{p.max_devices === null ? 'Cheksiz' : p.max_devices}</td>
+                  <td data-label="Holat">
                     <span className={`sub-pill ${p.is_active ? 'active' : 'suspended'}`}>
                       {p.is_active ? 'Faol' : 'Arxiv'}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="Amallar">
                     <div className="row-actions">
                       <button className="btn btn-ghost btn-sm" onClick={() => startEdit(p)} type="button">
                         Tahrirlash

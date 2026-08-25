@@ -177,11 +177,11 @@ function PaymentModal({ clinic, onClose, onSaved }: { clinic: AdminClinic; onClo
               <tbody>
                 {history.map((p) => (
                   <tr key={p.id}>
-                    <td>{fmtDate(p.paid_at)}</td>
-                    <td>{fmtMoney(p.amount, clinic.billing.currency)}</td>
-                    <td>{p.period_months} oy</td>
-                    <td>{p.recorded_by || '—'}</td>
-                    <td>{p.note || '—'}</td>
+                    <td data-label="Sana">{fmtDate(p.paid_at)}</td>
+                    <td data-label="Summa">{fmtMoney(p.amount, clinic.billing.currency)}</td>
+                    <td data-label="Davr">{p.period_months} oy</td>
+                    <td data-label="Kim">{p.recorded_by || '—'}</td>
+                    <td data-label="Izoh">{p.note || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -253,10 +253,10 @@ function ClinicStaffModal({ clinic, onClose }: { clinic: AdminClinic; onClose: (
               <tbody>
                 {staff.map((s) => (
                   <tr key={s.id}>
-                    <td>{s.name}</td>
-                    <td>{s.email}</td>
-                    <td>{s.role}</td>
-                    <td>
+                    <td data-label="Ism">{s.name}</td>
+                    <td data-label="Email">{s.email}</td>
+                    <td data-label="Rol">{s.role}</td>
+                    <td data-label="Amal">
                       <button
                         className="btn btn-ghost btn-sm"
                         type="button"
@@ -406,17 +406,17 @@ export function AdminClinicsTab() {
             {clinics.map((c) =>
               editingId === c.id ? (
                 <tr key={c.id}>
-                  <td>
+                  <td data-label="Nomi">
                     <input type="text" className="table-input" value={editName} onChange={(e) => setEditName(e.target.value)} />
                   </td>
-                  <td>
+                  <td data-label="Obuna / To'lov">
                     <select className="bind-select" value={editStatus} onChange={(e) => setEditStatus(e.target.value as SubscriptionStatus)}>
                       <option value="trial">Sinov</option>
                       <option value="active">Faol</option>
                       <option value="suspended">To'xtatilgan</option>
                     </select>
                   </td>
-                  <td>
+                  <td data-label="Tarif / Narx">
                     <select className="bind-select" value={editPlan} onChange={(e) => setEditPlan(e.target.value)}>
                       <option value="">— Tarifsiz —</option>
                       {plans
@@ -437,11 +437,11 @@ export function AdminClinicsTab() {
                       onChange={(e) => setEditPrice(e.target.value)}
                     />
                   </td>
-                  <td>{c.staff_count}</td>
-                  <td>{c.device_count}</td>
-                  <td>{c.room_count}</td>
-                  <td>{c.active_calls}</td>
-                  <td>
+                  <td data-label="Xodim">{c.staff_count}</td>
+                  <td data-label="Qurilma">{c.device_count}</td>
+                  <td data-label="Xona">{c.room_count}</td>
+                  <td data-label="Faol">{c.active_calls}</td>
+                  <td data-label="Amallar">
                     <div className="row-actions">
                       <button className="btn btn-primary btn-sm" onClick={() => saveEdit(c.id)} disabled={editBusy} type="button">
                         Saqlash
@@ -455,8 +455,8 @@ export function AdminClinicsTab() {
                 </tr>
               ) : (
                 <tr key={c.id}>
-                  <td>{c.name}</td>
-                  <td>
+                  <td data-label="Nomi">{c.name}</td>
+                  <td data-label="Obuna / To'lov">
                     <div className="billing-cell">
                       <span className={`sub-pill ${c.billing.effective_status}`}>
                         {STATUS_LABEL[c.billing.effective_status]}
@@ -464,7 +464,7 @@ export function AdminClinicsTab() {
                       <span className="muted">To'langan: {fmtDate(c.billing.paid_until)}</span>
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Tarif / Narx">
                     <div className="billing-cell">
                       <span className="price">{fmtMoney(c.billing.effective_price, c.billing.currency)}</span>
                       <span className="muted">
@@ -473,14 +473,14 @@ export function AdminClinicsTab() {
                       </span>
                     </div>
                   </td>
-                  <td>{c.staff_count}</td>
-                  <td>
+                  <td data-label="Xodim">{c.staff_count}</td>
+                  <td data-label="Qurilma">
                     {c.device_count}
                     {c.billing.max_devices !== null && <span className="muted"> / {c.billing.max_devices}</span>}
                   </td>
-                  <td>{c.room_count}</td>
-                  <td>{c.active_calls}</td>
-                  <td>
+                  <td data-label="Xona">{c.room_count}</td>
+                  <td data-label="Faol">{c.active_calls}</td>
+                  <td data-label="Amallar">
                     <div className="row-actions">
                       <button className="btn btn-ghost btn-sm" onClick={() => startEdit(c)} type="button">
                         Tahrirlash

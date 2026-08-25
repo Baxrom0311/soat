@@ -52,12 +52,12 @@ function SignalRow({
 
   return (
     <tr>
-      <td>{signal.ev1527_code}</td>
-      <td>{signal.device_id}</td>
-      <td>{fmtTime(signal.first_seen_at)}</td>
-      <td>{fmtTime(signal.last_seen_at)}</td>
-      <td>{signal.seen_count}</td>
-      <td>
+      <td data-label="Kod">{signal.ev1527_code}</td>
+      <td data-label="Qurilma">{signal.device_id}</td>
+      <td data-label="Birinchi ko'rilgan">{fmtTime(signal.first_seen_at)}</td>
+      <td data-label="Oxirgi ko'rilgan">{fmtTime(signal.last_seen_at)}</td>
+      <td data-label="Necha marta">{signal.seen_count}</td>
+      <td data-label="Xonaga bog'lash">
         <select className="bind-select" value={roomId} onChange={(e) => setRoomId(e.target.value)}>
           {rooms.map((r) => (
             <option key={r.id} value={r.id}>
@@ -105,8 +105,8 @@ function EditButtonRoomRow({
 
   return (
     <tr>
-      <td>{binding.ev1527_code}</td>
-      <td colSpan={2}>
+      <td data-label="Kod">{binding.ev1527_code}</td>
+      <td data-label="Xona" colSpan={2}>
         <select className="bind-select" value={roomId} onChange={(e) => setRoomId(e.target.value)}>
           {rooms.map((r) => (
             <option key={r.id} value={r.id}>
@@ -115,7 +115,7 @@ function EditButtonRoomRow({
           ))}
         </select>
       </td>
-      <td>
+      <td data-label="Amal">
         <div className="row-actions">
           <button className="btn btn-primary btn-sm" onClick={save} disabled={busy} type="button">
             Saqlash
@@ -248,10 +248,10 @@ export function UnassignedTab({ signals, refreshSignals, markLocalMutation }: Un
                 />
               ) : (
                 <tr key={b.id}>
-                  <td>{b.ev1527_code}</td>
-                  <td>{b.room_number}</td>
-                  <td>{b.floor}</td>
-                  <td>
+                  <td data-label="Kod">{b.ev1527_code}</td>
+                  <td data-label="Xona">{b.room_number}</td>
+                  <td data-label="Qavat">{b.floor}</td>
+                  <td data-label="Amal">
                     <div className="row-actions">
                       <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(b.id)} type="button">
                         Xonani o'zgartirish

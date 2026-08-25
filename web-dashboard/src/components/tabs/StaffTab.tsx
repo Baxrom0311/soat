@@ -160,7 +160,7 @@ export function StaffTab() {
               {staff.map((s) =>
                 editingId === s.id ? (
                   <tr key={s.id}>
-                    <td>
+                    <td data-label="Ism">
                       <input
                         type="text"
                         className="table-input"
@@ -168,7 +168,7 @@ export function StaffTab() {
                         onChange={(e) => setEditName(e.target.value)}
                       />
                     </td>
-                    <td>
+                    <td data-label="Email">
                       <input
                         type="email"
                         className="table-input"
@@ -176,7 +176,7 @@ export function StaffTab() {
                         onChange={(e) => setEditEmail(e.target.value)}
                       />
                     </td>
-                    <td>
+                    <td data-label="Rol">
                       <select
                         className="bind-select"
                         value={editRole}
@@ -186,7 +186,7 @@ export function StaffTab() {
                         <option value="admin">Admin</option>
                       </select>
                     </td>
-                    <td>
+                    <td data-label="Amallar">
                       <input
                         type="password"
                         className="table-input"
@@ -216,13 +216,13 @@ export function StaffTab() {
                   </tr>
                 ) : (
                   <tr key={s.id}>
-                    <td>{s.name}</td>
-                    <td>{s.email}</td>
-                    <td>
+                    <td data-label="Ism">{s.name}</td>
+                    <td data-label="Email">{s.email}</td>
+                    <td data-label="Rol">
                       <span className="role-pill">{s.role}</span>
                     </td>
                     {isAdmin && (
-                      <td>
+                      <td data-label="Amallar">
                         <div className="row-actions">
                           <button className="btn btn-ghost btn-sm" onClick={() => startEdit(s)} type="button">
                             Tahrirlash

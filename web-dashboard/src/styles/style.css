@@ -659,6 +659,51 @@ tbody tr:last-child td { border-bottom: none; }
   .modal-actions { justify-content: stretch; }
   .modal-actions .btn { flex: 1; justify-content: center; }
   .table-input { width: 100%; min-width: 90px; }
+
+  /* Sideways-scrolling tables read as "broken" on a phone, not just cramped --
+     every row becomes its own card instead, each cell a label:value line (the
+     label comes from data-label, since a <thead> makes no sense stacked). This
+     applies to every .table-wrap table and every .pay-history table alike. */
+  .table-wrap { overflow-x: visible; border-radius: 0; }
+  .table-wrap table, .pay-history { display: block; }
+  .table-wrap thead, .pay-history thead { display: none; }
+  .table-wrap tbody, .pay-history tbody { display: block; }
+  .table-wrap tr, .pay-history tr {
+    display: block;
+    background: var(--surface-soft);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 4px 14px;
+    margin-bottom: 10px;
+  }
+  .table-wrap tr:last-child, .pay-history tr:last-child { margin-bottom: 0; }
+  .table-wrap td, .pay-history td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 9px 0;
+    border-bottom: 1px dashed var(--border);
+    white-space: normal;
+    text-align: right;
+  }
+  .table-wrap tr td:last-child, .pay-history tr td:last-child { border-bottom: none; }
+  .table-wrap td::before, .pay-history td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-3);
+    text-align: left;
+  }
+  .table-wrap td:empty, .pay-history td:empty { display: none; }
+  .table-wrap td .table-input, .table-wrap td select { flex: 1; width: auto; min-width: 0; }
+  .table-wrap td .row-actions { flex: 1; justify-content: flex-end; }
+  .table-wrap td .form-error { flex: 1 0 100%; text-align: right; margin-top: 4px; }
+  .table-wrap td .billing-cell { align-items: flex-end; }
 }
 
 @media (prefers-reduced-motion: reduce) {

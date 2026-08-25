@@ -123,7 +123,7 @@ export function RoomsTab() {
               {rooms.map((r) =>
                 editingId === r.id ? (
                   <tr key={r.id}>
-                    <td>
+                    <td data-label="Xona">
                       <input
                         type="text"
                         className="table-input"
@@ -131,7 +131,7 @@ export function RoomsTab() {
                         onChange={(e) => setEditRoomNumber(e.target.value)}
                       />
                     </td>
-                    <td>
+                    <td data-label="Qavat">
                       <input
                         type="number"
                         className="table-input"
@@ -141,7 +141,7 @@ export function RoomsTab() {
                         onChange={(e) => setEditFloor(e.target.value)}
                       />
                     </td>
-                    <td>
+                    <td data-label="Amallar">
                       <div className="row-actions">
                         <button
                           className="btn btn-primary btn-sm"
@@ -164,9 +164,9 @@ export function RoomsTab() {
                   </tr>
                 ) : (
                   <tr key={r.id}>
-                    <td>{r.room_number}</td>
-                    <td>{r.floor}</td>
-                    <td>
+                    <td data-label="Xona">{r.room_number}</td>
+                    <td data-label="Qavat">{r.floor}</td>
+                    <td data-label="Amallar">
                       <button className="btn btn-ghost btn-sm" onClick={() => startEdit(r)} type="button">
                         Tahrirlash
                       </button>

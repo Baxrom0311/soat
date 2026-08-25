@@ -116,16 +116,16 @@ export function CallsTab({ activeCalls, history, ackCall }: CallsTabProps) {
           <tbody>
             {history.map((item) => (
               <tr key={item.call_id}>
-                <td>{item.room_number}</td>
-                <td>{item.floor}</td>
-                <td>
+                <td data-label="Xona">{item.room_number}</td>
+                <td data-label="Qavat">{item.floor}</td>
+                <td data-label="Holat">
                   <span className={`status-pill ${item.status}`}>
                     {item.status === 'active' ? 'Faol' : 'Qabul qilindi'}
                   </span>
                 </td>
-                <td>{fmtTime(item.created_at)}</td>
-                <td>{item.acknowledged_at ? fmtTime(item.acknowledged_at) : '—'}</td>
-                <td>{item.acknowledged_by || '—'}</td>
+                <td data-label="Yaratildi">{fmtTime(item.created_at)}</td>
+                <td data-label="Javob berildi">{item.acknowledged_at ? fmtTime(item.acknowledged_at) : '—'}</td>
+                <td data-label="Kim">{item.acknowledged_by || '—'}</td>
               </tr>
             ))}
           </tbody>

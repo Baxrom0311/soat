@@ -212,8 +212,8 @@ export function DevicesTab() {
               {devices.map((d) =>
                 editingId === d.id ? (
                   <tr key={d.device_id}>
-                    <td>{d.device_id}</td>
-                    <td>
+                    <td data-label="device_id">{d.device_id}</td>
+                    <td data-label="Qavat">
                       <input
                         type="number"
                         className="table-input"
@@ -223,15 +223,15 @@ export function DevicesTab() {
                         onChange={(e) => setEditFloor(e.target.value)}
                       />
                     </td>
-                    <td>
+                    <td data-label="Holat">
                       <span className={`online-badge ${d.online ? 'online' : 'offline'}`}>
                         <span className="dot" />
                         {d.online ? 'Onlayn' : 'Oflayn'}
                       </span>
                     </td>
-                    <td>{fmtTime(d.created_at)}</td>
-                    <td>{d.last_seen_at ? relTime(d.last_seen_at) : '—'}</td>
-                    <td>
+                    <td data-label="Yaratildi">{fmtTime(d.created_at)}</td>
+                    <td data-label="Oxirgi ko'rilgan">{d.last_seen_at ? relTime(d.last_seen_at) : '—'}</td>
+                    <td data-label="Amal">
                       <div className="row-actions">
                         <button
                           className="btn btn-primary btn-sm"
@@ -250,19 +250,19 @@ export function DevicesTab() {
                   </tr>
                 ) : (
                   <tr key={d.device_id}>
-                    <td>{d.device_id}</td>
-                    <td>{d.floor}</td>
-                    <td>
+                    <td data-label="device_id">{d.device_id}</td>
+                    <td data-label="Qavat">{d.floor}</td>
+                    <td data-label="Holat">
                       <span className={`online-badge ${d.online ? 'online' : 'offline'}`}>
                         <span className="dot" />
                         {d.online ? 'Onlayn' : 'Oflayn'}
                       </span>
                     </td>
-                    <td>{fmtTime(d.created_at)}</td>
-                    <td title={d.last_seen_at ? fmtTime(d.last_seen_at) : undefined}>
+                    <td data-label="Yaratildi">{fmtTime(d.created_at)}</td>
+                    <td data-label="Oxirgi ko'rilgan" title={d.last_seen_at ? fmtTime(d.last_seen_at) : undefined}>
                       {d.last_seen_at ? relTime(d.last_seen_at) : '—'}
                     </td>
-                    <td>
+                    <td data-label="Amal">
                       <button className="btn btn-ghost btn-sm" onClick={() => startEdit(d)} type="button">
                         Tahrirlash
                       </button>
