@@ -18,8 +18,8 @@ android {
         applicationId = "uz.soat.reminder"
         minSdk = 30
         targetSdk = 34
-        versionCode = 3
-        versionName = "1.2.0"
+        versionCode = 4
+        versionName = "1.3.0"
     }
 
     signingConfigs {
@@ -74,6 +74,9 @@ dependencies {
     implementation("androidx.wear.compose:compose-material:1.3.1")
     implementation("androidx.wear.compose:compose-foundation:1.3.1")
     implementation("androidx.wear:wear:1.3.0")
+    // RemoteInputIntentHelper (soatda to'g'ridan-to'g'ri login uchun matn kiritish) --
+    // androidx.wear:wear O'ZI buni o'z ichiga olmaydi, alohida modul.
+    implementation("androidx.wear:wear-input:1.2.0")
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")

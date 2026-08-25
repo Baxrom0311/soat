@@ -11,6 +11,7 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 class UnauthorizedException : IOException("Token yaroqsiz yoki muddati o'tgan")
+class InvalidCredentialsException : IOException("Email yoki parol noto'g'ri")
 
 object ApiClient {
     // Production backend (adb orqali provisioning paytida boshqasiga o'zgartirilishi mumkin,
@@ -81,6 +82,27 @@ object ApiClient {
             if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
             val body = response.body?.string() ?: "{}"
             return JSONObject(body).getInt("min_watch_version")
+        }
+    }
+
+    // Soatning o'zidan to'g'ridan-to'g'ri kirish uchun — telefon orqali Bluetooth bilan
+    // token uzatilishini kutish shart emas. Backend'dagi /auth/login har qanday
+    // klient uchun bir xil ishlaydi (veb-dashboard, mobil ilova bilan bir xil yo'l).
+    fun login(context: Context, email: String, password: String): String {
+        val json = JSONObject().put("email", email).put("password", password).toString()
+        val body = json.toRequestBody("application/json".toMediaType())
+        val request = Request.Builder()
+            .url("${baseUrl(context)}/api/v1/auth/login")
+            .post(body)
+            .build()
+
+        client.newCall(request).execute().use { response ->
+            if (response.code == 401) throw InvalidCredentialsException()
+            if (response.code == 429) throw IOException("Juda ko'p urinish, birozdan keyin qayta urinib ko'ring")
+            if (response.code == 403) throw IOException("Klinika obunasi to'xtatilgan")
+            if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
+            val respBody = response.body?.string() ?: throw IOException("Bo'sh javob")
+            return JSONObject(respBody).getString("access_token")
         }
     }
 
