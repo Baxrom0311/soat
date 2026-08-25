@@ -8,6 +8,7 @@ lookup here is clinic-scoped.
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.enums import StaffRole
 from app.models import Staff
 
 
@@ -28,7 +29,7 @@ def get(db: Session, clinic_id: int, staff_id: int) -> Staff | None:
 
 def count_admins(db: Session, clinic_id: int) -> int:
     return db.scalar(
-        select(func.count()).select_from(Staff).where(Staff.clinic_id == clinic_id, Staff.role == "admin")
+        select(func.count()).select_from(Staff).where(Staff.clinic_id == clinic_id, Staff.role == StaffRole.ADMIN)
     )
 
 
@@ -50,7 +51,7 @@ def list_by_clinic(db: Session, clinic_id: int) -> list[Staff]:
     return list(db.scalars(select(Staff).where(Staff.clinic_id == clinic_id).order_by(Staff.id)).all())
 
 
-def create(db: Session, *, clinic_id: int, email: str, password_hash: str, role: str, name: str) -> Staff:
+def create(db: Session, *, clinic_id: int, email: str, password_hash: str, role: StaffRole, name: str) -> Staff:
     staff = Staff(
         clinic_id=clinic_id,
         email=email,

@@ -8,6 +8,15 @@ Idempotent: every statement is IF NOT EXISTS / guarded, so re-running is a no-op
 Base.metadata.create_all (run on every app startup) would create discovered_devices
 on its own since it's a brand new table, but the ALTER TABLEs on the existing devices
 table need this script -- create_all never modifies existing tables.
+
+SUPERSEDED BY ALEMBIC: schema changes now live under migrations/versions/ and are
+applied with `alembic upgrade head`. This script is kept only as a historical record
+of the hand-rolled migration that predated Alembic in this project -- it is not part
+of the deploy path and must not be run again as a matter of course. If you ever
+think you need to run it, first run `alembic current` to see what the target
+database's schema state actually is; if Alembic already covers these columns/tables
+(it does, as of the baseline + enum revisions), running this script is redundant at
+best and, against a database whose schema has since moved on, at worst.
 """
 
 from sqlalchemy import text

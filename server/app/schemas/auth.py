@@ -1,5 +1,7 @@
 from pydantic import BaseModel, EmailStr
 
+from app.enums import StaffRole
+
 
 class LoginIn(BaseModel):
     email: EmailStr
@@ -8,7 +10,7 @@ class LoginIn(BaseModel):
 
 class LoginOut(BaseModel):
     access_token: str
-    role: str
+    role: StaffRole
     name: str
     clinic_id: int | None  # null for superadmin
 

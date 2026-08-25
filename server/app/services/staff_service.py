@@ -3,6 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
+from app.enums import StaffRole
 from app.models import Staff
 from app.repositories import push_token_repo, staff_repo
 
@@ -12,7 +13,7 @@ def list_staff(db: Session, clinic_id: int) -> list[Staff]:
 
 
 def create_staff(db: Session, clinic_id: int, *, email: str, password: str, role: str, name: str) -> Staff:
-    if role not in ("admin", "nurse"):
+    if role not in (StaffRole.ADMIN, StaffRole.NURSE):
         raise HTTPException(status_code=422, detail="role must be 'admin' or 'nurse'")
     if staff_repo.get_by_email(db, email):
         raise HTTPException(status_code=409, detail="Email already registered")
@@ -45,11 +46,11 @@ def update_staff(
     if staff is None:
         raise HTTPException(status_code=404, detail="Staff not found")
 
-    if role is not None and role not in ("admin", "nurse"):
+    if role is not None and role not in (StaffRole.ADMIN, StaffRole.NURSE):
         raise HTTPException(status_code=422, detail="role must be 'admin' or 'nurse'")
     # A clinic locked out of its own admin account can only be recovered by the
     # superadmin, so the last admin can never be demoted away via this endpoint.
-    if role == "nurse" and staff.role == "admin" and staff_repo.count_admins(db, clinic_id) <= 1:
+    if role == StaffRole.NURSE and staff.role == StaffRole.ADMIN and staff_repo.count_admins(db, clinic_id) <= 1:
         raise HTTPException(status_code=409, detail="Clinic must keep at least one admin")
 
     if email is not None and email != staff.email:
@@ -80,7 +81,7 @@ def delete_staff(db: Session, clinic_id: int, staff_id: int, *, requester_staff_
         raise HTTPException(status_code=404, detail="Staff not found")
     if staff.id == requester_staff_id:
         raise HTTPException(status_code=409, detail="Cannot delete your own account")
-    if staff.role == "admin" and staff_repo.count_admins(db, clinic_id) <= 1:
+    if staff.role == StaffRole.ADMIN and staff_repo.count_admins(db, clinic_id) <= 1:
         raise HTTPException(status_code=409, detail="Clinic must keep at least one admin")
 
     # No ON DELETE CASCADE from push_tokens.staff_id -> staff.id, so this has to be

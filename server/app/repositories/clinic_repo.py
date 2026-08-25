@@ -3,10 +3,13 @@
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.enums import SubscriptionStatus
 from app.models import Clinic
 
 
-def create(db: Session, *, name: str, subscription_status: str = "trial") -> Clinic:
+def create(
+    db: Session, *, name: str, subscription_status: SubscriptionStatus = SubscriptionStatus.TRIAL
+) -> Clinic:
     clinic = Clinic(name=name, subscription_status=subscription_status)
     db.add(clinic)
     db.flush()  # caller needs clinic.id before creating dependent rows

@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field
 
+from app.enums import EffectiveStatus, StaffRole, SubscriptionStatus
+
 
 class AdminOverviewOut(BaseModel):
     clinics: int
@@ -69,7 +71,7 @@ class AdminClinicCreate(BaseModel):
 
 class AdminClinicUpdate(BaseModel):
     name: str | None = None
-    subscription_status: str | None = None
+    subscription_status: SubscriptionStatus | None = None
     # Billing edits (all optional). To assign a plan, send plan_id; to remove it, send
     # clear_plan=true (NOT plan_id=0). Likewise clear_custom_price=true removes the
     # per-clinic override so the plan price applies again.
@@ -82,7 +84,7 @@ class AdminClinicUpdate(BaseModel):
 class AdminClinicOut(BaseModel):
     id: int
     name: str
-    subscription_status: str
+    subscription_status: SubscriptionStatus
     created_at: datetime
 
     class Config:
@@ -97,7 +99,7 @@ class ClinicBilling(BaseModel):
     custom_price_amount: int | None
     currency: str
     paid_until: datetime | None
-    effective_status: str  # trial | active | suspended | overdue
+    effective_status: EffectiveStatus  # trial | active | suspended | overdue
     max_devices: int | None
 
 
@@ -119,14 +121,14 @@ class AdminClinicAdminOut(BaseModel):
     id: int
     email: str
     name: str
-    role: str
+    role: StaffRole
 
 
 class AdminClinicStaffOut(BaseModel):
     id: int
     email: str
     name: str
-    role: str
+    role: StaffRole
     created_at: datetime
 
     class Config:

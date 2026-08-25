@@ -12,7 +12,9 @@ Access rules:
     routing layer, not here.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+
+from app.enums import EffectiveStatus, SubscriptionStatus
 
 
 def _now(now: datetime | None) -> datetime:
@@ -20,7 +22,7 @@ def _now(now: datetime | None) -> datetime:
 
 
 def is_overdue(clinic, now: datetime | None = None) -> bool:
-    if clinic.subscription_status == "trial":
+    if clinic.subscription_status == SubscriptionStatus.TRIAL:
         return False
     if clinic.paid_until is None:
         return False
@@ -29,19 +31,19 @@ def is_overdue(clinic, now: datetime | None = None) -> bool:
 
 def is_blocked(clinic, now: datetime | None = None) -> bool:
     """True == staff requests must be rejected with 402."""
-    if clinic.subscription_status == "suspended":
+    if clinic.subscription_status == SubscriptionStatus.SUSPENDED:
         return True
     return is_overdue(clinic, now)
 
 
-def effective_status(clinic, now: datetime | None = None) -> str:
+def effective_status(clinic, now: datetime | None = None) -> EffectiveStatus:
     """What the superadmin UI shows: manual 'suspended' | 'overdue' (auto) | the raw
     'trial'/'active' status when the clinic is in good standing."""
-    if clinic.subscription_status == "suspended":
-        return "suspended"
+    if clinic.subscription_status == SubscriptionStatus.SUSPENDED:
+        return EffectiveStatus.SUSPENDED
     if is_overdue(clinic, now):
-        return "overdue"
-    return clinic.subscription_status
+        return EffectiveStatus.OVERDUE
+    return EffectiveStatus(clinic.subscription_status.value)
 
 
 def effective_price(clinic, plan_price: int | None) -> int | None:
@@ -62,7 +64,6 @@ def add_months(dt: datetime, months: int) -> datetime:
         next_month_first = dt.replace(year=year + 1, month=1, day=1)
     else:
         next_month_first = dt.replace(year=year, month=month + 1, day=1)
-    from datetime import timedelta
 
     last_day = (next_month_first - timedelta(days=1)).day
     return dt.replace(year=year, month=month, day=min(dt.day, last_day))

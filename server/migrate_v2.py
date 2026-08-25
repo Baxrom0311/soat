@@ -1,3 +1,4 @@
+# Superseded by Alembic (see migrations/). Kept for historical reference only; do not run against production again without checking `alembic current` first.
 """v2 migration for existing databases. `create_all` only creates *missing tables*;
 it never alters an existing one, so every schema change since the original single-tenant
 build has to be applied here by hand. Fully idempotent (IF EXISTS / IF NOT EXISTS

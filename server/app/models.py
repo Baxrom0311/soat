@@ -5,6 +5,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     DateTime,
+    Enum as SAEnum,
     ForeignKey,
     Index,
     Integer,
@@ -15,6 +16,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+from app.enums import CallStatus, StaffRole, SubscriptionStatus
 
 
 class Plan(Base):
@@ -42,7 +44,16 @@ class Clinic(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
-    subscription_status: Mapped[str] = mapped_column(String, nullable=False, default="trial")
+    subscription_status: Mapped[SubscriptionStatus] = mapped_column(
+        SAEnum(
+            SubscriptionStatus,
+            name="subscription_status",
+            native_enum=True,
+            values_callable=lambda enum_cls: [e.value for e in enum_cls],
+        ),
+        nullable=False,
+        default=SubscriptionStatus.TRIAL,
+    )
     # Billing: plan assignment + optional per-clinic price override + paid-through date.
     plan_id: Mapped[int | None] = mapped_column(ForeignKey("plans.id"), nullable=True)
     # NULL == charge the plan's price; set == this clinic's negotiated price instead.
@@ -81,7 +92,15 @@ class Staff(Base):
     clinic_id: Mapped[int | None] = mapped_column(ForeignKey("clinics.id"), nullable=True)
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
     password_hash: Mapped[str] = mapped_column(String, nullable=False)
-    role: Mapped[str] = mapped_column(String, nullable=False)  # "superadmin" | "admin" | "nurse"
+    role: Mapped[StaffRole] = mapped_column(
+        SAEnum(
+            StaffRole,
+            name="staff_role",
+            native_enum=True,
+            values_callable=lambda enum_cls: [e.value for e in enum_cls],
+        ),
+        nullable=False,
+    )
     name: Mapped[str] = mapped_column(String, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -201,7 +220,16 @@ class Call(Base):
     clinic_id: Mapped[int] = mapped_column(ForeignKey("clinics.id"), nullable=False, index=True)
     room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id"), nullable=False, index=True)
     device_id: Mapped[int] = mapped_column(ForeignKey("devices.id"), nullable=False, index=True)
-    status: Mapped[str] = mapped_column(String, nullable=False, default="active")
+    status: Mapped[CallStatus] = mapped_column(
+        SAEnum(
+            CallStatus,
+            name="call_status",
+            native_enum=True,
+            values_callable=lambda enum_cls: [e.value for e in enum_cls],
+        ),
+        nullable=False,
+        default=CallStatus.ACTIVE,
+    )
     # Client-generated idempotency key: the ESP32 retry queue re-sends a press whose
     # response was lost; matching press_id returns the original call instead of a
     # phantom duplicate (unique allows multiple NULLs for clients that don't send it).

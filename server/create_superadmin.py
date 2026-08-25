@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import DATABASE_URL
 from app.core.security import hash_password
+from app.enums import StaffRole
 from app.models import Staff
 
 
@@ -31,7 +32,7 @@ def main() -> None:
     with Session(engine) as db:
         existing = db.scalar(select(Staff).where(Staff.email == args.email))
         if existing is not None:
-            if existing.role != "superadmin":
+            if existing.role != StaffRole.SUPERADMIN:
                 raise SystemExit(
                     f"{args.email} already exists with role {existing.role!r} — refusing to touch it"
                 )
@@ -48,7 +49,7 @@ def main() -> None:
                 clinic_id=None,
                 email=args.email,
                 password_hash=hash_password(args.password),
-                role="superadmin",
+                role=StaffRole.SUPERADMIN,
                 name=args.name,
             )
         )

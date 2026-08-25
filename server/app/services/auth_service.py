@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import CurrentUser
 from app.core.security import create_access_token, hash_password, verify_password
+from app.enums import SubscriptionStatus
 from app.repositories import clinic_repo, staff_repo
 from app.schemas.auth import LoginOut
 
@@ -45,11 +46,11 @@ def login(db: Session, *, email: str, password: str, client_ip: str = "unknown")
     # Suspended clinics can't log in at all; superadmin (clinic_id NULL) is never blocked.
     if staff.clinic_id is not None:
         clinic = clinic_repo.get(db, staff.clinic_id)
-        if clinic is not None and clinic.subscription_status == "suspended":
+        if clinic is not None and clinic.subscription_status == SubscriptionStatus.SUSPENDED:
             raise HTTPException(status_code=403, detail="subscription_suspended")
 
     token = create_access_token(
-        staff_id=staff.id, clinic_id=staff.clinic_id, role=staff.role, email=staff.email, name=staff.name
+        staff_id=staff.id, clinic_id=staff.clinic_id, role=staff.role.value, email=staff.email, name=staff.name
     )
     return LoginOut(access_token=token, role=staff.role, name=staff.name, clinic_id=staff.clinic_id)
 
@@ -61,7 +62,7 @@ def refresh(db: Session, *, user: CurrentUser) -> LoginOut:
     long as she opens the phone app at least once within JWT_EXPIRE_MINUTES."""
     if user.clinic_id is not None:
         clinic = clinic_repo.get(db, user.clinic_id)
-        if clinic is None or clinic.subscription_status == "suspended":
+        if clinic is None or clinic.subscription_status == SubscriptionStatus.SUSPENDED:
             raise HTTPException(status_code=403, detail="subscription_suspended")
 
     token = create_access_token(

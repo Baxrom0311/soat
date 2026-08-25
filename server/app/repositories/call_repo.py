@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from sqlalchemy import func, select, text, update
 from sqlalchemy.orm import Session
 
+from app.enums import CallStatus
 from app.models import Call, Device, Room
 
 
@@ -12,7 +13,7 @@ def create(
     db: Session, clinic_id: int, *, room_id: int, device_id: int, press_id: str | None = None
 ) -> Call:
     call = Call(
-        clinic_id=clinic_id, room_id=room_id, device_id=device_id, status="active", press_id=press_id
+        clinic_id=clinic_id, room_id=room_id, device_id=device_id, status=CallStatus.ACTIVE, press_id=press_id
     )
     db.add(call)
     db.flush()
@@ -40,7 +41,7 @@ def lock_room(db: Session, clinic_id: int, room_id: int) -> None:
 def get_active_by_room(db: Session, clinic_id: int, room_id: int) -> Call | None:
     return db.scalar(
         select(Call)
-        .where(Call.clinic_id == clinic_id, Call.room_id == room_id, Call.status == "active")
+        .where(Call.clinic_id == clinic_id, Call.room_id == room_id, Call.status == CallStatus.ACTIVE)
         .order_by(Call.created_at.desc())
         .limit(1)
     )
@@ -49,7 +50,7 @@ def get_active_by_room(db: Session, clinic_id: int, room_id: int) -> Call | None
 def count_active_by_clinic(db: Session) -> dict[int, int]:
     """One grouped query for the superadmin clinics list (avoids a COUNT per clinic)."""
     rows = db.execute(
-        select(Call.clinic_id, func.count()).where(Call.status == "active").group_by(Call.clinic_id)
+        select(Call.clinic_id, func.count()).where(Call.status == CallStatus.ACTIVE).group_by(Call.clinic_id)
     ).all()
     return {clinic_id: count for clinic_id, count in rows}
 
@@ -58,7 +59,7 @@ def list_active_with_room_by_clinic(db: Session, clinic_id: int) -> list[tuple[C
     rows = db.execute(
         select(Call, Room)
         .join(Room, Call.room_id == Room.id)
-        .where(Call.clinic_id == clinic_id, Call.status == "active")
+        .where(Call.clinic_id == clinic_id, Call.status == CallStatus.ACTIVE)
         .order_by(Call.created_at.asc())
     ).all()
     return [(call, room) for call, room in rows]
@@ -85,9 +86,9 @@ def acknowledge_if_active(db: Session, clinic_id: int, call_id: int, *, acknowle
     depends on every future caller remembering to check tenancy before this write."""
     result = db.execute(
         update(Call)
-        .where(Call.id == call_id, Call.clinic_id == clinic_id, Call.status == "active")
+        .where(Call.id == call_id, Call.clinic_id == clinic_id, Call.status == CallStatus.ACTIVE)
         .values(
-            status="acknowledged",
+            status=CallStatus.ACKNOWLEDGED,
             acknowledged_at=datetime.now(timezone.utc),
             acknowledged_by=acknowledged_by,
         )

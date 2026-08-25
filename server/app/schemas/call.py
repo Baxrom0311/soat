@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from app.enums import CallStatus
+
 
 class CallCreate(BaseModel):
     ev1527_code: int
@@ -23,14 +25,14 @@ class ActiveCallOut(BaseModel):
     room_number: str
     floor: int
     created_at: datetime
-    status: str
+    status: CallStatus
 
 
 class HistoryCallOut(BaseModel):
     call_id: int
     room_number: str
     floor: int
-    status: str
+    status: CallStatus
     device_id: str
     created_at: datetime
     acknowledged_at: datetime | None
@@ -43,5 +45,5 @@ class AckIn(BaseModel):
 
 class AckOut(BaseModel):
     call_id: int
-    status: str
+    status: CallStatus
     acknowledged_at: datetime

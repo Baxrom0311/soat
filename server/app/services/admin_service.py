@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.core import billing
 from app.core.deps import CurrentUser
+from app.enums import StaffRole, SubscriptionStatus
 from app.models import Clinic, Device, Payment, Plan, Staff
 from app.repositories import (
     audit_repo,
@@ -34,8 +35,6 @@ from app.schemas.admin import (
 )
 from app.core.security import hash_password
 from app.services import audit_service, device_service, staff_service
-
-VALID_SUBSCRIPTION_STATUSES = ("trial", "active", "suspended")
 
 
 def overview(db: Session) -> AdminOverviewOut:
@@ -245,7 +244,7 @@ def update_clinic(
     clinic_id: int,
     *,
     name: str | None,
-    subscription_status: str | None,
+    subscription_status: SubscriptionStatus | None,
     plan_id: int | None,
     clear_plan: bool,
     custom_price_amount: int | None,
@@ -256,10 +255,6 @@ def update_clinic(
     clinic = clinic_repo.get(db, clinic_id)
     if clinic is None:
         raise HTTPException(status_code=404, detail="Clinic not found")
-    if subscription_status is not None and subscription_status not in VALID_SUBSCRIPTION_STATUSES:
-        raise HTTPException(
-            status_code=422, detail="subscription_status must be one of trial|active|suspended"
-        )
     before = {
         "name": clinic.name,
         "subscription_status": clinic.subscription_status,
@@ -311,10 +306,10 @@ def create_clinic_admin(
     if clinic_repo.get(db, clinic_id) is None:
         raise HTTPException(status_code=404, detail="Clinic not found")
     # staff_service handles the duplicate-email 409 and password hashing
-    staff = staff_service.create_staff(db, clinic_id, email=email, password=password, role="admin", name=name)
+    staff = staff_service.create_staff(db, clinic_id, email=email, password=password, role=StaffRole.ADMIN, name=name)
     audit_service.record(
         db, actor, action="staff.created", target_type="staff", target_id=staff.id,
-        after={"email": email, "name": name, "role": "admin", "clinic_id": clinic_id},
+        after={"email": email, "name": name, "role": StaffRole.ADMIN.value, "clinic_id": clinic_id},
         ip_address=ip_address,
     )
     db.commit()
@@ -368,8 +363,8 @@ def record_payment(
     clinic.paid_until = new_paid_until
     # First payment activates a trial. A deliberate manual 'suspended' is left untouched
     # (only a manual reactivation clears it); an 'active' clinic stays active.
-    if clinic.subscription_status == "trial":
-        clinic.subscription_status = "active"
+    if clinic.subscription_status == SubscriptionStatus.TRIAL:
+        clinic.subscription_status = SubscriptionStatus.ACTIVE
 
     payment = payment_repo.create(
         db,

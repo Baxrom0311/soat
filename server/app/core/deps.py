@@ -8,6 +8,7 @@ import jwt
 from app.core import billing
 from app.core.security import decode_token
 from app.database import SessionLocal
+from app.enums import StaffRole
 from app.repositories import clinic_repo
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -31,10 +32,15 @@ class CurrentUser:
 
 
 def _user_from_payload(payload: dict) -> CurrentUser:
+    try:
+        role = StaffRole(payload["role"]).value
+        staff_id = int(payload["sub"])
+    except (KeyError, ValueError):
+        raise HTTPException(status_code=401, detail="invalid token")
     return CurrentUser(
-        staff_id=int(payload["sub"]),
+        staff_id=staff_id,
         clinic_id=payload.get("clinic_id"),  # null for superadmin tokens
-        role=payload["role"],
+        role=role,
         email=payload.get("email", ""),
         name=payload.get("name", ""),
     )
@@ -75,13 +81,13 @@ def get_clinic_user(
 
 
 def require_admin(user: CurrentUser = Depends(get_clinic_user)) -> CurrentUser:
-    if user.role != "admin":
+    if user.role != StaffRole.ADMIN.value:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin role required")
     return user
 
 
 def require_superadmin(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
-    if user.role != "superadmin":
+    if user.role != StaffRole.SUPERADMIN.value:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Superadmin role required"
         )
