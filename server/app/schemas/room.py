@@ -6,6 +6,11 @@ class RoomCreate(BaseModel):
     floor: int
 
 
+class RoomUpdate(BaseModel):
+    room_number: str | None = None
+    floor: int | None = None
+
+
 class RoomOut(BaseModel):
     id: int
     room_number: str

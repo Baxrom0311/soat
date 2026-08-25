@@ -12,6 +12,12 @@ export function RoomsTab() {
   const [loadError, setLoadError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editRoomNumber, setEditRoomNumber] = useState('');
+  const [editFloor, setEditFloor] = useState('');
+  const [editError, setEditError] = useState('');
+  const [editBusy, setEditBusy] = useState(false);
+
   async function load() {
     setLoadError('');
     try {
@@ -38,6 +44,27 @@ export function RoomsTab() {
       setError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function startEdit(r: Room) {
+    setEditingId(r.id);
+    setEditRoomNumber(r.room_number);
+    setEditFloor(String(r.floor));
+    setEditError('');
+  }
+
+  async function saveEdit(roomId: number) {
+    setEditError('');
+    setEditBusy(true);
+    try {
+      await api.updateRoom(roomId, { room_number: editRoomNumber, floor: Number(editFloor) });
+      setEditingId(null);
+      await load();
+    } catch (err) {
+      setEditError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
+    } finally {
+      setEditBusy(false);
     }
   }
 
@@ -89,15 +116,64 @@ export function RoomsTab() {
               <tr>
                 <th>Xona</th>
                 <th>Qavat</th>
+                <th>Amallar</th>
               </tr>
             </thead>
             <tbody>
-              {rooms.map((r) => (
-                <tr key={r.id}>
-                  <td>{r.room_number}</td>
-                  <td>{r.floor}</td>
-                </tr>
-              ))}
+              {rooms.map((r) =>
+                editingId === r.id ? (
+                  <tr key={r.id}>
+                    <td>
+                      <input
+                        type="text"
+                        className="table-input"
+                        value={editRoomNumber}
+                        onChange={(e) => setEditRoomNumber(e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        className="table-input"
+                        min={0}
+                        step={1}
+                        value={editFloor}
+                        onChange={(e) => setEditFloor(e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <div className="row-actions">
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => saveEdit(r.id)}
+                          disabled={editBusy}
+                          type="button"
+                        >
+                          Saqlash
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => setEditingId(null)}
+                          type="button"
+                        >
+                          Bekor
+                        </button>
+                      </div>
+                      {editError && <p className="form-error">{editError}</p>}
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={r.id}>
+                    <td>{r.room_number}</td>
+                    <td>{r.floor}</td>
+                    <td>
+                      <button className="btn btn-ghost btn-sm" onClick={() => startEdit(r)} type="button">
+                        Tahrirlash
+                      </button>
+                    </td>
+                  </tr>
+                )
+              )}
             </tbody>
           </table>
         </div>
