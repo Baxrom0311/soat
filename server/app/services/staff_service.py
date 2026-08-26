@@ -5,14 +5,16 @@ from sqlalchemy.orm import Session
 from app.core.security import hash_password
 from app.enums import StaffRole
 from app.models import Staff
-from app.repositories import push_token_repo, staff_repo
+from app.repositories import push_token_repo, staff_floor_repo, staff_repo
 
 
 def list_staff(db: Session, clinic_id: int) -> list[Staff]:
     return staff_repo.list_by_clinic(db, clinic_id)
 
 
-def create_staff(db: Session, clinic_id: int, *, email: str, password: str, role: str, name: str) -> Staff:
+def create_staff(
+    db: Session, clinic_id: int, *, email: str, password: str, role: str, name: str, floors: list[int] | None = None
+) -> Staff:
     if role not in (StaffRole.ADMIN, StaffRole.NURSE):
         raise HTTPException(status_code=422, detail="role must be 'admin' or 'nurse'")
     if staff_repo.get_by_email(db, email):
@@ -24,6 +26,7 @@ def create_staff(db: Session, clinic_id: int, *, email: str, password: str, role
         staff = staff_repo.create(
             db, clinic_id=clinic_id, email=email, password_hash=hash_password(password), role=role, name=name
         )
+        staff_floor_repo.set_floors(db, staff.id, floors or [])
         db.commit()
     except IntegrityError:
         db.rollback()
@@ -41,6 +44,7 @@ def update_staff(
     email: str | None,
     role: str | None,
     password: str | None,
+    floors: list[int] | None = None,
 ) -> Staff:
     staff = staff_repo.get(db, clinic_id, staff_id)
     if staff is None:
@@ -65,6 +69,8 @@ def update_staff(
         if len(password) < 8:
             raise HTTPException(status_code=422, detail="Password must be at least 8 characters")
         staff.password_hash = hash_password(password)
+    if floors is not None:
+        staff_floor_repo.set_floors(db, staff.id, floors)
 
     try:
         db.commit()

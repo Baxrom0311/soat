@@ -112,6 +112,37 @@ class Staff(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
+    floor_assignments: Mapped[list["StaffFloorAssignment"]] = relationship(
+        back_populates="staff",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="StaffFloorAssignment.floor",
+    )
+
+    @property
+    def floors(self) -> list[int]:
+        """Empty == unrestricted: this nurse sees/gets notified of every floor's calls
+        until an admin assigns at least one (the safe default -- a freshly created or
+        not-yet-configured nurse must never silently stop receiving calls)."""
+        return [fa.floor for fa in self.floor_assignments]
+
+
+class StaffFloorAssignment(Base):
+    """Which floor(s) a nurse is responsible for. A staff row with zero rows here is
+    unrestricted (see Staff.floors); admin/superadmin rows are never floor-restricted
+    regardless of what's stored here."""
+
+    __tablename__ = "staff_floor_assignments"
+    __table_args__ = (
+        UniqueConstraint("staff_id", "floor", name="uq_staff_floor_assignments_staff_floor"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    staff_id: Mapped[int] = mapped_column(ForeignKey("staff.id", ondelete="CASCADE"), nullable=False, index=True)
+    floor: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    staff: Mapped["Staff"] = relationship(back_populates="floor_assignments")
+
 
 class Room(Base):
     __tablename__ = "rooms"

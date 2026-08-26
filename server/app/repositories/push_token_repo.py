@@ -10,11 +10,26 @@ from sqlalchemy import delete as sa_delete, select
 from sqlalchemy.orm import Session
 
 from app.models import PushToken
+from app.repositories import staff_floor_repo
 
 
 def list_by_clinic(db: Session, clinic_id: int) -> list[PushToken]:
     return list(
         db.scalars(select(PushToken).where(PushToken.clinic_id == clinic_id).order_by(PushToken.id)).all()
+    )
+
+
+def list_by_clinic_for_floor(db: Session, clinic_id: int, floor: int) -> list[PushToken]:
+    """Same as list_by_clinic but scoped to staff who should be notified about this
+    floor -- admins, nurses with no floor assignments (unrestricted), and nurses
+    assigned to this exact floor. See staff_floor_repo.visible_staff_ids_for_floor."""
+    visible_staff_ids = staff_floor_repo.visible_staff_ids_for_floor(db, clinic_id, floor)
+    return list(
+        db.scalars(
+            select(PushToken)
+            .where(PushToken.clinic_id == clinic_id, PushToken.staff_id.in_(visible_staff_ids))
+            .order_by(PushToken.id)
+        ).all()
     )
 
 

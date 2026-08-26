@@ -32,7 +32,7 @@ def send_new_call_notifications(clinic_id: int, *, call_id: int, room_number: st
     """
     db: Session = SessionLocal()
     try:
-        tokens = push_token_repo.list_by_clinic(db, clinic_id)
+        tokens = push_token_repo.list_by_clinic_for_floor(db, clinic_id, floor)
         if not tokens:
             logger.info("No push tokens registered for clinic_id=%s, skipping push", clinic_id)
             return

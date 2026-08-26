@@ -133,11 +133,11 @@ export const api = {
   getClinic: () => request<Clinic>('/api/v1/clinic/me'),
 
   getStaff: () => request<Staff[]>('/api/v1/staff'),
-  createStaff: (input: { email: string; password: string; role: string; name: string }) =>
+  createStaff: (input: { email: string; password: string; role: string; name: string; floors: number[] }) =>
     request<Staff>('/api/v1/staff', { method: 'POST', body: JSON.stringify(input) }),
   updateStaff: (
     staffId: number,
-    input: Partial<{ name: string; email: string; role: string; password: string }>
+    input: Partial<{ name: string; email: string; role: string; password: string; floors: number[] }>
   ) => request<Staff>(`/api/v1/staff/${staffId}`, { method: 'PATCH', body: JSON.stringify(input) }),
   deleteStaff: (staffId: number) => request<void>(`/api/v1/staff/${staffId}`, { method: 'DELETE' }),
 

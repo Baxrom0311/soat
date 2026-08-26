@@ -34,7 +34,7 @@ async def create_call(
 
 @router.get("/active", response_model=list[ActiveCallOut])
 def list_active_calls(user: CurrentUser = Depends(get_clinic_user), db: Session = Depends(get_db)):
-    return call_service.list_active_calls(db, user.clinic_id)
+    return call_service.list_active_calls(db, user.clinic_id, staff_id=user.staff_id, role=user.role)
 
 
 @router.get("/history", response_model=list[HistoryCallOut])
@@ -43,7 +43,7 @@ def call_history(
     user: CurrentUser = Depends(get_clinic_user),
     db: Session = Depends(get_db),
 ):
-    return call_service.call_history(db, user.clinic_id, limit=limit)
+    return call_service.call_history(db, user.clinic_id, limit=limit, staff_id=user.staff_id, role=user.role)
 
 
 @router.post("/{call_id}/ack", response_model=AckOut)

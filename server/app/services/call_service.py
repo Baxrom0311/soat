@@ -30,7 +30,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import CALL_INGEST_RATE_LIMIT_MAX, CALL_INGEST_RATE_LIMIT_WINDOW_SECONDS
 from app.core.rate_limit import SlidingWindowLimiter
-from app.repositories import button_repo, call_repo, device_repo, unassigned_repo
+from app.repositories import button_repo, call_repo, device_repo, staff_floor_repo, unassigned_repo
 from app.schemas.call import ActiveCallOut, AckOut, CallCreateOut, HistoryCallOut
 from app.services import push_service
 from app.services.device_service import authenticate_device
@@ -166,7 +166,11 @@ async def create_call_from_device(
     if event is not None:
         # Fire-and-forget: a slow/stuck dashboard socket must never delay the
         # HTTP response to the ESP32 device that's waiting on this call to post.
-        asyncio.create_task(manager.broadcast(clinic_id, event))
+        # floor=None for unassigned_signal events -- those have no room/floor yet
+        # and stay clinic-wide; new_call carries its room's floor so per-connection
+        # floor filtering (registered at ws connect time) applies to it.
+        floor = event["call"]["floor"] if event["type"] == "new_call" else None
+        asyncio.create_task(manager.broadcast(clinic_id, event, floor=floor))
     if out is None:
         raise HTTPException(status_code=404, detail="Unknown code")
     if push_args is not None and background_tasks is not None:
@@ -176,8 +180,11 @@ async def create_call_from_device(
     return out
 
 
-def list_active_calls(db: Session, clinic_id: int) -> list[ActiveCallOut]:
+def list_active_calls(db: Session, clinic_id: int, *, staff_id: int, role: str) -> list[ActiveCallOut]:
     rows = call_repo.list_active_with_room_by_clinic(db, clinic_id)
+    visible_floors = staff_floor_repo.get_visible_floors(db, staff_id, role)
+    if visible_floors is not None:
+        rows = [(call, room) for call, room in rows if room.floor in visible_floors]
     return [
         ActiveCallOut(
             call_id=call.id, room_number=room.room_number, floor=room.floor, created_at=call.created_at, status=call.status
@@ -186,8 +193,11 @@ def list_active_calls(db: Session, clinic_id: int) -> list[ActiveCallOut]:
     ]
 
 
-def call_history(db: Session, clinic_id: int, *, limit: int) -> list[HistoryCallOut]:
-    rows = call_repo.list_history_with_room_device_by_clinic(db, clinic_id, limit=limit)
+def call_history(db: Session, clinic_id: int, *, limit: int, staff_id: int, role: str) -> list[HistoryCallOut]:
+    visible_floors = staff_floor_repo.get_visible_floors(db, staff_id, role)
+    rows = call_repo.list_history_with_room_device_by_clinic(
+        db, clinic_id, limit=limit, floors=visible_floors
+    )
     return [
         HistoryCallOut(
             call_id=call.id,

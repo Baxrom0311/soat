@@ -3,7 +3,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from app.core import billing
 from app.core.deps import get_current_user_ws
 from app.database import SessionLocal
-from app.repositories import clinic_repo
+from app.repositories import clinic_repo, staff_floor_repo
 from app.ws_manager import manager
 
 router = APIRouter()
@@ -28,13 +28,14 @@ async def ws_calls(websocket: WebSocket, token: str | None = None):
     try:
         clinic = clinic_repo.get(db, user.clinic_id)
         blocked = clinic is None or billing.is_blocked(clinic)
+        floors = staff_floor_repo.get_visible_floors(db, user.staff_id, user.role) or []
     finally:
         db.close()
     if blocked:
         await websocket.close(code=4402)  # custom close code: subscription blocked
         return
 
-    manager.register(websocket, user.clinic_id)
+    manager.register(websocket, user.clinic_id, role=user.role, floors=floors)
     try:
         while True:
             # Dashboard doesn't send anything meaningful; just keep the socket alive.

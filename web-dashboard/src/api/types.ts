@@ -73,6 +73,8 @@ export interface Staff {
   name: string;
   email: string;
   role: StaffRole;
+  // Empty == unrestricted (sees/notified of every floor).
+  floors: number[];
 }
 
 export interface Room {

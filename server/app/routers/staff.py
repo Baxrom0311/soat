@@ -20,7 +20,13 @@ def create_staff(
     db: Session = Depends(get_db),
 ):
     return staff_service.create_staff(
-        db, user.clinic_id, email=body.email, password=body.password, role=body.role, name=body.name
+        db,
+        user.clinic_id,
+        email=body.email,
+        password=body.password,
+        role=body.role,
+        name=body.name,
+        floors=body.floors,
     )
 
 
@@ -32,7 +38,14 @@ def update_staff(
     db: Session = Depends(get_db),
 ):
     return staff_service.update_staff(
-        db, user.clinic_id, staff_id, name=body.name, email=body.email, role=body.role, password=body.password
+        db,
+        user.clinic_id,
+        staff_id,
+        name=body.name,
+        email=body.email,
+        role=body.role,
+        password=body.password,
+        floors=body.floors,
     )
 
 

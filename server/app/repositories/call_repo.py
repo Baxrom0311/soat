@@ -66,16 +66,20 @@ def list_active_with_room_by_clinic(db: Session, clinic_id: int) -> list[tuple[C
 
 
 def list_history_with_room_device_by_clinic(
-    db: Session, clinic_id: int, *, limit: int
+    db: Session, clinic_id: int, *, limit: int, floors: list[int] | None = None
 ) -> list[tuple[Call, Room, Device]]:
-    rows = db.execute(
+    # floors filter must apply BEFORE the LIMIT (in SQL, not in Python after fetching):
+    # otherwise a floor-restricted nurse's most recent floor calls could sit past the
+    # clinic-wide top-`limit` rows and never show up at all.
+    query = (
         select(Call, Room, Device)
         .join(Room, Call.room_id == Room.id)
         .join(Device, Call.device_id == Device.id)
         .where(Call.clinic_id == clinic_id)
-        .order_by(Call.created_at.desc())
-        .limit(limit)
-    ).all()
+    )
+    if floors is not None:
+        query = query.where(Room.floor.in_(floors))
+    rows = db.execute(query.order_by(Call.created_at.desc()).limit(limit)).all()
     return [(call, room, device) for call, room, device in rows]
 
 

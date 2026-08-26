@@ -5,6 +5,19 @@ import { useAuth } from '../../context/AuthContext';
 import type { Staff, StaffRole } from '../../api/types';
 import { PlusIcon } from '../Icons';
 
+function parseFloors(text: string): number[] {
+  const seen = new Set<number>();
+  for (const part of text.split(/[,\s]+/)) {
+    const n = Number.parseInt(part, 10);
+    if (!Number.isNaN(n)) seen.add(n);
+  }
+  return Array.from(seen).sort((a, b) => a - b);
+}
+
+function formatFloors(floors: number[]): string {
+  return floors.length ? floors.join(', ') : 'Barchasi';
+}
+
 export function StaffTab() {
   const { session } = useAuth();
   const isAdmin = session?.role === 'admin';
@@ -14,6 +27,7 @@ export function StaffTab() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<StaffRole>('nurse');
+  const [floorsInput, setFloorsInput] = useState('');
   const [error, setError] = useState('');
   const [loadError, setLoadError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -23,6 +37,7 @@ export function StaffTab() {
   const [editEmail, setEditEmail] = useState('');
   const [editRole, setEditRole] = useState<StaffRole>('nurse');
   const [editPassword, setEditPassword] = useState('');
+  const [editFloorsInput, setEditFloorsInput] = useState('');
   const [editError, setEditError] = useState('');
   const [editBusy, setEditBusy] = useState(false);
   const [rowError, setRowError] = useState('');
@@ -45,11 +60,12 @@ export function StaffTab() {
     setError('');
     setSubmitting(true);
     try {
-      await api.createStaff({ name, email, password, role });
+      await api.createStaff({ name, email, password, role, floors: parseFloors(floorsInput) });
       setName('');
       setEmail('');
       setPassword('');
       setRole('nurse');
+      setFloorsInput('');
       await load();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
@@ -64,6 +80,7 @@ export function StaffTab() {
     setEditEmail(s.email);
     setEditRole(s.role);
     setEditPassword('');
+    setEditFloorsInput(s.floors.join(', '));
     setEditError('');
   }
 
@@ -75,6 +92,7 @@ export function StaffTab() {
         name: editName,
         email: editEmail,
         role: editRole,
+        floors: parseFloors(editFloorsInput),
         ...(editPassword ? { password: editPassword } : {}),
       });
       setEditingId(null);
@@ -128,6 +146,12 @@ export function StaffTab() {
               <option value="nurse">Hamshira</option>
               <option value="admin">Admin</option>
             </select>
+            <input
+              type="text"
+              placeholder="Qavat (masalan: 1, 2 — bo'sh = barchasi)"
+              value={floorsInput}
+              onChange={(e) => setFloorsInput(e.target.value)}
+            />
             <button type="submit" className="btn btn-primary" disabled={submitting}>
               {submitting ? '...' : "Qo'shish"}
             </button>
@@ -153,6 +177,7 @@ export function StaffTab() {
                 <th>Ism</th>
                 <th>Email</th>
                 <th>Rol</th>
+                <th>Qavat</th>
                 {isAdmin && <th>Amallar</th>}
               </tr>
             </thead>
@@ -185,6 +210,15 @@ export function StaffTab() {
                         <option value="nurse">Hamshira</option>
                         <option value="admin">Admin</option>
                       </select>
+                    </td>
+                    <td data-label="Qavat">
+                      <input
+                        type="text"
+                        className="table-input"
+                        placeholder="masalan: 1, 2"
+                        value={editFloorsInput}
+                        onChange={(e) => setEditFloorsInput(e.target.value)}
+                      />
                     </td>
                     <td data-label="Amallar">
                       <input
@@ -221,6 +255,7 @@ export function StaffTab() {
                     <td data-label="Rol">
                       <span className="role-pill">{s.role}</span>
                     </td>
+                    <td data-label="Qavat">{formatFloors(s.floors)}</td>
                     {isAdmin && (
                       <td data-label="Amallar">
                         <div className="row-actions">
