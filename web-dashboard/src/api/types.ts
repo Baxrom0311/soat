@@ -211,6 +211,18 @@ export interface WsUnassignedSignal {
   seen_count: number;
 }
 
+/** A submission from the public landing-page contact form (superadmin-only view). */
+export interface ContactRequest {
+  id: number;
+  name: string;
+  phone: string;
+  clinic_name: string | null;
+  message: string | null;
+  source_ip: string | null;
+  handled: boolean;
+  created_at: string;
+}
+
 export type WsMessage =
   | { type: 'new_call'; call: ActiveCall }
   | { type: 'ack'; call_id: number }

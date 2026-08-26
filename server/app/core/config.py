@@ -44,6 +44,14 @@ DISCOVERED_DEVICE_ONLINE_WINDOW_SECONDS = int(os.getenv("DISCOVERED_DEVICE_ONLIN
 ANNOUNCE_RATE_LIMIT_MAX = int(os.getenv("ANNOUNCE_RATE_LIMIT_MAX", "20"))
 ANNOUNCE_RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("ANNOUNCE_RATE_LIMIT_WINDOW_SECONDS", "60"))
 
+# Public landing-page lead capture (POST /api/v1/contact-requests). Unauthenticated,
+# so it's rate-limited per IP -- deliberately far tighter than /announce: a real human
+# filling in a call-back form has no reason to submit more than a handful an hour.
+CONTACT_REQUEST_RATE_LIMIT_MAX = int(os.getenv("CONTACT_REQUEST_RATE_LIMIT_MAX", "5"))
+CONTACT_REQUEST_RATE_LIMIT_WINDOW_SECONDS = int(
+    os.getenv("CONTACT_REQUEST_RATE_LIMIT_WINDOW_SECONDS", "3600")
+)
+
 # Per-clinic ceiling on call ingestion (POST /api/v1/calls), keyed by clinic_id once
 # the posting device's key has authenticated it -- a single clinic's misbehaving/
 # spoofed device (or a buggy retry loop) can only burn through its OWN budget, never

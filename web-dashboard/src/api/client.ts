@@ -12,6 +12,7 @@ import type {
   ClaimDeviceInput,
   ClaimDeviceResponse,
   Clinic,
+  ContactRequest,
   Device,
   DeviceCreateResponse,
   DiscoveredDevice,
@@ -257,6 +258,11 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(input),
     }),
+
+  // ---- Contact requests (landing sahifadagi so'rovlar) ----
+  getContactRequests: () => request<ContactRequest[]>('/api/v1/contact-requests?limit=100'),
+  markContactRequestHandled: (id: number) =>
+    request<ContactRequest>(`/api/v1/contact-requests/${id}/handled`, { method: 'POST' }),
 
   getDiscoveredDevices: () => request<DiscoveredDevice[]>('/api/v1/admin/discovered-devices'),
   claimDiscoveredDevice: (chipId: string, input: ClaimDeviceInput) =>

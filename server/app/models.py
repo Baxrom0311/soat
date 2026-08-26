@@ -281,6 +281,26 @@ class Call(Base):
     room: Mapped["Room"] = relationship()
 
 
+class ContactRequest(Base):
+    """Lead capture from the public marketing landing page. Not scoped to a clinic --
+    the person filling it in is a prospective customer who has no account yet."""
+
+    __tablename__ = "contact_requests"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    phone: Mapped[str] = mapped_column(String, nullable=False)
+    clinic_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    message: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Kept for abuse triage only (the submitting endpoint is unauthenticated), never
+    # shown to the person who submitted the form.
+    source_ip: Mapped[str | None] = mapped_column(String, nullable=True)
+    handled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
+    )
+
+
 class AuditLog(Base):
     """Append-only record of every superadmin/admin write action. Actor identity is
     snapshotted (name/email/role) in addition to the FK so the log stays readable even

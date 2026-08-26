@@ -1,20 +1,22 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ChangePasswordModal } from './ChangePasswordModal';
-import { ClinicIcon, DevicesIcon, OverviewIcon, PlanIcon } from './Icons';
+import { ClinicIcon, DevicesIcon, InboxIcon, OverviewIcon, PlanIcon } from './Icons';
 import { MobileTopbar, Sidebar } from './Sidebar';
 import { AdminClinicsTab } from './admin/AdminClinicsTab';
 import { AdminDevicesTab } from './admin/AdminDevicesTab';
 import { AdminOverviewTab } from './admin/AdminOverviewTab';
 import { AdminPlansTab } from './admin/AdminPlansTab';
+import { ContactRequestsTab } from './admin/ContactRequestsTab';
 
-type TabKey = 'overview' | 'clinics' | 'plans' | 'devices';
+type TabKey = 'overview' | 'clinics' | 'plans' | 'devices' | 'requests';
 
 const NAV_ITEMS: { key: TabKey; label: string; Icon: typeof OverviewIcon }[] = [
   { key: 'overview', label: 'Umumiy', Icon: OverviewIcon },
   { key: 'clinics', label: 'Klinikalar', Icon: ClinicIcon },
   { key: 'plans', label: 'Tariflar', Icon: PlanIcon },
   { key: 'devices', label: 'Qurilmalar', Icon: DevicesIcon },
+  { key: 'requests', label: "So'rovlar", Icon: InboxIcon },
 ];
 
 /** Superadmin shell: no clinic WS feed — all data comes from the /admin REST endpoints. */
@@ -63,6 +65,7 @@ export function SuperAdminLayout() {
           {tab === 'clinics' && <AdminClinicsTab />}
           {tab === 'plans' && <AdminPlansTab />}
           {tab === 'devices' && <AdminDevicesTab />}
+          {tab === 'requests' && <ContactRequestsTab />}
         </main>
       </div>
     </div>

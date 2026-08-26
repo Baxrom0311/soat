@@ -4,54 +4,72 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NurseCall — bemor chaqiruvi hamshira bilagiga soniyalarda yetadi</title>
-<meta name="description" content="SOS tugmadan hamshiraning soatigacha simsiz yo'l. Har chaqiruv qayd etiladi, har klinika o'z ma'lumotiga ega. Bepul ro'yxatdan o'ting." />
+<meta name="description" content="Xonadagi simsiz SOS tugmadan hamshiraning soatigacha. Har chaqiruv vaqti bilan qayd etiladi. Klinikangiz uchun bepul konsultatsiya va o'rnatish — bog'laning." />
+<link rel="canonical" href="https://nurcecall.boos.uz/" />
+<meta property="og:title" content="NurseCall — bemor chaqiruvi hamshira bilagiga soniyalarda yetadi" />
+<meta property="og:description" content="Xonadagi simsiz SOS tugmadan hamshiraning soatigacha. Har chaqiruv qayd etiladi. Bepul konsultatsiya uchun bog'laning." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://nurcecall.boos.uz/" />
+<meta property="og:site_name" content="NurseCall" />
+<meta property="og:locale" content="uz_UZ" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="NurseCall — hamshira chaqiruv tizimi" />
+<meta name="twitter:description" content="Simsiz SOS tugmadan hamshiraning soatigacha. Har chaqiruv qayd etiladi." />
 <link rel="icon" href="data:," />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <script>
+  /* Day theme is the baseline; night is opt-in via the toggle only. We deliberately do
+     NOT read prefers-color-scheme -- a visitor's OS being in dark mode shouldn't decide
+     how a product page for clinic owners looks. */
   (function () {
     try {
       var saved = localStorage.getItem('theme');
-      var theme = saved === 'light' || saved === 'dark'
-        ? saved
-        : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-      document.documentElement.setAttribute('data-theme', theme);
-    } catch (e) {}
+      document.documentElement.setAttribute('data-theme', saved === 'dark' ? 'dark' : 'light');
+    } catch (e) {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
   })();
 </script>
 <style>
-  /* ================= THEME TOKENS ================= */
+  /* ================= THEME TOKENS (Sneat purple/indigo, shared with the dashboard) ================= */
   :root {
-    --bg-0: #eef3fa;
-    --bg-1: #e6edf7;
-    --bg-2: #dfe9f5;
-    --blob-a: rgba(37, 99, 235, 0.16);
-    --blob-b: rgba(13, 148, 136, 0.13);
-    --blob-c: rgba(96, 165, 250, 0.14);
+    --bg-0: #f5f5f9;
+    --bg-1: #ffffff;
+    --bg-2: #eeedf3;
 
-    --surface: rgba(255, 255, 255, 0.66);
-    --surface-strong: rgba(255, 255, 255, 0.86);
-    --surface-soft: rgba(255, 255, 255, 0.42);
-    --border: rgba(23, 50, 84, 0.13);
-    --border-strong: rgba(23, 50, 84, 0.24);
-    --grid-line: rgba(23, 50, 84, 0.09);
+    --surface: #ffffff;
+    --surface-strong: #ffffff;
+    --surface-soft: #fafafb;
+    --border: rgba(50, 49, 64, 0.1);
+    --border-strong: rgba(50, 49, 64, 0.18);
 
-    --text-1: #0c1e33;
-    --text-2: #3e5872;
-    --text-3: #7488a2;
+    --text-1: #32324b;
+    --text-2: #4a4a68;
+    --text-3: #a1acb8;
 
-    --accent: #1d5fe0;
+    --accent: #696cff;
+    --accent-hover: #5f61e6;
     --accent-ink: #ffffff;
-    --accent-soft: rgba(29, 95, 224, 0.12);
-    --accent-2: #0c8f83;
-    --accent-2-soft: rgba(12, 143, 131, 0.14);
-    --warn: #d9463a;
-    --warn-soft: rgba(217, 70, 58, 0.12);
+    --accent-soft: rgba(105, 108, 255, 0.16);
+    --accent-2: #03c3ec;
+    --accent-2-soft: rgba(3, 195, 236, 0.16);
 
-    --shadow-lg: 0 30px 70px -30px rgba(16, 38, 68, 0.28);
-    --shadow-md: 0 16px 36px -18px rgba(16, 38, 68, 0.24);
-    --shadow-sm: 0 6px 16px -8px rgba(16, 38, 68, 0.2);
+    --warn: #ff3e1d;
+    --warn-soft: rgba(255, 62, 29, 0.16);
+    --ok: #71dd37;
+    --ok-soft: rgba(113, 221, 55, 0.16);
+    --caution: #ffab00;
+    --caution-soft: rgba(255, 171, 0, 0.16);
+
+    --shadow-lg: 0 8px 24px -4px rgba(50, 49, 64, 0.1);
+    --shadow-md: 0 4px 14px -4px rgba(50, 49, 64, 0.09);
+    --shadow-sm: 0 2px 6px 0 rgba(50, 49, 64, 0.06);
+
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
 
     --font-display: "Sora", sans-serif;
     --font-body: "Inter", sans-serif;
@@ -60,71 +78,39 @@
     color-scheme: light;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg-0: #060b15;
-      --bg-1: #0a1220;
-      --bg-2: #0d1729;
-      --blob-a: rgba(59, 130, 246, 0.24);
-      --blob-b: rgba(20, 184, 166, 0.16);
-      --blob-c: rgba(99, 179, 237, 0.14);
-
-      --surface: rgba(16, 25, 42, 0.6);
-      --surface-strong: rgba(20, 31, 51, 0.82);
-      --surface-soft: rgba(16, 25, 42, 0.36);
-      --border: rgba(158, 190, 227, 0.14);
-      --border-strong: rgba(158, 190, 227, 0.26);
-      --grid-line: rgba(158, 190, 227, 0.09);
-
-      --text-1: #eef4fc;
-      --text-2: #a7bcd8;
-      --text-3: #6c83a2;
-
-      --accent: #5b9bff;
-      --accent-ink: #04101f;
-      --accent-soft: rgba(91, 155, 255, 0.16);
-      --accent-2: #2fd6c4;
-      --accent-2-soft: rgba(47, 214, 196, 0.14);
-      --warn: #ff7466;
-      --warn-soft: rgba(255, 116, 102, 0.16);
-
-      --shadow-lg: 0 30px 80px -28px rgba(0, 0, 0, 0.6);
-      --shadow-md: 0 18px 44px -20px rgba(0, 0, 0, 0.55);
-      --shadow-sm: 0 8px 20px -10px rgba(0, 0, 0, 0.5);
-      color-scheme: dark;
-    }
-  }
-
   :root[data-theme="dark"] {
-    --bg-0: #060b15;
-    --bg-1: #0a1220;
-    --bg-2: #0d1729;
-    --blob-a: rgba(59, 130, 246, 0.24);
-    --blob-b: rgba(20, 184, 166, 0.16);
-    --blob-c: rgba(99, 179, 237, 0.14);
+    --bg-0: #26233a;
+    --bg-1: #2b2843;
+    --bg-2: #302d4d;
 
-    --surface: rgba(16, 25, 42, 0.6);
-    --surface-strong: rgba(20, 31, 51, 0.82);
-    --surface-soft: rgba(16, 25, 42, 0.36);
-    --border: rgba(158, 190, 227, 0.14);
-    --border-strong: rgba(158, 190, 227, 0.26);
-    --grid-line: rgba(158, 190, 227, 0.09);
+    --surface: #2f2b48;
+    --surface-strong: #34304f;
+    --surface-soft: #282544;
+    --border: rgba(219, 219, 253, 0.1);
+    --border-strong: rgba(219, 219, 253, 0.18);
 
-    --text-1: #eef4fc;
-    --text-2: #a7bcd8;
-    --text-3: #6c83a2;
+    --text-1: #e6e5f5;
+    --text-2: #b6b4d6;
+    --text-3: #7c7aa3;
 
-    --accent: #5b9bff;
-    --accent-ink: #04101f;
-    --accent-soft: rgba(91, 155, 255, 0.16);
-    --accent-2: #2fd6c4;
-    --accent-2-soft: rgba(47, 214, 196, 0.14);
-    --warn: #ff7466;
-    --warn-soft: rgba(255, 116, 102, 0.16);
+    --accent: #696cff;
+    --accent-hover: #8285ff;
+    --accent-ink: #ffffff;
+    --accent-soft: rgba(105, 108, 255, 0.24);
+    --accent-2: #1ed8f9;
+    --accent-2-soft: rgba(30, 216, 249, 0.18);
 
-    --shadow-lg: 0 30px 80px -28px rgba(0, 0, 0, 0.6);
-    --shadow-md: 0 18px 44px -20px rgba(0, 0, 0, 0.55);
-    --shadow-sm: 0 8px 20px -10px rgba(0, 0, 0, 0.5);
+    --warn: #ff6947;
+    --warn-soft: rgba(255, 105, 71, 0.2);
+    --ok: #85e043;
+    --ok-soft: rgba(133, 224, 67, 0.18);
+    --caution: #ffbb33;
+    --caution-soft: rgba(255, 187, 51, 0.18);
+
+    --shadow-lg: 0 10px 30px -6px rgba(0, 0, 0, 0.45);
+    --shadow-md: 0 6px 18px -6px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 3px 9px -2px rgba(0, 0, 0, 0.35);
+
     color-scheme: dark;
   }
 
@@ -136,854 +122,1033 @@
     background: var(--bg-0);
     color: var(--text-1);
     font-family: var(--font-body);
+    font-size: 16px;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
-    transition: background-color 0.4s ease, color 0.4s ease;
-    overflow-x: hidden;
   }
-  a { color: inherit; }
-  img, svg { display: block; max-width: 100%; }
-  ::selection { background: var(--accent-soft); color: var(--text-1); }
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.18; margin: 0; letter-spacing: -0.01em; }
+  p { margin: 0; }
+  a { color: inherit; text-decoration: none; }
+  img, svg { display: block; }
 
-  :focus-visible {
-    outline: 2.5px solid var(--accent);
-    outline-offset: 3px;
-    border-radius: 6px;
-  }
+  .wrap { width: 100%; max-width: 1160px; margin: 0 auto; padding: 0 28px; }
 
-  .wrap {
-    max-width: 1160px;
-    margin: 0 auto;
-    padding: 0 28px;
-    position: relative;
-  }
-
-  /* ================= MESH BACKGROUND ================= */
-  .mesh {
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    overflow: hidden;
-    background:
-      radial-gradient(1100px 620px at 12% -8%, var(--blob-a), transparent 60%),
-      radial-gradient(900px 640px at 88% 8%, var(--blob-c), transparent 58%),
-      radial-gradient(1000px 700px at 50% 100%, var(--blob-b), transparent 55%),
-      var(--bg-0);
-  }
-  .mesh::before, .mesh::after {
-    content: "";
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(70px);
-    opacity: 0.8;
-  }
-  .mesh::before {
-    width: 560px; height: 560px;
-    top: -140px; right: -120px;
-    background: var(--blob-a);
-    animation: float-a 22s ease-in-out infinite;
-  }
-  .mesh::after {
-    width: 460px; height: 460px;
-    bottom: -160px; left: -100px;
-    background: var(--blob-b);
-    animation: float-b 26s ease-in-out infinite;
-  }
-  @keyframes float-a {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(-40px, 50px) scale(1.08); }
-  }
-  @keyframes float-b {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(50px, -30px) scale(1.06); }
-  }
-  .grid-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background-image:
-      linear-gradient(var(--grid-line) 1px, transparent 1px),
-      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-    background-size: 64px 64px;
-    mask-image: radial-gradient(1100px 700px at 50% 0%, black, transparent 75%);
-    opacity: 0.6;
-  }
-
-  /* ================= GLASS PRIMITIVE ================= */
-  .glass {
+  .card {
     background: var(--surface);
     border: 1px solid var(--border);
-    backdrop-filter: blur(22px) saturate(140%);
-    -webkit-backdrop-filter: blur(22px) saturate(140%);
-    box-shadow: var(--shadow-md);
-  }
-
-  /* ================= NAV ================= */
-  .nav {
-    position: sticky;
-    top: 0;
-    z-index: 30;
-    padding-top: 14px;
-  }
-  .nav-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 62px;
-    padding: 0 20px;
-    border-radius: 16px;
-    background: var(--surface-strong);
-    border: 1px solid var(--border);
-    backdrop-filter: blur(24px) saturate(150%);
-    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
   }
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 1.06rem;
-    letter-spacing: -0.01em;
-    text-decoration: none;
-    color: var(--text-1);
-  }
-  .brand-mark {
-    width: 30px;
-    height: 30px;
-    border-radius: 9px;
-    background: linear-gradient(155deg, var(--accent), var(--accent-2));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 14px -4px var(--accent-soft);
-  }
-  .brand-mark svg { width: 17px; height: 17px; color: var(--accent-ink); }
 
-  .nav-links { display: flex; align-items: center; gap: 6px; font-size: 0.92rem; }
-  .nav-links a.plain {
-    color: var(--text-2);
-    text-decoration: none;
-    padding: 8px 12px;
-    border-radius: 8px;
-    transition: color 0.2s ease, background-color 0.2s ease;
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
   }
-  .nav-links a.plain:hover { color: var(--text-1); background: var(--surface-soft); }
-  .nav-divider { width: 1px; height: 22px; background: var(--border); margin: 0 6px; }
 
-  .theme-toggle {
-    position: relative;
-    width: 42px;
-    height: 42px;
-    border-radius: 11px;
-    border: 1px solid var(--border);
-    background: var(--surface-soft);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-2);
-    transition: border-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
-  }
-  .theme-toggle:hover { color: var(--accent); border-color: var(--border-strong); transform: translateY(-1px); }
-  .theme-toggle svg { width: 19px; height: 19px; }
-  .theme-toggle .icon-sun { display: none; }
-  :root[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
-  :root[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+  .section { padding: 86px 0; }
+  .section-alt { background: var(--bg-1); }
+  .section h2 { font-size: clamp(1.6rem, 3.4vw, 2.3rem); margin-bottom: 14px; }
+  .section-lede { color: var(--text-2); max-width: 62ch; font-size: 1.02rem; }
+  .section-head { margin-bottom: 46px; }
 
   /* ================= BUTTONS ================= */
   .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 11px 20px;
-    border-radius: 10px;
-    font-size: 0.92rem;
-    font-weight: 600;
-    text-decoration: none;
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    height: 2.9rem; padding: 0 1.35rem;
+    border-radius: var(--radius-md);
     border: 1px solid transparent;
+    font-family: var(--font-body); font-weight: 500; font-size: 0.96rem;
+    cursor: pointer; white-space: nowrap;
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); box-shadow: 0 2px 8px -1px var(--accent-soft); }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-ghost { background: var(--accent-soft); color: var(--accent); }
+  .btn-ghost:hover { background: var(--accent); color: var(--accent-ink); }
+  .btn-outline { background: transparent; color: var(--text-1); border-color: var(--border-strong); }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-sm { height: 2.4rem; padding: 0 1rem; font-size: 0.88rem; }
+  .btn-lg { height: 3.2rem; padding: 0 1.7rem; font-size: 1rem; }
+
+  .icon-btn {
+    width: 34px; height: 34px;
+    display: grid; place-items: center;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: transparent; color: var(--text-2);
     cursor: pointer;
-    font-family: var(--font-body);
-    transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
-    white-space: nowrap;
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease;
   }
-  .btn svg { width: 16px; height: 16px; }
-  .btn-primary {
-    background: linear-gradient(135deg, var(--accent), #2f7cf0 60%, var(--accent-2));
-    color: var(--accent-ink);
-    box-shadow: 0 12px 28px -12px var(--accent-soft);
-  }
-  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 36px -14px var(--accent-soft); }
-  .btn-primary:active { transform: translateY(0); }
-  .btn-ghost {
-    border-color: var(--border-strong);
-    color: var(--text-1);
-    background: var(--surface-soft);
-  }
-  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  .icon-btn:hover { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+  .icon-btn svg { width: 18px; height: 18px; }
+  .icon-sun { display: none; }
+  :root[data-theme="dark"] .icon-moon { display: none; }
+  :root[data-theme="dark"] .icon-sun { display: block; }
 
-  /* ================= HERO ================= */
-  .hero {
-    padding: 64px 0 88px;
-    display: grid;
-    grid-template-columns: 1.05fr 0.95fr;
-    gap: 52px;
-    align-items: center;
-  }
-  .eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-family: var(--font-mono);
-    font-size: 0.76rem;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--accent-2);
-    margin: 0 0 20px;
-    padding: 6px 12px 6px 8px;
-    border-radius: 100px;
-    background: var(--accent-2-soft);
-    border: 1px solid rgba(12, 143, 131, 0.22);
-  }
-  .eyebrow .dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: var(--accent-2);
-    box-shadow: 0 0 0 3px var(--accent-2-soft);
-    animation: pulse-dot 2.2s ease-in-out infinite;
-  }
-  @keyframes pulse-dot {
-    0%, 100% { box-shadow: 0 0 0 3px var(--accent-2-soft); }
-    50% { box-shadow: 0 0 0 6px transparent; }
-  }
-  .hero h1 {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: clamp(2.05rem, 3.2vw + 0.7rem, 3.35rem);
-    line-height: 1.1;
-    letter-spacing: -0.02em;
-    margin: 0 0 20px;
-    color: var(--text-1);
-  }
-  .hero h1 em {
-    font-style: normal;
-    background: linear-gradient(120deg, var(--accent), var(--accent-2));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  .hero p.lede {
-    font-size: 1.08rem;
-    color: var(--text-2);
-    max-width: 48ch;
-    margin: 0 0 32px;
-  }
-  .hero-ctas { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
-  .hero-ctas .btn { padding: 14px 24px; font-size: 0.98rem; }
-  .hero-note {
-    margin-top: 20px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.85rem;
-    color: var(--text-3);
-    font-family: var(--font-mono);
-  }
-  .hero-note svg { width: 14px; height: 14px; color: var(--accent-2); }
-
-  /* ================= HERO MONITOR CARD ================= */
-  .monitor-card {
-    border-radius: 20px;
-    padding: 22px 22px 0;
-    position: relative;
-    overflow: hidden;
-  }
-  .monitor-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-family: var(--font-mono);
-    font-size: 0.74rem;
-    color: var(--text-3);
-    letter-spacing: 0.03em;
-    padding-bottom: 16px;
-    margin-bottom: 18px;
+  /* ================= NAV ================= */
+  .nav {
+    position: sticky; top: 0; z-index: 60;
+    background: var(--surface);
     border-bottom: 1px solid var(--border);
   }
-  .monitor-head .live {
-    display: inline-flex; align-items: center; gap: 6px;
-    color: var(--accent-2);
+  .nav-inner { display: flex; align-items: center; gap: 18px; height: 68px; }
+  .brand { display: flex; align-items: center; gap: 11px; font-family: var(--font-display); font-weight: 700; font-size: 1.08rem; }
+  .brand-mark {
+    width: 32px; height: 32px; border-radius: 9px;
+    background: linear-gradient(155deg, var(--accent), var(--accent-hover));
+    display: grid; place-items: center;
+    box-shadow: 0 4px 12px -3px var(--accent-soft);
+    flex: 0 0 auto;
   }
-  .monitor-head .live .dot {
-    width: 6px; height: 6px; border-radius: 50%; background: var(--accent-2);
-    animation: pulse-dot 2.2s ease-in-out infinite;
+  .brand-mark svg { width: 18px; height: 18px; color: #fff; }
+  .nav-links { display: flex; align-items: center; gap: 4px; margin-left: 22px; }
+  .nav-links a {
+    padding: 8px 13px; border-radius: var(--radius-md);
+    color: var(--text-2); font-size: 0.93rem; font-weight: 500;
+    transition: background-color .15s ease, color .15s ease;
   }
-  .room-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-bottom: 18px;
+  .nav-links a:hover { background: var(--accent-soft); color: var(--accent); }
+  .nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .nav-hamburger { display: none; }
+
+  .mobile-menu {
+    display: none;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    padding: 10px 0 16px;
   }
+  .mobile-menu.open { display: block; }
+  .mobile-menu a {
+    display: block; padding: 12px 28px;
+    color: var(--text-2); font-weight: 500;
+  }
+  .mobile-menu a:hover { background: var(--accent-soft); color: var(--accent); }
+
+  /* ================= HERO ================= */
+  .hero { padding: 76px 0 84px; }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 58px; align-items: center; }
+  .hero h1 { font-size: clamp(2rem, 4.2vw, 2.9rem); }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero-lede { color: var(--text-2); font-size: 1.1rem; margin-top: 20px; max-width: 52ch; }
+  .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+
+  .trust-strip {
+    display: flex; flex-wrap: wrap; gap: 10px 22px;
+    margin-top: 34px; padding-top: 26px;
+    border-top: 1px solid var(--border);
+  }
+  .trust-item { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: var(--text-2); }
+  .trust-item svg { width: 17px; height: 17px; color: var(--ok); flex: 0 0 auto; }
+
+  /* ================= HERO MONITOR MOCK ================= */
+  .mock {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+  .mock-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-soft);
+    font-family: var(--font-mono); font-size: 0.68rem;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3);
+  }
+  .mock-bar .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px var(--ok-soft); }
+  .mock-bar .spacer { margin-left: auto; }
+  .mock-body { padding: 20px 18px 22px; }
+  .room-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .room-cell {
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     background: var(--surface-soft);
-    padding: 14px 10px;
+    padding: 13px 10px;
     text-align: center;
-    transition: border-color 0.3s ease, background-color 0.3s ease;
-  }
-  .room-cell .room-num {
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
+    font-family: var(--font-mono); font-size: 0.9rem; font-weight: 500;
     color: var(--text-2);
-    margin-bottom: 8px;
   }
-  .room-cell .room-dot {
-    width: 10px; height: 10px; border-radius: 50%;
-    margin: 0 auto;
-    background: var(--border-strong);
-    animation: room-cycle 9s ease-in-out infinite;
+  .room-cell.alert {
+    background: var(--warn-soft);
+    border-color: transparent;
+    color: var(--warn);
+    animation: pulseAlert 1.6s ease-in-out infinite;
   }
-  .room-cell:nth-child(1) .room-dot { animation-delay: 0s; }
-  .room-cell:nth-child(2) .room-dot { animation-delay: 1.5s; }
-  .room-cell:nth-child(3) .room-dot { animation-delay: 3s; }
-  .room-cell:nth-child(4) .room-dot { animation-delay: 4.5s; }
-  .room-cell:nth-child(5) .room-dot { animation-delay: 6s; }
-  .room-cell:nth-child(6) .room-dot { animation-delay: 7.5s; }
-  @keyframes room-cycle {
-    0%   { background: var(--border-strong); box-shadow: none; transform: scale(1); }
-    3%   { background: var(--warn); box-shadow: 0 0 0 6px var(--warn-soft); transform: scale(1.25); }
-    10%  { background: var(--warn); box-shadow: 0 0 0 3px var(--warn-soft); transform: scale(1.05); }
-    16%  { background: var(--accent-2); box-shadow: 0 0 0 2px var(--accent-2-soft); transform: scale(1); }
-    24%, 100% { background: var(--border-strong); box-shadow: none; transform: scale(1); }
+  @keyframes pulseAlert {
+    0%, 100% { box-shadow: 0 0 0 0 var(--warn-soft); }
+    50% { box-shadow: 0 0 0 6px transparent; }
   }
-  .ecg-strip {
-    height: 56px;
-    margin: 0 -22px;
+  .ecg { margin-top: 18px; height: 44px; }
+  /* Draws the full trace and pulses its opacity, rather than sweeping a dash offset:
+     a sweep leaves the line visibly half-drawn most of the time, which reads as a
+     rendering bug on a marketing page (and in any screenshot of it). */
+  .ecg path { stroke: var(--accent); stroke-width: 2; fill: none; animation: ecgPulse 2.4s ease-in-out infinite; }
+  @keyframes ecgPulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+  .mock-note {
+    margin-top: 16px; padding-top: 15px;
     border-top: 1px solid var(--border);
-    position: relative;
-    overflow: hidden;
-    background: var(--surface-soft);
+    font-size: 0.86rem; color: var(--text-2);
   }
-  .ecg-strip svg { width: 200%; height: 100%; }
-  .ecg-line {
-    stroke: var(--accent-2);
-    stroke-width: 1.8;
-    fill: none;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    animation: ecg-scroll 6s linear infinite;
-  }
-  @keyframes ecg-scroll {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
-  }
-  .monitor-foot {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 0 16px;
-    border-top: 1px solid var(--border);
-    margin-top: 0;
-  }
-  .watch-chip {
-    flex: 0 0 auto;
-    width: 32px; height: 36px;
-    border: 2px solid var(--text-3);
-    border-radius: 10px;
-    position: relative;
-    animation: watch-buzz 3s ease-in-out infinite;
-  }
-  .watch-chip::before {
-    content: "";
-    position: absolute; inset: 5px;
-    border-radius: 5px;
-    background: var(--accent-2);
-    opacity: 0.35;
-  }
-  @keyframes watch-buzz {
-    0%, 80%, 100% { transform: rotate(0deg); border-color: var(--text-3); }
-    83% { transform: rotate(-6deg); border-color: var(--warn); }
-    86% { transform: rotate(5deg); }
-    89% { transform: rotate(-3deg); }
-    92% { transform: rotate(0deg); border-color: var(--warn); }
-  }
-  .monitor-foot-text { font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-2); }
-  .monitor-foot-text b { color: var(--warn); font-weight: 500; }
+  .mock-note b { color: var(--text-1); }
 
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
-    .mesh::before, .mesh::after { animation: none !important; }
-    .room-cell:nth-child(4) .room-dot { background: var(--warn); box-shadow: 0 0 0 4px var(--warn-soft); }
-  }
-
-  /* ================= SECTION SCAFFOLD ================= */
-  .section { padding: 80px 0; position: relative; }
-  .section-head { max-width: 56ch; margin: 0 auto 46px; text-align: center; }
-  .section-head .eyebrow { }
-  .section-head h2 {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: clamp(1.6rem, 1.8vw + 0.9rem, 2.3rem);
-    letter-spacing: -0.01em;
-    margin: 0;
-    color: var(--text-1);
-  }
-  .section-head.left { text-align: left; margin-left: 0; }
-
-  /* ================= ICON CHIP ================= */
-  .icon-chip {
-    width: 52px; height: 52px;
-    border-radius: 14px;
-    display: flex; align-items: center; justify-content: center;
-    background: var(--accent-soft);
-    border: 1px solid rgba(29, 95, 224, 0.2);
-    color: var(--accent);
-    flex: 0 0 auto;
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-  }
-  .icon-chip svg { width: 26px; height: 26px; }
-  .icon-chip.teal { background: var(--accent-2-soft); border-color: rgba(12, 143, 131, 0.22); color: var(--accent-2); }
+  /* ================= PAIN / BENEFIT ================= */
+  .pain-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .pain-row { padding: 24px 26px; }
+  .pain-q { display: flex; gap: 12px; align-items: flex-start; }
+  .pain-q svg { width: 20px; height: 20px; color: var(--warn); flex: 0 0 auto; margin-top: 3px; }
+  .pain-q p { font-weight: 500; color: var(--text-1); }
+  .pain-a { display: flex; gap: 12px; align-items: flex-start; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border); }
+  .pain-a svg { width: 20px; height: 20px; color: var(--ok); flex: 0 0 auto; margin-top: 3px; }
+  .pain-a p { color: var(--text-2); font-size: 0.95rem; }
 
   /* ================= STEPS ================= */
-  .steps {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+  .step { padding: 26px 24px 28px; }
+  .step-num { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; color: var(--text-3); text-transform: uppercase; }
+  .icon-chip {
+    width: 44px; height: 44px; border-radius: var(--radius-md);
+    background: var(--accent-soft); color: var(--accent);
+    display: grid; place-items: center; margin: 16px 0 16px;
   }
-  .step {
-    border-radius: 18px;
-    padding: 26px 22px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-  }
-  .step:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--border-strong); }
-  .step:hover .icon-chip { transform: scale(1.08) rotate(-3deg); }
-  .step-num {
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    color: var(--text-3);
-  }
-  .step h3 {
-    font-family: var(--font-display);
-    font-size: 1.04rem;
-    font-weight: 600;
-    margin: 0 0 6px;
-    color: var(--text-1);
-  }
-  .step p { color: var(--text-2); font-size: 0.9rem; margin: 0; }
+  .icon-chip svg { width: 22px; height: 22px; }
+  .step h3 { font-size: 1.06rem; margin-bottom: 9px; }
+  .step p { color: var(--text-2); font-size: 0.94rem; }
 
-  .steps-connector {
-    display: flex;
-    justify-content: center;
-    margin: -4px 0 20px;
-    color: var(--border-strong);
+  /* ================= FLOW STRIP ================= */
+  .flow-strip { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; overflow-x: auto; padding: 6px 0 10px; }
+  .flow-node {
+    flex: 1 1 0; min-width: 118px;
+    padding: 16px 12px; text-align: center;
+    border: 1px solid var(--border); border-radius: var(--radius-md);
+    background: var(--surface);
+    font-family: var(--font-mono); font-size: 0.68rem;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-2);
   }
+  .flow-arrow { flex: 0 0 auto; color: var(--text-3); display: grid; place-items: center; }
+  .flow-arrow svg { width: 18px; height: 18px; }
+
+  /* ================= SHOWCASE ================= */
+  .showcase-grid { display: grid; grid-template-columns: 1.35fr 0.65fr; gap: 30px; align-items: center; }
+  .dash-mock { overflow: hidden; }
+  .dash-mock-body { display: grid; grid-template-columns: 132px 1fr; min-height: 232px; }
+  .dash-side { border-right: 1px solid var(--border); background: var(--surface-soft); padding: 14px 10px; }
+  .dash-side-item {
+    padding: 8px 10px; border-radius: var(--radius-sm);
+    font-size: 0.79rem; color: var(--text-3); margin-bottom: 3px;
+  }
+  .dash-side-item.on { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+  .dash-main { padding: 16px 18px; }
+  .dash-title { font-family: var(--font-display); font-weight: 600; font-size: 0.95rem; margin-bottom: 13px; }
+  .call-row {
+    display: flex; align-items: center; gap: 11px;
+    padding: 11px 13px; margin-bottom: 8px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+  .call-row.hot { background: var(--warn-soft); border-color: transparent; }
+  .call-row .rm { font-family: var(--font-mono); font-weight: 500; color: var(--text-1); }
+  .call-row .fl { color: var(--text-3); font-size: 0.79rem; }
+  .call-row .ago { margin-left: auto; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-3); }
+  .call-row.hot .ago { color: var(--warn); }
+
+  .watch-mock { display: grid; place-items: center; }
+  .watch-body {
+    width: 210px; height: 210px; border-radius: 50%;
+    background: #1c1a2b;
+    border: 9px solid var(--border-strong);
+    box-shadow: var(--shadow-lg);
+    display: grid; place-items: center;
+    padding: 26px; text-align: center;
+  }
+  .watch-room { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: #fff; }
+  .watch-floor { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; color: #a8aaff; margin-top: 5px; }
+  .watch-hint {
+    margin-top: 14px; padding: 7px 12px;
+    background: rgba(255, 62, 29, 0.22); color: #ff9d86;
+    border-radius: 999px; font-size: 0.7rem;
+  }
+  .watch-caption { margin-top: 16px; text-align: center; font-size: 0.85rem; color: var(--text-3); }
 
   /* ================= FEATURES ================= */
-  .features-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-  }
-  .feature {
-    border-radius: 18px;
-    padding: 26px 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-  }
-  .feature:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--border-strong); }
-  .feature:hover .icon-chip { transform: scale(1.08) rotate(3deg); }
-  .feature h3 {
-    font-family: var(--font-display);
-    font-size: 1rem;
-    font-weight: 600;
-    margin: 0;
-    color: var(--text-1);
-  }
-  .feature p { color: var(--text-2); font-size: 0.9rem; margin: 0; }
+  .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .feature { padding: 26px 24px 28px; }
+  .feature h3 { font-size: 1.04rem; margin-bottom: 9px; }
+  .feature p { color: var(--text-2); font-size: 0.94rem; }
 
-  /* ================= HOW STEP ROW DIVIDER for md ================= */
-  .divider-h { height: 1px; background: var(--border); margin: 0; }
+  /* ================= INSTALL ================= */
+  .install-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .install-item { display: flex; gap: 14px; padding: 22px 24px; }
+  .install-item svg { width: 21px; height: 21px; color: var(--accent); flex: 0 0 auto; margin-top: 3px; }
+  .install-item h3 { font-size: 1rem; margin-bottom: 6px; }
+  .install-item p { color: var(--text-2); font-size: 0.93rem; }
 
-  /* ================= ARCHITECTURE STRIP ================= */
-  .flow-strip {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 26px 24px;
-    border-radius: 18px;
-    flex-wrap: wrap;
-  }
-  .flow-node {
-    display: flex; align-items: center; gap: 10px;
-    font-family: var(--font-mono);
-    font-size: 0.82rem;
-    color: var(--text-2);
-  }
-  .flow-node svg { width: 20px; height: 20px; color: var(--accent); }
-  .flow-arrow { color: var(--text-3); flex: 1 1 24px; min-width: 20px; display: flex; align-items: center; justify-content: center; }
-  .flow-arrow svg { width: 22px; height: 14px; }
+  /* ================= PRICE ================= */
+  .price-card { padding: 40px 38px; text-align: center; max-width: 760px; margin: 0 auto; }
+  .price-card h3 { font-size: 1.45rem; margin-bottom: 12px; }
+  .price-card > p { color: var(--text-2); max-width: 56ch; margin: 0 auto; }
+  .price-includes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 22px; margin: 28px 0 30px; text-align: left; }
+  .price-includes div { display: flex; align-items: center; gap: 9px; font-size: 0.93rem; color: var(--text-2); }
+  .price-includes svg { width: 17px; height: 17px; color: var(--ok); flex: 0 0 auto; }
 
-  /* ================= CTA ================= */
-  .cta-panel {
-    text-align: center;
-    padding: 64px 48px;
-    border-radius: 26px;
-    position: relative;
+  /* ================= FAQ ================= */
+  .faq { max-width: 800px; margin: 0 auto; }
+  .faq details {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    margin-bottom: 10px;
     overflow: hidden;
   }
-  .cta-panel h2 {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: clamp(1.7rem, 2.2vw + 1rem, 2.4rem);
-    letter-spacing: -0.01em;
-    margin: 0 0 14px;
-    color: var(--text-1);
+  .faq summary {
+    padding: 17px 22px; cursor: pointer;
+    font-weight: 500; color: var(--text-1);
+    list-style: none; display: flex; align-items: center; gap: 12px;
   }
-  .cta-panel p { color: var(--text-2); margin: 0 0 30px; font-size: 1.02rem; }
-  .cta-ctas { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
-  .cta-ctas .btn { padding: 15px 28px; font-size: 1rem; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after {
+    content: "+"; margin-left: auto;
+    font-family: var(--font-mono); font-size: 1.1rem; color: var(--accent);
+  }
+  .faq details[open] summary::after { content: "\2212"; }
+  .faq details[open] summary { border-bottom: 1px solid var(--border); }
+  .faq .faq-body { padding: 16px 22px 20px; color: var(--text-2); font-size: 0.95rem; }
 
-  footer { padding: 32px 0 40px; }
-  footer .wrap {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    color: var(--text-3);
-    gap: 16px;
-    flex-wrap: wrap;
-    padding-top: 24px;
-    border-top: 1px solid var(--border);
+  /* ================= CONTACT ================= */
+  .contact-grid { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 26px; align-items: start; }
+  .contact-ways { display: grid; gap: 12px; }
+  .contact-way {
+    display: flex; align-items: center; gap: 14px;
+    padding: 18px 20px;
+    transition: border-color .15s ease;
   }
-  footer .foot-brand { display: flex; align-items: center; gap: 8px; color: var(--text-2); }
-  footer .foot-brand svg { width: 14px; height: 14px; color: var(--accent-2); }
+  .contact-way:hover { border-color: var(--accent); }
+  .contact-way .cw-icon {
+    width: 42px; height: 42px; border-radius: var(--radius-md);
+    background: var(--accent-soft); color: var(--accent);
+    display: grid; place-items: center; flex: 0 0 auto;
+  }
+  .contact-way .cw-icon svg { width: 21px; height: 21px; }
+  .contact-way .cw-label { font-size: 0.78rem; color: var(--text-3); }
+  .contact-way .cw-value { font-weight: 500; color: var(--text-1); font-size: 0.98rem; word-break: break-all; }
+
+  .form-card { padding: 30px 30px 32px; }
+  .form-card h3 { font-size: 1.2rem; margin-bottom: 8px; }
+  .form-card > p { color: var(--text-2); font-size: 0.94rem; margin-bottom: 22px; }
+  .field { margin-bottom: 15px; }
+  .field label { display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-2); margin-bottom: 7px; }
+  .field input, .field textarea {
+    width: 100%; padding: 0 14px; height: 2.8rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--surface-soft);
+    color: var(--text-1);
+    font-family: var(--font-body); font-size: 0.96rem;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .field textarea { height: auto; min-height: 96px; padding: 12px 14px; resize: vertical; }
+  .field input:focus, .field textarea:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .field input::placeholder, .field textarea::placeholder { color: var(--text-3); }
+  .form-msg { margin-top: 14px; font-size: 0.92rem; }
+  .form-msg.err { color: var(--warn); }
+  .form-done { text-align: center; padding: 26px 10px; }
+  .form-done .fd-icon {
+    width: 54px; height: 54px; border-radius: 50%;
+    background: var(--ok-soft); color: var(--ok);
+    display: grid; place-items: center; margin: 0 auto 16px;
+  }
+  .form-done .fd-icon svg { width: 26px; height: 26px; }
+  .form-done h3 { margin-bottom: 8px; }
+  .form-done p { color: var(--text-2); font-size: 0.95rem; }
+  .form-hint { font-size: 0.83rem; color: var(--text-3); margin-top: 12px; }
+
+  /* ================= FOOTER ================= */
+  footer { border-top: 1px solid var(--border); background: var(--surface); padding: 40px 0; }
+  .footer-inner { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; }
+  .footer-links { margin-left: auto; display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 0.9rem; color: var(--text-2); }
+  .footer-links a:hover { color: var(--accent); }
+  .footer-copy { font-size: 0.86rem; color: var(--text-3); }
+
+  /* ================= STICKY MOBILE CTA ================= */
+  .mobile-cta {
+    display: none;
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 70;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 10px 14px;
+    gap: 10px;
+    box-shadow: 0 -4px 16px -6px rgba(50, 49, 64, 0.16);
+  }
+  .mobile-cta .btn { flex: 1 1 0; }
 
   /* ================= RESPONSIVE ================= */
-  @media (max-width: 920px) {
-    .hero { grid-template-columns: 1fr; padding: 40px 0 56px; }
-    .steps { grid-template-columns: 1fr 1fr; }
-    .features-grid { grid-template-columns: 1fr; }
-    .flow-strip { flex-direction: column; align-items: stretch; }
+  @media (max-width: 1000px) {
+    .hero-grid { grid-template-columns: 1fr; gap: 44px; }
+    .steps { grid-template-columns: repeat(2, 1fr); }
+    .features-grid { grid-template-columns: repeat(2, 1fr); }
+    .showcase-grid { grid-template-columns: 1fr; }
+    .contact-grid { grid-template-columns: 1fr; }
+    .flow-strip { flex-wrap: wrap; }
     .flow-arrow { transform: rotate(90deg); }
+    .flow-node { min-width: 0; flex: 1 1 40%; }
   }
-  @media (max-width: 720px) {
-    .nav-links .plain { display: none; }
-    .nav-divider { display: none; }
-  }
-  @media (max-width: 560px) {
+  @media (max-width: 760px) {
+    .nav-links { display: none; }
+    .nav-hamburger { display: grid; }
+    .nav-kirish { display: none; }
+    .section { padding: 58px 0; }
+    .hero { padding: 46px 0 56px; }
     .wrap { padding: 0 18px; }
-    .steps { grid-template-columns: 1fr; }
-    .cta-panel { padding: 44px 22px; }
-    footer .wrap { flex-direction: column; align-items: flex-start; }
+    .pain-grid, .install-grid, .price-includes { grid-template-columns: 1fr; }
+    .features-grid, .steps { grid-template-columns: 1fr; }
+    .price-card { padding: 30px 22px; }
+    .form-card { padding: 24px 20px 26px; }
+    .mobile-cta { display: flex; }
+    body { padding-bottom: 74px; }
+    .footer-links { margin-left: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .ecg path, .room-cell.alert { animation: none; opacity: 1; }
+    * { transition-duration: 0.01ms !important; }
   }
 </style>
 </head>
 <body>
 
-<div class="mesh" aria-hidden="true"></div>
-<div class="grid-overlay" aria-hidden="true"></div>
-
+<!-- ================= NAV ================= -->
 <header class="nav">
-  <div class="wrap">
-    <div class="nav-inner">
-      <a href="/" class="brand">
-        <span class="brand-mark">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg>
-        </span>
-        NurseCall
-      </a>
-      <div class="nav-links">
-        <a class="plain" href="#how">Qanday ishlaydi</a>
-        <a class="plain" href="#features">Imkoniyatlar</a>
-        <span class="nav-divider"></span>
-        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Tungi/kunduzgi rejimni almashtirish" aria-pressed="false">
-          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/></svg>
-          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg>
-        </button>
-        <span class="nav-divider"></span>
-        <a class="btn btn-primary" href="/login">Kirish</a>
-      </div>
+  <div class="wrap nav-inner">
+    <a href="/" class="brand">
+      <span class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg>
+      </span>
+      <span>NurseCall</span>
+    </a>
+    <nav class="nav-links">
+      <a href="#qanday">Qanday ishlaydi</a>
+      <a href="#imkoniyatlar">Imkoniyatlar</a>
+      <a href="#narx">Narx</a>
+      <a href="#aloqa">Aloqa</a>
+    </nav>
+    <div class="nav-right">
+      <button class="icon-btn" id="themeToggle" type="button" aria-label="Kunduzgi/tungi rejim" aria-pressed="false">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg>
+      </button>
+      <a href="/login" class="btn btn-outline btn-sm nav-kirish">Kirish</a>
+      <a href="#aloqa" class="btn btn-primary btn-sm">Bog'lanish</a>
+      <button class="icon-btn nav-hamburger" id="menuToggle" type="button" aria-label="Menyu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
     </div>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#qanday">Qanday ishlaydi</a>
+    <a href="#imkoniyatlar">Imkoniyatlar</a>
+    <a href="#narx">Narx</a>
+    <a href="#aloqa">Aloqa</a>
+    <a href="/login">Kirish</a>
   </div>
 </header>
 
-<main>
-  <section class="hero wrap">
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="wrap hero-grid">
     <div>
-      <p class="eyebrow"><span class="dot"></span>Hamshira chaqiruv tizimi · 433MHz + ESP32</p>
-      <h1>Bemor bir marta bosadi.<br>Hamshira <em>soniyalarda</em> biladi.</h1>
-      <p class="lede">Xonadagi SOS tugmadan hamshiraning bilagidagi soatigacha — simsiz, kechiktirmasdan. Har chaqiruv vaqti bilan qayd etiladi, hech biri yo'qolib ketmaydi.</p>
-      <div class="hero-ctas">
-        <a class="btn btn-primary" href="/login">
-          Kirish
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </a>
-        <a class="btn btn-ghost" href="#how">
-          Qanday ishlaydi
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
-        </a>
+      <div class="eyebrow">Hamshira chaqiruv tizimi &middot; simsiz 433MHz</div>
+      <h1>Bemor bir marta bosadi.<br />Hamshira <em>soniyalarda</em> biladi.</h1>
+      <p class="hero-lede">Xonadagi SOS tugmadan hamshiraning bilagidagi soatigacha — simsiz, kechiktirmasdan. Har chaqiruv vaqti bilan qayd etiladi, hech biri yo'qolib ketmaydi.</p>
+      <div class="hero-cta">
+        <a href="#aloqa" class="btn btn-primary btn-lg">Bepul konsultatsiya</a>
+        <a href="#qanday" class="btn btn-outline btn-lg">Qanday ishlaydi</a>
       </div>
-      <p class="hero-note">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
-        Har klinika uchun alohida, xavfsiz sozlanadi
-      </p>
+      <div class="trust-strip">
+        <span class="trust-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          Simsiz — devor buzilmaydi
+        </span>
+        <span class="trust-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          Mavjud binoga o'rnatiladi
+        </span>
+        <span class="trust-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          Har chaqiruv qayd etiladi
+        </span>
+        <span class="trust-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          Har klinika alohida va xavfsiz
+        </span>
+      </div>
     </div>
 
-    <div class="monitor-card glass" aria-hidden="true">
-      <div class="monitor-head">
-        <span>2-QAVAT · JONLI KUZATUV</span>
-        <span class="live"><span class="dot"></span>ULANGAN</span>
+    <div class="mock">
+      <div class="mock-bar">
+        <span class="live-dot"></span>
+        <span>2-qavat &middot; jonli kuzatuv</span>
+        <span class="spacer">ulangan</span>
       </div>
-      <div class="room-grid">
-        <div class="room-cell"><div class="room-num">201</div><div class="room-dot"></div></div>
-        <div class="room-cell"><div class="room-num">204</div><div class="room-dot"></div></div>
-        <div class="room-cell"><div class="room-num">208</div><div class="room-dot"></div></div>
-        <div class="room-cell"><div class="room-num">214</div><div class="room-dot"></div></div>
-        <div class="room-cell"><div class="room-num">219</div><div class="room-dot"></div></div>
-        <div class="room-cell"><div class="room-num">223</div><div class="room-dot"></div></div>
-      </div>
-      <div class="ecg-strip">
-        <svg viewBox="0 0 400 56" preserveAspectRatio="none">
-          <path class="ecg-line" d="M0,28 L30,28 L40,28 L46,10 L52,46 L58,28 L70,28 L84,28 L90,16 L96,28 L110,28 L200,28 L230,28 L240,28 L246,10 L252,46 L258,28 L270,28 L284,28 L290,16 L296,28 L310,28 L400,28"/>
+      <div class="mock-body">
+        <div class="room-grid">
+          <div class="room-cell">201</div>
+          <div class="room-cell">204</div>
+          <div class="room-cell">208</div>
+          <div class="room-cell alert">214</div>
+          <div class="room-cell">219</div>
+          <div class="room-cell">223</div>
+        </div>
+        <svg class="ecg" viewBox="0 0 320 44" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 22h58l7-15 8 30 7-15h44l7-11 8 22 7-11h44l7-15 8 30 7-15h56" />
         </svg>
-      </div>
-      <div class="monitor-foot">
-        <div class="watch-chip"></div>
-        <div class="monitor-foot-text"><b>214-xona</b> · hamshira ogohlantirildi, 2 soniya oldin</div>
+        <p class="mock-note"><b>214-xona</b> &middot; hamshira ogohlantirildi, 2 soniya oldin</p>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section class="section" id="how">
-    <div class="wrap">
-      <div class="section-head">
-        <p class="eyebrow" style="margin-left:auto;margin-right:auto;">Qanday ishlaydi</p>
-        <h2>Tugmadan bilakgacha to'rt qadam.</h2>
-      </div>
-      <div class="steps">
-        <div class="step glass">
-          <div class="icon-chip">
-            <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="18" cy="26" r="10"/>
-              <circle cx="18" cy="26" r="4"/>
-              <path d="M27 15q4-2 7 1M30 10q6-3 11 2" opacity="0.85"/>
-            </svg>
-          </div>
-          <div>
-            <div class="step-num">01 / TUGMA</div>
-            <h3>Tugma bosiladi</h3>
-            <p>Xonadagi SOS tugma 433MHz signal va shu xonaga tegishli noyob kodni chiqaradi.</p>
-          </div>
-        </div>
-        <div class="step glass">
-          <div class="icon-chip teal">
-            <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 30V13"/>
-              <path d="M15 20l7-7 7 7"/>
-              <rect x="12" y="30" width="20" height="7" rx="2"/>
-              <path d="M9 16q4-6 13-6t13 6" opacity="0.8"/>
-            </svg>
-          </div>
-          <div>
-            <div class="step-num">02 / QABUL</div>
-            <h3>Qavat qabul qiladi</h3>
-            <p>Shu qavatdagi ESP32 qabul qilgich signalni ushlab, kodni qaysi xonaga tegishli ekanini aniqlaydi.</p>
-          </div>
-        </div>
-        <div class="step glass">
-          <div class="icon-chip">
-            <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="10" y="9" width="24" height="9" rx="2.5"/>
-              <rect x="10" y="21" width="24" height="9" rx="2.5"/>
-              <circle cx="15.5" cy="13.5" r="1.4" fill="currentColor" stroke="none"/>
-              <circle cx="15.5" cy="25.5" r="1.4" fill="currentColor" stroke="none"/>
-              <path d="M20 13.5h9M20 25.5h9"/>
-            </svg>
-          </div>
-          <div>
-            <div class="step-num">03 / QAYD</div>
-            <h3>Server qayd etadi</h3>
-            <p>Chaqiruv darhol bazaga tushadi — kim, qachon, qaysi xona — hech qachon yo'qolmaydi.</p>
-          </div>
-        </div>
-        <div class="step glass">
-          <div class="icon-chip teal">
-            <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M17 11h10M17 33h10" opacity="0.7"/>
-              <rect x="14" y="13" width="16" height="18" rx="5"/>
-              <path d="M22 18v5l3.5 2"/>
-              <path d="M8 19l2.5 1.5M8 25l2.5-1.5" opacity="0.8"/>
-            </svg>
-          </div>
-          <div>
-            <div class="step-num">04 / BILDIRISH</div>
-            <h3>Soat bildiradi</h3>
-            <p>Hamshiraning bilagidagi soat tebranadi va xona raqamini darhol ko'rsatadi.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="wrap">
-      <div class="flow-strip glass">
-        <div class="flow-node">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.6"/></svg>
-          SOS TUGMA
-        </div>
-        <div class="flow-arrow"><svg viewBox="0 0 24 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7h20M15 1l6 6-6 6"/></svg></div>
-        <div class="flow-node">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10q8-7 16 0" opacity="0.5"/><path d="M7 13.5q5-4.2 10 0"/><circle cx="12" cy="17" r="1.6" fill="currentColor" stroke="none"/></svg>
-          433MHz RF
-        </div>
-        <div class="flow-arrow"><svg viewBox="0 0 24 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7h20M15 1l6 6-6 6"/></svg></div>
-        <div class="flow-node">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M9 9h6v6H9z"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-          ESP32
-        </div>
-        <div class="flow-arrow"><svg viewBox="0 0 24 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7h20M15 1l6 6-6 6"/></svg></div>
-        <div class="flow-node">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="6" rx="1.6"/><rect x="4" y="14" width="16" height="6" rx="1.6"/></svg>
-          MARKAZIY SERVER
-        </div>
-        <div class="flow-arrow"><svg viewBox="0 0 24 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7h20M15 1l6 6-6 6"/></svg></div>
-        <div class="flow-node">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="6" width="10" height="12" rx="3.5"/><path d="M9.5 3.5h5M9.5 20.5h5"/></svg>
-          GALAXY WATCH
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section" id="features">
-    <div class="wrap">
-      <div class="section-head">
-        <p class="eyebrow" style="margin-left:auto;margin-right:auto;">Imkoniyatlar</p>
-        <h2>Bitta klinikaga ham, bir nechtasiga ham.</h2>
-      </div>
-      <div class="features-grid">
-        <div class="feature glass">
-          <div class="icon-chip">
-            <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="22" cy="24" r="12"/>
-              <path d="M22 17v7l5 3"/>
-              <path d="M18 6h8M22 6v4"/>
-            </svg>
-          </div>
-          <h3>Real vaqtda</h3>
-          <p>Chaqiruv yuborilgach hamshira soatiga bir necha soniyada yetadi va tebranish bilan ogohlantiradi.</p>
-        </div>
-        <div class="feature glass">
-          <div class="icon-chip teal">
-            <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="9" y="7" width="26" height="30" rx="2.5"/>
-              <path d="M9 17h26M9 27h26"/>
-              <circle cx="26" cy="32" r="3.4" fill="none"/>
-              <path d="M26 30.5v1.2l1 .8" stroke-width="1.4"/>
-            </svg>
-          </div>
-          <h3>Ko'p klinika, bitta tizim</h3>
-          <p>Har klinikaning xonalari, qurilmalari va xodimlari butunlay izolyatsiya qilingan — boshqasi ko'ra olmaydi.</p>
-        </div>
-        <div class="feature glass">
-          <div class="icon-chip">
-            <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 30c-6 2-10 6-10 6h20s-4-4-10-6Z" opacity="0.55"/>
-              <rect x="15" y="10" width="14" height="17" rx="4.5"/>
-              <path d="M18 8h8M18 34.5h8" stroke-width="2"/>
-              <path d="M19 18.5l2.4 2.4L26 16" stroke-width="1.6"/>
-            </svg>
-          </div>
-          <h3>Hamshira bilagida</h3>
-          <p>Alohida qurilma emas — Samsung Galaxy Watch orqali, doim ko'zga tashlanadigan joyda.</p>
-        </div>
-        <div class="feature glass">
-          <div class="icon-chip teal">
-            <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="12" y="8" width="20" height="27" rx="2.5"/>
-              <path d="M17 8v-1.5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2V8"/>
-              <path d="M17 17h10M17 22h10M17 27h6"/>
-            </svg>
-          </div>
-          <h3>Har chaqiruv tarixda</h3>
-          <p>Qaysi xona, qachon chaqirdi, kim javob berdi — hisobot va tekshiruv uchun to'liq jurnal.</p>
-        </div>
-        <div class="feature glass">
-          <div class="icon-chip">
-            <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M8 22a14 14 0 0 1 24-9.5" />
-              <path d="M36 22a14 14 0 0 1-24 9.5" />
-              <path d="M32 12.5v-5M32 12.5h5" />
-              <path d="M12 31.5v5M12 31.5H7" />
-            </svg>
-          </div>
-          <h3>Uzilishga chidamli</h3>
-          <p>WiFi uzilsa qayta ulanadi, qurilma qotib qolsa o'zi qayta yuklanadi — chaqiruv sababsiz jim qolmaydi.</p>
-        </div>
-        <div class="feature glass">
-          <div class="icon-chip teal">
-            <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 6l12 4.5v9c0 8.5-5.2 14.8-12 17.5C15.2 34.3 10 28 10 19.5v-9L22 6Z"/>
-              <rect x="18" y="19" width="8" height="7" rx="1.6"/>
-              <path d="M19.5 19v-2.5a2.5 2.5 0 0 1 5 0V19"/>
-            </svg>
-          </div>
-          <h3>Shifrlangan kanal</h3>
-          <p>Qurilmadan serverga, serverdan soatga — barcha aloqa HTTPS orqali himoyalangan.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="wrap">
-      <div class="cta-panel glass">
-        <h2>Klinikangiz allaqachon ulanganmi?</h2>
-        <p>Hisobingiz mavjud bo'lsa, panelga kiring. Yangi klinika ulash uchun mas'ul xodim siz bilan bog'lanadi.</p>
-        <div class="cta-ctas">
-          <a class="btn btn-primary" href="/login">
-            Kirish
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
-</main>
-
-<footer>
+<!-- ================= PAIN / BENEFIT ================= -->
+<section class="section section-alt">
   <div class="wrap">
-    <div class="wrap" style="padding:0;">
-      <div class="foot-brand">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg>
-        <span>© 2026 NurseCall</span>
+    <div class="section-head">
+      <div class="eyebrow">Tanish muammo</div>
+      <h2>Bemor chaqiradi — lekin kim eshitadi?</h2>
+      <p class="section-lede">Ko'p klinikada chaqiruv tizimi yo'q yoki eskirgan. Natijada hamma narsa odamning eshitishiga va koridorda yugurishga bog'liq bo'lib qoladi.</p>
+    </div>
+    <div class="pain-grid">
+      <div class="card pain-row">
+        <div class="pain-q">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>
+          <p>Bemor qichqiradi yoki qarindoshi koridorda hamshira qidirib yuradi.</p>
+        </div>
+        <div class="pain-a">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          <p>Tugma bosiladi — mas'ul hamshiraning soati darhol tebranadi va xona raqamini ko'rsatadi. Hech kimni qidirish kerak emas.</p>
+        </div>
       </div>
-      <span>nurcecall.boos.uz</span>
+      <div class="card pain-row">
+        <div class="pain-q">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <p>Tungi smenada javob vaqti cho'ziladi — hamshira boshqa qavatda bo'lishi mumkin.</p>
+        </div>
+        <div class="pain-a">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          <p>Bildirishnoma qavatga qarab yo'naltiriladi: 1-qavatga mas'ul hamshira 2-qavat chaqiruvidan bezovta bo'lmaydi.</p>
+        </div>
+      </div>
+      <div class="card pain-row">
+        <div class="pain-q">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15h6"/></svg>
+          <p>Shikoyat bo'lganda "hamshira chaqirilganmi, qachon javob berilgan?" degan savolga hujjat yo'q.</p>
+        </div>
+        <div class="pain-a">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          <p>Har chaqiruv bazaga tushadi: qaysi xona, qachon bosilgan, kim va qachon tasdiqlagan. Tarix panelda ko'rinadi.</p>
+        </div>
+      </div>
+      <div class="card pain-row">
+        <div class="pain-q">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          <p>Hamshira chaqiruvni o'tkazib yubormaslik uchun postda o'tirishga majbur.</p>
+        </div>
+        <div class="pain-a">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          <p>Chaqiruv bilakdagi soatga keladi — hamshira ish bilan yurishi mumkin, chaqiruv unga o'zi yetib boradi.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HOW IT WORKS ================= -->
+<section class="section" id="qanday">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Qanday ishlaydi</div>
+      <h2>Tugmadan bilakgacha to'rt qadam.</h2>
+    </div>
+    <div class="steps">
+      <div class="card step">
+        <div class="step-num">01 / Tugma</div>
+        <div class="icon-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/></svg>
+        </div>
+        <h3>Tugma bosiladi</h3>
+        <p>Bemorning yonidagi simsiz tugma. Sim tortish, rozetka yoki devor buzish kerak emas.</p>
+      </div>
+      <div class="card step">
+        <div class="step-num">02 / Qabul</div>
+        <div class="icon-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12a7 7 0 0 1 14 0"/><path d="M2 12a10 10 0 0 1 20 0"/><circle cx="12" cy="18" r="2"/></svg>
+        </div>
+        <h3>Qavat qabul qiladi</h3>
+        <p>Qavatdagi qabul qilgich signalni ushlaydi va serverga yuboradi. Bitta qurilma butun qavatga xizmat qiladi.</p>
+      </div>
+      <div class="card step">
+        <div class="step-num">03 / Qayd</div>
+        <div class="icon-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+        </div>
+        <h3>Server qayd etadi</h3>
+        <p>Chaqiruv vaqti bilan bazaga yoziladi: qaysi xona, qaysi qavat, qachon. Keyin o'chirib tashlab bo'lmaydi.</p>
+      </div>
+      <div class="card step">
+        <div class="step-num">04 / Bildirish</div>
+        <div class="icon-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 3h6M9 21h6"/></svg>
+        </div>
+        <h3>Soat bildiradi</h3>
+        <p>Mas'ul hamshiraning soati tebranadi va xonani ko'rsatadi. Bosib tasdiqlaydi — vaqti yozilib qoladi.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FLOW STRIP ================= -->
+<section class="section section-alt">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Tizim tuzilishi</div>
+      <h2>Signal qanday yo'l bosadi.</h2>
+    </div>
+    <div class="flow-strip">
+      <div class="flow-node">SOS tugma</div>
+      <span class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      <div class="flow-node">433MHz radio</div>
+      <span class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      <div class="flow-node">Qavat qabul qilgichi</div>
+      <span class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      <div class="flow-node">Markaziy server</div>
+      <span class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      <div class="flow-node">Hamshira soati</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SHOWCASE ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Nima ko'rinadi</div>
+      <h2>Panel — nazorat uchun. Soat — harakat uchun.</h2>
+      <p class="section-lede">Klinika rahbari brauzerdan butun holatni ko'radi. Hamshiraga esa faqat kerakli chaqiruv boradi.</p>
+    </div>
+    <div class="showcase-grid">
+      <div>
+        <div class="card dash-mock">
+          <div class="mock-bar">
+            <span class="live-dot"></span>
+            <span>klinika paneli</span>
+            <span class="spacer">jonli</span>
+          </div>
+          <div class="dash-mock-body">
+            <div class="dash-side">
+              <div class="dash-side-item on">Chaqiruvlar</div>
+              <div class="dash-side-item">Qurilmalar</div>
+              <div class="dash-side-item">Xonalar</div>
+              <div class="dash-side-item">Xodimlar</div>
+            </div>
+            <div class="dash-main">
+              <div class="dash-title">Faol chaqiruvlar</div>
+              <div class="call-row hot">
+                <span class="rm">214-xona</span>
+                <span class="fl">2-qavat</span>
+                <span class="ago">2 s</span>
+              </div>
+              <div class="call-row">
+                <span class="rm">108-xona</span>
+                <span class="fl">1-qavat</span>
+                <span class="ago">tasdiqlandi</span>
+              </div>
+              <div class="call-row">
+                <span class="rm">305-xona</span>
+                <span class="fl">3-qavat</span>
+                <span class="ago">tasdiqlandi</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="watch-caption">Namoyish uchun tasvir — haqiqiy panel ko'rinishi shu tarzda.</p>
+      </div>
+      <div class="watch-mock">
+        <div class="watch-body">
+          <div>
+            <div class="watch-room">214</div>
+            <div class="watch-floor">2-qavat</div>
+            <div class="watch-hint">tasdiqlash uchun bosing</div>
+          </div>
+        </div>
+        <p class="watch-caption">Hamshira bilagidagi Wear OS soat</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FEATURES ================= -->
+<section class="section section-alt" id="imkoniyatlar">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Imkoniyatlar</div>
+      <h2>Bitta klinikaga ham, bir nechtasiga ham.</h2>
+    </div>
+    <div class="features-grid">
+      <div class="card feature">
+        <div class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg></div>
+        <h3>Kutish yo'q</h3>
+        <p>Tugma bosilgandan keyin chaqiruv soniyalar ichida hamshiraga yetadi. Panel esa o'zi yangilanadi — sahifani qayta yuklash kerak emas.</p>
+      </div>
+      <div class="card feature">
+        <div class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
+        <h3>Har hamshira o'z qavatida</h3>
+        <p>Hamshirani bir yoki bir nechta qavatga biriktirasiz — u faqat o'sha qavat chaqiruvlarini oladi. Keraksiz bildirishnoma yo'q.</p>
+      </div>
+      <div class="card feature">
+        <div class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 3h6M9 21h6"/></svg></div>
+        <h3>Bilakda, cho'ntakda emas</h3>
+        <p>Chaqiruv soatga keladi va tebranish bilan bildiradi. Telefonga ham bildirishnoma boradi — ikkalasi bir vaqtda ishlaydi.</p>
+      </div>
+      <div class="card feature">
+        <div class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        <h3>Har chaqiruv tarixda</h3>
+        <p>Qaysi xona, qachon bosilgan, kim va qancha vaqtda javob bergan. Shikoyat yoki tekshiruv bo'lsa — hujjat tayyor.</p>
+      </div>
+      <div class="card feature">
+        <div class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <h3>Har klinika alohida</h3>
+        <p>Bir nechta klinika bitta tizimda ishlaydi, lekin har biri faqat o'z ma'lumotini ko'radi. Aloqa shifrlangan kanal orqali.</p>
+      </div>
+      <div class="card feature">
+        <div class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M21 3v6h-6"/></svg></div>
+        <h3>Uzilishga chidamli</h3>
+        <p>Internet uzilsa qurilma qayta ulanishga urinadi va bu vaqtda bosilgan chaqiruvlarni saqlab turadi — aloqa tiklanganda yuboradi.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= INSTALL ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">O'rnatish</div>
+      <h2>O'rnatishni o'zim qilib beraman.</h2>
+      <p class="section-lede">Qurilmalarni klinikaga borib o'zim o'rnatib, sozlab, xodimlarni o'qitib beraman. Sizdan faqat xonalar ro'yxati kerak.</p>
+    </div>
+    <div class="install-grid">
+      <div class="card install-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v14"/><path d="M12 8.5v4M10 10.5h4"/></svg>
+        <div>
+          <h3>Mavjud binoga o'rnatiladi</h3>
+          <p>Simsiz tizim — devor buzish, kabel tortish, ta'mir qilish kerak emas. Ishlab turgan klinikada ish to'xtamaydi.</p>
+        </div>
+      </div>
+      <div class="card install-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+        <div>
+          <h3>Sozlash ham menda</h3>
+          <p>Xonalar, qavatlar, tugmalar va hamshiralar — hammasini o'zim kiritib, tekshirib beraman. Siz tayyor tizimni olasiz.</p>
+        </div>
+      </div>
+      <div class="card install-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <div>
+          <h3>Xodimlarni o'qitaman</h3>
+          <p>Hamshiralar soatdan qanday foydalanishni, rahbariyat esa paneldan qanday hisobot olishni bilib qoladi.</p>
+        </div>
+      </div>
+      <div class="card install-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2 4.2 2 2 0 0 1 4 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8 9.6a16 16 0 0 0 6 6l1.2-1.1a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2z"/></svg>
+        <div>
+          <h3>Keyin ham yordam bor</h3>
+          <p>Savol chiqsa yoki qurilma bilan muammo bo'lsa — bog'lanasiz. Tizim yangilanishlari avtomatik keladi.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PRICE ================= -->
+<section class="section section-alt" id="narx">
+  <div class="wrap">
+    <div class="section-head" style="text-align:center">
+      <div class="eyebrow">Narx</div>
+      <h2>Narx klinikaning o'lchamiga qarab.</h2>
+      <p class="section-lede" style="margin:0 auto">Har klinika har xil: qavatlar soni, xonalar soni, qancha tugma va qancha soat kerakligi boshqa-boshqa. Shuning uchun narxni aniq holatga qarab aytaman.</p>
+    </div>
+    <div class="card price-card">
+      <h3>Nima kiradi</h3>
+      <p>Bir marta bog'lanasiz — klinikangizni ko'rib, aniq hisob-kitob qilib beraman.</p>
+      <div class="price-includes">
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Xonadagi simsiz tugmalar</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Qavat qabul qilgichlari</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> O'rnatish va sozlash</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Klinika paneli va hisobotlar</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Xodimlarni o'qitish</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Texnik yordam va yangilanishlar</div>
+      </div>
+      <a href="#aloqa" class="btn btn-primary btn-lg">Narxni bilish uchun bog'laning</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head" style="text-align:center">
+      <div class="eyebrow">Savol-javob</div>
+      <h2>Ko'p beriladigan savollar.</h2>
+    </div>
+    <div class="faq">
+      <details>
+        <summary>Internet uzilsa nima bo'ladi?</summary>
+        <div class="faq-body">Qabul qilgich aloqa uzilganini sezadi va qayta ulanishga urinib turadi. Bu vaqtda bosilgan chaqiruvlar qurilmada saqlanadi va aloqa tiklanganda serverga yuboriladi — bosilgan tugma yo'qolib ketmaydi.</div>
+      </details>
+      <details>
+        <summary>Wi-Fi kerakmi?</summary>
+        <div class="faq-body">Ha, qavatdagi qabul qilgich serverga ulanish uchun internetga chiqishi kerak. Odatda klinikada mavjud Wi-Fi yetarli bo'ladi — o'rnatishdan oldin joyida tekshirib ko'ramiz.</div>
+      </details>
+      <details>
+        <summary>Bitta qabul qilgich qancha xonaga yetadi?</summary>
+        <div class="faq-body">Odatda bitta qurilma bir qavatni qoplaydi. Aniq soni binoning tuzilishiga bog'liq — devorlar qalin bo'lsa qamrov kamayadi. Shuning uchun o'rnatishdan oldin joyida sinab, kerak bo'lsa qurilma qo'shamiz.</div>
+      </details>
+      <details>
+        <summary>Tugmaning batareyasi qancha ishlaydi?</summary>
+        <div class="faq-body">Tugma faqat bosilganda signal yuboradi, qolgan vaqt kutish rejimida turadi — shu sababli batareya uzoq muddat yetadi. Batareya tugasa oddiy almashtiriladigan turdagi, o'zimiz yetkazib beramiz.</div>
+      </details>
+      <details>
+        <summary>Soatni kim sotib oladi?</summary>
+        <div class="faq-body">Buni kelishib olamiz: soatlarni to'liq to'plam ichida yetkazib berishim ham, klinikada mavjud Wear OS soatlarga tizimni o'rnatib berishim ham mumkin. Bog'langanda variantlarni aytaman.</div>
+      </details>
+      <details>
+        <summary>Bemor ma'lumotlari xavfsizmi?</summary>
+        <div class="faq-body">Tizim bemorning tibbiy ma'lumotini saqlamaydi — faqat xona raqami, vaqt va chaqiruvni kim tasdiqlagani yozib olinadi. Har klinika faqat o'z ma'lumotini ko'radi, aloqa shifrlangan HTTPS kanal orqali.</div>
+      </details>
+      <details>
+        <summary>Necha kunda o'rnatiladi?</summary>
+        <div class="faq-body">Odatda kichik va o'rta klinikada o'rnatish va sozlash bir ish kunida tugaydi. Katta binoda ko'proq vaqt ketishi mumkin — joyni ko'rgandan keyin aniq muddatni aytaman.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CONTACT ================= -->
+<section class="section section-alt" id="aloqa">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Aloqa</div>
+      <h2>Klinikangiz uchun bepul konsultatsiya.</h2>
+      <p class="section-lede">Qo'ng'iroq qiling yoki formani to'ldiring — klinikangizni ko'rib, nima kerakligini va qancha turishini aytib beraman.</p>
+    </div>
+    <div class="contact-grid">
+      <div class="contact-ways">
+        <a class="card contact-way" href="tel:+998935580311">
+          <span class="cw-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2 4.2 2 2 0 0 1 4 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8 9.6a16 16 0 0 0 6 6l1.2-1.1a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2z"/></svg></span>
+          <span>
+            <span class="cw-label">Telefon</span><br />
+            <span class="cw-value">+998 93 558 03 11</span>
+          </span>
+        </a>
+        <a class="card contact-way" href="https://t.me/bakhromdev" target="_blank" rel="noopener">
+          <span class="cw-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 4.2 2.9 11.4c-.8.3-.8 1.4 0 1.7l4.3 1.5 1.6 4.9c.2.7 1.1.8 1.6.3l2.3-2.3 4.4 3.2c.6.4 1.4.1 1.6-.6l3.4-15c.2-.8-.6-1.4-1.3-1.1z"/><path d="M7.2 14.6 17.8 7"/></svg></span>
+          <span>
+            <span class="cw-label">Telegram</span><br />
+            <span class="cw-value">@bakhromdev</span>
+          </span>
+        </a>
+        <a class="card contact-way" href="mailto:bahromreyimberganov0311@gmail.com">
+          <span class="cw-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg></span>
+          <span>
+            <span class="cw-label">Email</span><br />
+            <span class="cw-value">bahromreyimberganov0311@gmail.com</span>
+          </span>
+        </a>
+      </div>
+
+      <div class="card form-card" id="formCard">
+        <h3>Sizga o'zim qo'ng'iroq qilaman</h3>
+        <p>Ism va telefon yetarli. Qolganini gaplashib olamiz.</p>
+        <form id="contactForm" novalidate>
+          <div class="field">
+            <label for="cf-name">Ismingiz <span aria-hidden="true">*</span></label>
+            <input id="cf-name" name="name" type="text" required minlength="2" maxlength="100" autocomplete="name" placeholder="Ismingiz" />
+          </div>
+          <div class="field">
+            <label for="cf-phone">Telefon <span aria-hidden="true">*</span></label>
+            <input id="cf-phone" name="phone" type="tel" required minlength="5" maxlength="32" autocomplete="tel" placeholder="+998 __ ___ __ __" />
+          </div>
+          <div class="field">
+            <label for="cf-clinic">Klinika nomi</label>
+            <input id="cf-clinic" name="clinic_name" type="text" maxlength="200" autocomplete="organization" placeholder="Ixtiyoriy" />
+          </div>
+          <div class="field">
+            <label for="cf-message">Xabar</label>
+            <textarea id="cf-message" name="message" maxlength="2000" placeholder="Qavatlar va xonalar soni, savollaringiz — ixtiyoriy"></textarea>
+          </div>
+          <button class="btn btn-primary btn-lg" type="submit" id="cf-submit" style="width:100%">Yuborish</button>
+          <p class="form-msg" id="cf-msg" role="status" aria-live="polite"></p>
+          <p class="form-hint">Ma'lumotlaringiz faqat siz bilan bog'lanish uchun ishlatiladi.</p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap footer-inner">
+    <div>
+      <a href="/" class="brand" style="margin-bottom:6px">
+        <span class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg>
+        </span>
+        <span>NurseCall</span>
+      </a>
+      <p class="footer-copy">&copy; 2026 NurseCall &middot; <a href="https://nurcecall.boos.uz">nurcecall.boos.uz</a></p>
+    </div>
+    <div class="footer-links">
+      <a href="tel:+998935580311">+998 93 558 03 11</a>
+      <a href="https://t.me/bakhromdev" target="_blank" rel="noopener">@bakhromdev</a>
+      <a href="mailto:bahromreyimberganov0311@gmail.com">Email</a>
+      <a href="/login">Kirish</a>
     </div>
   </div>
 </footer>
 
+<!-- ================= STICKY MOBILE CTA ================= -->
+<div class="mobile-cta">
+  <a href="tel:+998935580311" class="btn btn-primary">Qo'ng'iroq</a>
+  <a href="https://t.me/bakhromdev" target="_blank" rel="noopener" class="btn btn-ghost">Telegram</a>
+</div>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://nurcecall.boos.uz/#org",
+      "name": "NurseCall",
+      "url": "https://nurcecall.boos.uz/",
+      "telephone": "+998935580311",
+      "email": "bahromreyimberganov0311@gmail.com"
+    },
+    {
+      "@type": "Service",
+      "name": "NurseCall — hamshira chaqiruv tizimi",
+      "serviceType": "Klinikalar uchun simsiz hamshira chaqiruv tizimi",
+      "provider": { "@id": "https://nurcecall.boos.uz/#org" },
+      "areaServed": "UZ",
+      "description": "Xonadagi simsiz SOS tugmadan hamshiraning Wear OS soatiga chaqiruv yetkazish, har chaqiruvni vaqti bilan qayd etish va klinika paneli orqali nazorat qilish."
+    }
+  ]
+}
+</script>
+
 <script>
   (function () {
     var root = document.documentElement;
+
+    /* ---- theme toggle ---- */
     var toggle = document.getElementById('themeToggle');
-    function current() { return root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'; }
-    function sync() { toggle.setAttribute('aria-pressed', current() === 'dark' ? 'true' : 'false'); }
-    sync();
+    function syncPressed() {
+      toggle.setAttribute('aria-pressed', root.getAttribute('data-theme') === 'dark' ? 'true' : 'false');
+    }
+    syncPressed();
     toggle.addEventListener('click', function () {
-      var next = current() === 'dark' ? 'light' : 'dark';
+      var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
       root.setAttribute('data-theme', next);
       try { localStorage.setItem('theme', next); } catch (e) {}
-      sync();
+      syncPressed();
+    });
+
+    /* ---- mobile menu ---- */
+    var menuBtn = document.getElementById('menuToggle');
+    var menu = document.getElementById('mobileMenu');
+    menuBtn.addEventListener('click', function () {
+      var open = menu.classList.toggle('open');
+      menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    // Tapping any entry navigates within the page, so the panel must close behind it.
+    menu.addEventListener('click', function (e) {
+      if (e.target.tagName === 'A') {
+        menu.classList.remove('open');
+        menuBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    /* ---- contact form ---- */
+    var form = document.getElementById('contactForm');
+    var submitBtn = document.getElementById('cf-submit');
+    var msg = document.getElementById('cf-msg');
+    var card = document.getElementById('formCard');
+
+    function show(text, isError) {
+      msg.textContent = text;
+      msg.className = 'form-msg' + (isError ? ' err' : '');
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      var name = form.name.value.trim();
+      var phone = form.phone.value.trim();
+      var clinic = form.clinic_name.value.trim();
+      var message = form.message.value.trim();
+
+      // Mirrors the server's limits so the ordinary mistake never costs a round-trip.
+      if (name.length < 2 || name.length > 100) { show("Ismni 2 dan 100 belgigacha kiriting", true); return; }
+      if (phone.length < 5 || phone.length > 32) { show("Telefon raqamini to'g'ri kiriting", true); return; }
+
+      submitBtn.disabled = true;
+      var originalLabel = submitBtn.textContent;
+      submitBtn.textContent = 'Yuborilmoqda...';
+      show('', false);
+
+      fetch('/api/v1/contact-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name,
+          phone: phone,
+          clinic_name: clinic || null,
+          message: message || null
+        })
+      })
+        .then(function (resp) {
+          return resp.json().catch(function () { return null; }).then(function (data) {
+            return { ok: resp.ok, status: resp.status, data: data };
+          });
+        })
+        .then(function (r) {
+          if (r.ok) {
+            card.innerHTML =
+              '<div class="form-done">' +
+              '<div class="fd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>' +
+              '<h3>Rahmat!</h3>' +
+              "<p>So'rovingiz qabul qilindi — tez orada o'zim bog'lanaman. Shoshilinch bo'lsa: " +
+              '<a href="tel:+998935580311" style="color:var(--accent)">+998 93 558 03 11</a></p>' +
+              '</div>';
+            return;
+          }
+          var detail = (r.data && r.data.detail) ? r.data.detail : "Yuborib bo'lmadi. Iltimos, qayta urinib ko'ring";
+          show(detail, true);
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalLabel;
+        })
+        .catch(function () {
+          show("Aloqa xatosi. Iltimos, qayta urinib ko'ring yoki +998 93 558 03 11 raqamiga qo'ng'iroq qiling", true);
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalLabel;
+        });
     });
   })();
 </script>

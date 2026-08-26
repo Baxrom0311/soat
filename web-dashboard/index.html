@@ -11,17 +11,16 @@
       rel="stylesheet"
     />
     <script>
+      // Day theme is the baseline, night is opt-in via the in-app toggle -- we do NOT
+      // follow prefers-color-scheme. A nurse station's OS being in dark mode should
+      // not decide what the clinic's dashboard looks like; only an explicit choice does.
       (function () {
         try {
           var saved = localStorage.getItem('theme');
-          var theme =
-            saved === 'light' || saved === 'dark'
-              ? saved
-              : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-                ? 'dark'
-                : 'light';
-          document.documentElement.setAttribute('data-theme', theme);
-        } catch (e) {}
+          document.documentElement.setAttribute('data-theme', saved === 'dark' ? 'dark' : 'light');
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
       })();
     </script>
     <title>NurseCall — Bemor chaqiruv paneli</title>

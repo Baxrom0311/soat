@@ -12,7 +12,7 @@ const STATUS_LABEL: Record<EffectiveStatus, string> = {
   overdue: "Muddat o'tgan",
 };
 
-function fmtDate(iso: string | null): string {
+export function fmtDate(iso: string | null): string {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }

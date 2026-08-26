@@ -160,6 +160,15 @@ export function CollapseIcon(props: IconProps) {
   );
 }
 
+export function InboxIcon(props: IconProps) {
+  return (
+    <svg {...base} className={props.className}>
+      <path d="M3 12h4l2 3h6l2-3h4" />
+      <path d="M5.5 5h13l2.5 7v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5l2.5-7Z" />
+    </svg>
+  );
+}
+
 export function WarningIcon(props: IconProps) {
   return (
     <svg {...base} className={props.className}>

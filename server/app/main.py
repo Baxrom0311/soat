@@ -8,7 +8,7 @@ from sqlalchemy import text
 
 from app.core.config import ENVIRONMENT
 from app.database import Base, SessionLocal, engine
-from app.routers import admin, auth, buttons, calls, clinic, devices, meta, push_tokens, rooms, staff, unassigned, ws
+from app.routers import admin, auth, buttons, calls, clinic, contact, devices, meta, push_tokens, rooms, staff, unassigned, ws
 
 # Uvicorn only configures its own "uvicorn.*" loggers by default; without this, the
 # app-level logging (e.g. app.services.push_service's Expo push delivery logs) never
@@ -61,6 +61,7 @@ app.include_router(buttons.router)
 app.include_router(unassigned.router)
 app.include_router(calls.router)
 app.include_router(push_tokens.router)
+app.include_router(contact.router)
 app.include_router(ws.router)
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
