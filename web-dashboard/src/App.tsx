@@ -35,8 +35,6 @@ function RequireSuperAdmin({ children }: { children: ReactNode }) {
 function App() {
   return (
     <AuthProvider>
-      <div className="mesh" />
-      <div className="grid-overlay" />
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginRoute />} />

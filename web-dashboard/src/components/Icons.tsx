@@ -43,6 +43,15 @@ export function LogoutIcon(props: IconProps) {
   );
 }
 
+export function KeyIcon(props: IconProps) {
+  return (
+    <svg {...base} className={props.className}>
+      <circle cx="7.5" cy="15.5" r="3.5" />
+      <path d="M10 13l8-8M15.5 7.5l2 2M18 5l2 2" />
+    </svg>
+  );
+}
+
 export function CallsIcon(props: IconProps) {
   return (
     <svg {...base} className={props.className}>
@@ -130,6 +139,23 @@ export function CopyIcon(props: IconProps) {
     <svg {...base} className={props.className}>
       <rect x="9" y="9" width="13" height="13" rx="2" />
       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+export function HamburgerIcon(props: IconProps) {
+  return (
+    <svg {...base} className={props.className}>
+      <path d="M3 6h18M3 12h18M3 18h18" />
+    </svg>
+  );
+}
+
+export function CollapseIcon(props: IconProps) {
+  return (
+    <svg {...base} className={props.className}>
+      <path d="M15 6l-6 6 6 6" />
+      <path d="M4 4v16" />
     </svg>
   );
 }

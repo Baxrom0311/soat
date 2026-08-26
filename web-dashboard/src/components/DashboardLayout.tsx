@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCallsFeed } from '../hooks/useCallsFeed';
 import { ChangePasswordModal } from './ChangePasswordModal';
-import { CallsIcon, DevicesIcon, LogoIcon, LogoutIcon, RoomsIcon, StaffIcon, UnassignedIcon } from './Icons';
-import { ThemeToggle } from './ThemeToggle';
+import { CallsIcon, DevicesIcon, RoomsIcon, StaffIcon, UnassignedIcon } from './Icons';
+import { MobileTopbar, Sidebar } from './Sidebar';
 import { CallsTab } from './tabs/CallsTab';
 import { DevicesTab } from './tabs/DevicesTab';
 import { RoomsTab } from './tabs/RoomsTab';
@@ -12,7 +12,7 @@ import { StaffTab } from './tabs/StaffTab';
 
 type TabKey = 'calls' | 'devices' | 'rooms' | 'unassigned' | 'staff';
 
-const TABS: { key: TabKey; label: string; Icon: typeof CallsIcon }[] = [
+const NAV_ITEMS: { key: TabKey; label: string; Icon: typeof CallsIcon }[] = [
   { key: 'calls', label: 'Chaqiruvlar', Icon: CallsIcon },
   { key: 'devices', label: 'Qurilmalar', Icon: DevicesIcon },
   { key: 'rooms', label: 'Xonalar', Icon: RoomsIcon },
@@ -30,70 +30,62 @@ export function DashboardLayout() {
   const { token, session, logout } = useAuth();
   const [tab, setTab] = useState<TabKey>('calls');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const feed = useCallsFeed(token);
 
-  const userChip = session ? `${session.name} (${session.role})` : '';
+  const userName = session?.name ?? '';
+  const userRole = session?.role ?? '';
+
+  const navItems = NAV_ITEMS.map(({ key, label, Icon }) => ({
+    key,
+    label,
+    Icon,
+    active: tab === key,
+    onClick: () => {
+      setTab(key);
+      setMobileOpen(false);
+    },
+  }));
 
   return (
-    <div className="app-screen">
-      <header className="nav">
-        <div className="nav-inner glass">
-          <a href="/" className="brand">
-            <span className="brand-mark">
-              <LogoIcon />
-            </span>
-            <span className="brand-text">NurseCall</span>
-          </a>
-          <div className="nav-right">
-            <div className="conn">
-              <span className={`dot ${feed.connStatus === 'live' ? 'live' : ''}`} />
-              <span>{CONN_LABEL[feed.connStatus]}</span>
-            </div>
-            <span className="nav-divider" />
-            <ThemeToggle />
-            <span className="user-chip">{userChip}</span>
-            <button className="btn btn-ghost btn-sm" onClick={() => setShowPasswordModal(true)} type="button">
-              Parol
-            </button>
-            <button className="btn btn-ghost btn-sm" onClick={logout} type="button">
-              <LogoutIcon />
-              Chiqish
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className={`app-screen app-screen--sidebar ${collapsed ? 'collapsed' : ''}`}>
+      <Sidebar
+        items={navItems}
+        collapsed={collapsed}
+        onToggleCollapsed={() => setCollapsed((v) => !v)}
+        mobileOpen={mobileOpen}
+        onCloseMobile={() => setMobileOpen(false)}
+        userName={userName}
+        userRole={userRole}
+        onOpenPasswordModal={() => setShowPasswordModal(true)}
+        onLogout={logout}
+        conn={{ status: feed.connStatus, label: CONN_LABEL[feed.connStatus] }}
+      />
 
       {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
 
-      <nav className="tabs-wrap">
-        <div className="tabs glass">
-          {TABS.map(({ key, label, Icon }) => (
-            <button
-              key={key}
-              className={`tab-btn ${tab === key ? 'active' : ''}`}
-              onClick={() => setTab(key)}
-              type="button"
-            >
-              <Icon />
-              {label}
-            </button>
-          ))}
-        </div>
-      </nav>
+      <div className="app-body">
+        <MobileTopbar onOpenMobile={() => setMobileOpen(true)}>
+          <div className="conn">
+            <span className={`dot ${feed.connStatus === 'live' ? 'live' : ''}`} />
+          </div>
+        </MobileTopbar>
 
-      <main className="wrap">
-        {tab === 'calls' && <CallsTab activeCalls={feed.activeCalls} history={feed.history} ackCall={feed.ackCall} />}
-        {tab === 'devices' && <DevicesTab />}
-        {tab === 'rooms' && <RoomsTab />}
-        {tab === 'unassigned' && (
-          <UnassignedTab
-            signals={feed.unassignedSignals}
-            refreshSignals={feed.refreshUnassigned}
-            markLocalMutation={feed.markLocalMutation}
-          />
-        )}
-        {tab === 'staff' && <StaffTab />}
-      </main>
+        <main className="content-area">
+          {tab === 'calls' && <CallsTab activeCalls={feed.activeCalls} history={feed.history} ackCall={feed.ackCall} />}
+          {tab === 'devices' && <DevicesTab />}
+          {tab === 'rooms' && <RoomsTab />}
+          {tab === 'unassigned' && (
+            <UnassignedTab
+              signals={feed.unassignedSignals}
+              refreshSignals={feed.refreshUnassigned}
+              markLocalMutation={feed.markLocalMutation}
+            />
+          )}
+          {tab === 'staff' && <StaffTab />}
+        </main>
+      </div>
     </div>
   );
 }
