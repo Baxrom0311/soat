@@ -9,6 +9,9 @@ export const darkColors = {
   accent: '#5b9bff',
   accentAlt: '#2fd6c4',
   danger: '#ff7466',
+  // Ogohlantirish (sariq) — `danger` qizil rangi chaqiruv/xato uchun band, obuna
+  // muddati tugayotgani esa shoshilinch emas, shu bilan aralashmasligi kerak.
+  warning: '#f2b34b',
   success: '#2fd6c4',
   textPrimary: '#eef4fc',
   textMuted: '#a7bcd8',
@@ -25,6 +28,7 @@ export const lightColors = {
   accent: '#1d5fe0',
   accentAlt: '#0c8f83',
   danger: '#d9463a',
+  warning: '#9a6408',
   success: '#0c8f83',
   textPrimary: '#0c1e33',
   textMuted: '#3e5872',

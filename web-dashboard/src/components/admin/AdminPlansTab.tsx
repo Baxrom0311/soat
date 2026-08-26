@@ -9,18 +9,150 @@ function fmtMoney(amount: number, currency: string): string {
   return `${amount.toLocaleString('ru-RU')} ${label}`;
 }
 
+/** The four amounts a plan carries, as strings while they live in inputs. */
+type Amounts = {
+  perDeviceMonthly: string;
+  minMonthly: string;
+  perDeviceAnnual: string;
+  minAnnual: string;
+};
+
+const EMPTY_AMOUNTS: Amounts = {
+  perDeviceMonthly: '',
+  minMonthly: '',
+  perDeviceAnnual: '',
+  minAnnual: '',
+};
+
+function fromPlan(plan: Plan): Amounts {
+  return {
+    perDeviceMonthly: String(plan.price_per_device_monthly),
+    minMonthly: String(plan.min_price_monthly),
+    perDeviceAnnual: String(plan.price_per_device_annual),
+    minAnnual: String(plan.min_price_annual),
+  };
+}
+
+/**
+ * Validates the four amounts together. Guards the Number('') === 0 footgun: a blank
+ * per-device price must not silently make the plan free.
+ */
+function parseAmounts(a: Amounts): { ok: true; value: PlanAmounts } | { ok: false; error: string } {
+  const perDeviceMonthly = Number(a.perDeviceMonthly);
+  const perDeviceAnnual = Number(a.perDeviceAnnual);
+  if (a.perDeviceMonthly.trim() === '' || Number.isNaN(perDeviceMonthly) || perDeviceMonthly < 0) {
+    return { ok: false, error: "Oylik narxni to'g'ri kiriting (0 yoki undan katta)" };
+  }
+  if (a.perDeviceAnnual.trim() === '' || Number.isNaN(perDeviceAnnual) || perDeviceAnnual < 0) {
+    return { ok: false, error: "Yillik narxni to'g'ri kiriting (0 yoki undan katta)" };
+  }
+  const minMonthly = a.minMonthly.trim() === '' ? 0 : Number(a.minMonthly);
+  const minAnnual = a.minAnnual.trim() === '' ? 0 : Number(a.minAnnual);
+  if (Number.isNaN(minMonthly) || minMonthly < 0 || Number.isNaN(minAnnual) || minAnnual < 0) {
+    return { ok: false, error: "Minimal summani to'g'ri kiriting (0 yoki undan katta)" };
+  }
+  return {
+    ok: true,
+    value: {
+      price_per_device_monthly: perDeviceMonthly,
+      price_per_device_annual: perDeviceAnnual,
+      min_price_monthly: minMonthly,
+      min_price_annual: minAnnual,
+    },
+  };
+}
+
+type PlanAmounts = {
+  price_per_device_monthly: number;
+  price_per_device_annual: number;
+  min_price_monthly: number;
+  min_price_annual: number;
+};
+
+/**
+ * One period's two numbers, kept in a titled block. Four bare number inputs in a row
+ * are indistinguishable at a glance; grouping them per period makes "monthly vs annual"
+ * the primary distinction and "rate vs floor" the secondary one.
+ */
+function PeriodFields({
+  title,
+  note,
+  perDevice,
+  min,
+  onPerDevice,
+  onMin,
+  idPrefix,
+}: {
+  title: string;
+  note: string;
+  perDevice: string;
+  min: string;
+  onPerDevice: (v: string) => void;
+  onMin: (v: string) => void;
+  idPrefix: string;
+}) {
+  return (
+    <div className="period-block">
+      <div className="period-block__head">
+        <span className="period-block__title">{title}</span>
+        <span className="period-block__note">{note}</span>
+      </div>
+      <label className="period-block__label" htmlFor={`${idPrefix}-per-device`}>
+        1 qurilma uchun
+      </label>
+      <input
+        id={`${idPrefix}-per-device`}
+        type="number"
+        min={0}
+        placeholder="masalan 40000"
+        value={perDevice}
+        onChange={(e) => onPerDevice(e.target.value)}
+      />
+      <label className="period-block__label" htmlFor={`${idPrefix}-min`}>
+        Minimal summa
+      </label>
+      <input
+        id={`${idPrefix}-min`}
+        type="number"
+        min={0}
+        placeholder="bo'sh = 0 (chegara yo'q)"
+        value={min}
+        onChange={(e) => onMin(e.target.value)}
+      />
+    </div>
+  );
+}
+
+/** Read-only summary of one period, used in the table. */
+function PeriodCell({
+  perDevice,
+  min,
+  currency,
+}: {
+  perDevice: number;
+  min: number;
+  currency: string;
+}) {
+  return (
+    <div className="billing-cell">
+      <span className="price">{fmtMoney(perDevice, currency)}</span>
+      <span className="muted">1 qurilma uchun</span>
+      <span className="muted">
+        {min > 0 ? `Minimal: ${fmtMoney(min, currency)}` : 'Minimal chegara yo’q'}
+      </span>
+    </div>
+  );
+}
+
 export function AdminPlansTab() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [name, setName] = useState('');
-  const [price, setPrice] = useState('');
-  const [months, setMonths] = useState('1');
-  const [maxDevices, setMaxDevices] = useState('');
+  const [amounts, setAmounts] = useState<Amounts>(EMPTY_AMOUNTS);
   const [createError, setCreateError] = useState('');
   const [creating, setCreating] = useState(false);
 
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editPrice, setEditPrice] = useState('');
-  const [editMax, setEditMax] = useState('');
+  const [editAmounts, setEditAmounts] = useState<Amounts>(EMPTY_AMOUNTS);
   const [editError, setEditError] = useState('');
   const [rowError, setRowError] = useState('');
   const [loadError, setLoadError] = useState('');
@@ -41,18 +173,16 @@ export function AdminPlansTab() {
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
     setCreateError('');
+    const parsed = parseAmounts(amounts);
+    if (!parsed.ok) {
+      setCreateError(parsed.error);
+      return;
+    }
     setCreating(true);
     try {
-      await api.createPlan({
-        name,
-        price_amount: Number(price),
-        billing_period_months: Number(months) || 1,
-        max_devices: maxDevices ? Number(maxDevices) : null,
-      });
+      await api.createPlan({ name, ...parsed.value });
       setName('');
-      setPrice('');
-      setMonths('1');
-      setMaxDevices('');
+      setAmounts(EMPTY_AMOUNTS);
       await load();
     } catch (err) {
       setCreateError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
@@ -63,24 +193,19 @@ export function AdminPlansTab() {
 
   function startEdit(plan: Plan) {
     setEditingId(plan.id);
-    setEditPrice(String(plan.price_amount));
-    setEditMax(plan.max_devices === null ? '' : String(plan.max_devices));
+    setEditAmounts(fromPlan(plan));
     setEditError('');
   }
 
   async function saveEdit(planId: number) {
     setEditError('');
-    // Guard the Number('') === 0 footgun: an empty price must not silently zero the plan.
-    const price = Number(editPrice);
-    if (editPrice.trim() === '' || Number.isNaN(price) || price < 0) {
-      setEditError("Narxni to'g'ri kiriting (0 yoki undan katta)");
+    const parsed = parseAmounts(editAmounts);
+    if (!parsed.ok) {
+      setEditError(parsed.error);
       return;
     }
     try {
-      await api.updatePlan(planId, {
-        price_amount: price,
-        max_devices: editMax ? Number(editMax) : null,
-      });
+      await api.updatePlan(planId, parsed.value);
       setEditingId(null);
       load();
     } catch (err) {
@@ -126,38 +251,41 @@ export function AdminPlansTab() {
         <h3>
           <PlusIcon /> Yangi tarif qo'shish
         </h3>
-        <form className="inline-form" onSubmit={handleCreate}>
-          <input
-            type="text"
-            placeholder="Nomi (masalan Standart)"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <input
-            type="number"
-            min={0}
-            placeholder="Narx (so'm/davr)"
-            required
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-          />
-          <input
-            type="number"
-            min={1}
-            max={60}
-            placeholder="Davr (oy)"
-            required
-            value={months}
-            onChange={(e) => setMonths(e.target.value)}
-          />
-          <input
-            type="number"
-            min={1}
-            placeholder="Maks. qurilma (bo'sh = cheksiz)"
-            value={maxDevices}
-            onChange={(e) => setMaxDevices(e.target.value)}
-          />
+        <p className="hint">
+          Narx har bir ESP32 qabul qilgich uchun hisoblanadi: qurilma soni × 1 qurilma
+          narxi, natija minimal summadan kam bo'lsa minimal summa olinadi. Oylik va yillik
+          stavkalar bir-biridan mustaqil — yillik chegirma tijorat qarori.
+        </p>
+        <form onSubmit={handleCreate}>
+          <div className="inline-form">
+            <input
+              type="text"
+              placeholder="Nomi (masalan Standart)"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="period-grid">
+            <PeriodFields
+              idPrefix="new-monthly"
+              title="Oylik"
+              note="1 oyga"
+              perDevice={amounts.perDeviceMonthly}
+              min={amounts.minMonthly}
+              onPerDevice={(v) => setAmounts((a) => ({ ...a, perDeviceMonthly: v }))}
+              onMin={(v) => setAmounts((a) => ({ ...a, minMonthly: v }))}
+            />
+            <PeriodFields
+              idPrefix="new-annual"
+              title="Yillik"
+              note="12 oyga"
+              perDevice={amounts.perDeviceAnnual}
+              min={amounts.minAnnual}
+              onPerDevice={(v) => setAmounts((a) => ({ ...a, perDeviceAnnual: v }))}
+              onMin={(v) => setAmounts((a) => ({ ...a, minAnnual: v }))}
+            />
+          </div>
           <button type="submit" className="btn btn-primary" disabled={creating}>
             {creating ? '...' : "Qo'shish"}
           </button>
@@ -173,9 +301,8 @@ export function AdminPlansTab() {
           <thead>
             <tr>
               <th>Nomi</th>
-              <th>Narx</th>
-              <th>Davr</th>
-              <th>Maks. qurilma</th>
+              <th>Oylik (1 qurilma)</th>
+              <th>Yillik (1 qurilma)</th>
               <th>Holat</th>
               <th>Amallar</th>
             </tr>
@@ -185,25 +312,27 @@ export function AdminPlansTab() {
               editingId === p.id ? (
                 <tr key={p.id}>
                   <td data-label="Nomi">{p.name}</td>
-                  <td data-label="Narx">
-                    <input
-                      type="number"
-                      min={0}
-                      className="table-input"
-                      value={editPrice}
-                      onChange={(e) => setEditPrice(e.target.value)}
-                    />
-                  </td>
-                  <td data-label="Davr">{p.billing_period_months} oy</td>
-                  <td data-label="Maks. qurilma">
-                    <input
-                      type="number"
-                      min={1}
-                      className="table-input"
-                      placeholder="cheksiz"
-                      value={editMax}
-                      onChange={(e) => setEditMax(e.target.value)}
-                    />
+                  <td data-label="Oylik (1 qurilma)" colSpan={2}>
+                    <div className="period-grid period-grid--inline">
+                      <PeriodFields
+                        idPrefix={`edit-${p.id}-monthly`}
+                        title="Oylik"
+                        note="1 oyga"
+                        perDevice={editAmounts.perDeviceMonthly}
+                        min={editAmounts.minMonthly}
+                        onPerDevice={(v) => setEditAmounts((a) => ({ ...a, perDeviceMonthly: v }))}
+                        onMin={(v) => setEditAmounts((a) => ({ ...a, minMonthly: v }))}
+                      />
+                      <PeriodFields
+                        idPrefix={`edit-${p.id}-annual`}
+                        title="Yillik"
+                        note="12 oyga"
+                        perDevice={editAmounts.perDeviceAnnual}
+                        min={editAmounts.minAnnual}
+                        onPerDevice={(v) => setEditAmounts((a) => ({ ...a, perDeviceAnnual: v }))}
+                        onMin={(v) => setEditAmounts((a) => ({ ...a, minAnnual: v }))}
+                      />
+                    </div>
                   </td>
                   <td data-label="Holat">{p.is_active ? 'Faol' : 'Arxiv'}</td>
                   <td data-label="Amallar">
@@ -221,9 +350,20 @@ export function AdminPlansTab() {
               ) : (
                 <tr key={p.id}>
                   <td data-label="Nomi">{p.name}</td>
-                  <td data-label="Narx">{fmtMoney(p.price_amount, p.currency)}</td>
-                  <td data-label="Davr">{p.billing_period_months} oy</td>
-                  <td data-label="Maks. qurilma">{p.max_devices === null ? 'Cheksiz' : p.max_devices}</td>
+                  <td data-label="Oylik (1 qurilma)">
+                    <PeriodCell
+                      perDevice={p.price_per_device_monthly}
+                      min={p.min_price_monthly}
+                      currency={p.currency}
+                    />
+                  </td>
+                  <td data-label="Yillik (1 qurilma)">
+                    <PeriodCell
+                      perDevice={p.price_per_device_annual}
+                      min={p.min_price_annual}
+                      currency={p.currency}
+                    />
+                  </td>
                   <td data-label="Holat">
                     <span className={`sub-pill ${p.is_active ? 'active' : 'suspended'}`}>
                       {p.is_active ? 'Faol' : 'Arxiv'}

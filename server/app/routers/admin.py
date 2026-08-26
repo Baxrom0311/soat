@@ -53,10 +53,11 @@ def create_plan(
     return admin_service.create_plan(
         db,
         name=body.name,
-        price_amount=body.price_amount,
         currency=body.currency,
-        billing_period_months=body.billing_period_months,
-        max_devices=body.max_devices,
+        price_per_device_monthly=body.price_per_device_monthly,
+        price_per_device_annual=body.price_per_device_annual,
+        min_price_monthly=body.min_price_monthly,
+        min_price_annual=body.min_price_annual,
         actor=user,
         ip_address=_ip(request),
     )
@@ -111,9 +112,22 @@ def update_clinic(
         clear_plan=body.clear_plan,
         custom_price_amount=body.custom_price_amount,
         clear_custom_price=body.clear_custom_price,
+        billing_period_months=body.billing_period_months,
+        discount_percent=body.discount_percent,
+        discount_months=body.discount_months,
+        clear_discount=body.clear_discount,
+        enforcement_enabled=body.enforcement_enabled,
         actor=user,
         ip_address=_ip(request),
     )
+
+
+@router.post("/clinics/{clinic_id}/start-billing", response_model=AdminClinicListItem)
+def start_billing(
+    clinic_id: int, request: Request,
+    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+):
+    return admin_service.start_billing(db, clinic_id, actor=user, ip_address=_ip(request))
 
 
 # ---- Payments (to'lovlar) ----
@@ -140,6 +154,7 @@ def record_payment(
         actor=user,
         ip_address=_ip(request),
         idempotency_key=body.idempotency_key,
+        allow_amount_mismatch=body.allow_amount_mismatch,
     )
 
 

@@ -69,7 +69,33 @@ CALL_INGEST_RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("CALL_INGEST_RATE_LIMIT_WI
 # Manual suspension (subscription_status="suspended") is NOT affected by this and
 # still blocks immediately -- the grace period only softens the automatic,
 # payment-lapse path.
-BILLING_GRACE_PERIOD_DAYS = int(os.getenv("BILLING_GRACE_PERIOD_DAYS", "7"))
+BILLING_GRACE_PERIOD_DAYS = int(os.getenv("BILLING_GRACE_PERIOD_DAYS", "3"))
+
+# How far ahead of paid_until the expiry warning starts appearing (clinic side) and
+# alerting (vendor side). The point is to collect the payment BEFORE the due date, so
+# the grace window and the cutoff are never reached at all -- by the time a clinic is
+# overdue the conversation is already an awkward one.
+BILLING_WARN_BEFORE_DAYS = int(os.getenv("BILLING_WARN_BEFORE_DAYS", "5"))
+
+# Vendor identity printed on the clinic-facing bill (GET /api/v1/clinic/bill).
+# All empty by default and the template omits any empty block: there is no registered
+# legal entity yet, so the page must stay a plain bill ("Hisob") and must not print
+# blank "STIR:" style labels that would make it look like an incomplete invoice.
+# Fill these in via env once the entity and bank account exist.
+VENDOR_LEGAL_NAME = os.getenv("VENDOR_LEGAL_NAME", "")
+VENDOR_TAX_ID = os.getenv("VENDOR_TAX_ID", "")
+VENDOR_BANK_DETAILS = os.getenv("VENDOR_BANK_DETAILS", "")
+VENDOR_ADDRESS = os.getenv("VENDOR_ADDRESS", "")
+# The one contact detail that is already known and stable.
+VENDOR_PHONE = os.getenv("VENDOR_PHONE", "+998935580311")
+
+# Vendor-facing alert channels for the daily expiry-warning job
+# (jobs/check_expiring_subscriptions.py). Both are individually optional: whichever is
+# configured gets the message, and an unconfigured channel is simply skipped -- so the
+# job can ship and start warning over ntfy before a Telegram bot exists.
+NTFY_TOPIC_URL = os.getenv("NTFY_TOPIC_URL", "")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 
 # Minimum client build (Android versionCode / Wear versionCode) allowed to keep working.
 # Bump these after shipping a build that older clients must not silently keep using

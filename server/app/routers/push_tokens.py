@@ -1,17 +1,20 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.core.deps import CurrentUser, get_clinic_user, get_db
+from app.core.deps import CurrentUser, get_clinic_user_ungated, get_db
 from app.schemas.push_token import PushTokenIn, PushTokenOut
 from app.services import push_token_service
 
+# Alerting path: never billing-gated. If a blocked clinic could not register a
+# push token, a nurse installing the app on a new phone would silently stop
+# receiving call notifications.
 router = APIRouter(prefix="/api/v1/push-tokens", tags=["push-tokens"])
 
 
 @router.post("", response_model=PushTokenOut)
 def register_push_token(
     body: PushTokenIn,
-    user: CurrentUser = Depends(get_clinic_user),
+    user: CurrentUser = Depends(get_clinic_user_ungated),
     db: Session = Depends(get_db),
 ):
     push_token_service.register_token(
@@ -23,7 +26,7 @@ def register_push_token(
 @router.delete("", response_model=PushTokenOut)
 def unregister_push_token(
     body: PushTokenIn,
-    user: CurrentUser = Depends(get_clinic_user),
+    user: CurrentUser = Depends(get_clinic_user_ungated),
     db: Session = Depends(get_db),
 ):
     push_token_service.unregister_token(

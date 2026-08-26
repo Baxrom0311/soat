@@ -109,6 +109,23 @@ export function ackCall(callId: number, acknowledgedBy: string): Promise<AckResp
   });
 }
 
+export interface BillingNotice {
+  warn: boolean;
+  days_left: number | null;
+  blocked: boolean;
+}
+
+// Obuna eslatmasi — hech qachon xato tashlamaydi (null qaytaradi): to'lov
+// tekshiruvi chaqiruvlar ro'yxatini buzishi yoki to'xtatishi mumkin emas.
+// 401 bo'lsa request() ichidagi handler baribir login ekraniga qaytaradi.
+export async function getBillingNotice(): Promise<BillingNotice | null> {
+  try {
+    return await request<BillingNotice>('/api/v1/clinic/billing-notice');
+  } catch {
+    return null;
+  }
+}
+
 export function registerPushToken(expoPushToken: string): Promise<{ ok: boolean }> {
   return request<{ ok: boolean }>('/api/v1/push-tokens', {
     method: 'POST',

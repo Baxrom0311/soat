@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { api, triggerSuspended, triggerUnauthorized, wsUrl } from '../api/client';
+import { api, triggerBlocked, triggerUnauthorized, wsUrl } from '../api/client';
 import type { ActiveCall, HistoryCall, UnassignedSignal, WsMessage, WsUnassignedSignal } from '../api/types';
 
 export type ConnStatus = 'connecting' | 'live' | 'disconnected';
@@ -48,8 +48,16 @@ function normalizeWsSignal(signal: WsUnassignedSignal): UnassignedSignal {
   };
 }
 
-/** Drives the active-calls/history/unassigned-signals feed for the whole session: WebSocket push + 5s polling fallback. */
-export function useCallsFeed(token: string | null) {
+/**
+ * Drives the active-calls/history/unassigned-signals feed for the whole session:
+ * WebSocket push + 5s polling fallback.
+ *
+ * `blocked` == the clinic is billing-blocked. Active calls, the WS stream and ack are
+ * ungated server-side and keep running regardless; history and unassigned-signals are
+ * management routes that answer 402, so once we know the clinic is blocked we stop
+ * asking for them rather than generating a guaranteed 402 every 5 seconds.
+ */
+export function useCallsFeed(token: string | null, blocked = false) {
   const [activeCalls, setActiveCalls] = useState<Map<number, ActiveCall>>(new Map());
   const [history, setHistory] = useState<HistoryCall[]>([]);
   const [unassignedSignals, setUnassignedSignals] = useState<UnassignedSignal[]>([]);
@@ -60,6 +68,10 @@ export function useCallsFeed(token: string | null) {
   // overwrite the fresher state that event produced. Any WS mutation bumps this.
   const lastWsEventAt = useRef(0);
   const initialLoadDone = useRef(false);
+  // Read through a ref so flipping to blocked doesn't tear down the WebSocket: the
+  // socket and the active-call poll must survive it untouched.
+  const blockedRef = useRef(blocked);
+  blockedRef.current = blocked;
 
   const refreshActive = useCallback(async () => {
     const startedAt = Date.now();
@@ -82,11 +94,13 @@ export function useCallsFeed(token: string | null) {
   }, []);
 
   const refreshHistory = useCallback(async () => {
+    if (blockedRef.current) return; // management route: a 402 is certain, don't ask
     const data = await api.getCallHistory(50);
     setHistory(data);
   }, []);
 
   const refreshUnassigned = useCallback(async () => {
+    if (blockedRef.current) return; // management route: a 402 is certain, don't ask
     const startedAt = Date.now();
     const data = await api.getUnassignedSignals();
     if (lastWsEventAt.current > startedAt) return;
@@ -137,8 +151,12 @@ export function useCallsFeed(token: string | null) {
           return;
         }
         if (evt.code === WS_CLOSE_SUSPENDED) {
-          // Billing-blocked: flip to the suspended screen instead of reconnect-looping.
-          triggerSuspended();
+          // The current backend never sends 4402 (the call stream is ungated on
+          // purpose), but an older server might: record the blocked flag so the UI can
+          // say so, and stop reconnect-looping against a socket that will keep
+          // rejecting us. Live-call delivery then falls back to the 5s /active poll,
+          // which is ungated.
+          triggerBlocked(true);
           return;
         }
         reconnectTimer.current = window.setTimeout(connectWs, 2000);

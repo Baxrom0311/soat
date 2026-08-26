@@ -5,6 +5,9 @@ interface CallsTabProps {
   activeCalls: Map<number, ActiveCall>;
   history: HistoryCall[];
   ackCall: (callId: number) => Promise<void>;
+  /** Call HISTORY is a management route and answers 402 for a blocked clinic — the
+   *  live board above it is ungated and keeps working. */
+  historyBlocked?: boolean;
 }
 
 function fmtTime(iso: string): string {
@@ -61,7 +64,7 @@ function CallCard({ call, now, onAck }: { call: ActiveCall; now: number; onAck: 
   );
 }
 
-export function CallsTab({ activeCalls, history, ackCall }: CallsTabProps) {
+export function CallsTab({ activeCalls, history, ackCall, historyBlocked = false }: CallsTabProps) {
   const [now, setNow] = useState(() => Date.now());
   const [ackError, setAckError] = useState('');
 
@@ -101,6 +104,12 @@ export function CallsTab({ activeCalls, history, ackCall }: CallsTabProps) {
       </div>
 
       <h2 className="hist-title">Tarix (oxirgi 50 ta)</h2>
+      {historyBlocked ? (
+        <p className="empty-msg">
+          Obuna to'lanmagani uchun tarix vaqtincha yopilgan. Yuqoridagi faol chaqiruvlar
+          paneli ishlashda davom etadi.
+        </p>
+      ) : (
       <div className="table-wrap glass">
         <table>
           <thead>
@@ -131,6 +140,7 @@ export function CallsTab({ activeCalls, history, ackCall }: CallsTabProps) {
           </tbody>
         </table>
       </div>
+      )}
     </section>
   );
 }

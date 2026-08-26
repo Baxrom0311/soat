@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field
 
-from app.enums import EffectiveStatus, StaffRole, SubscriptionStatus
+from app.enums import EffectiveStatus, StaffRole, SubscriptionStatus, SuspensionReason
 
 
 class AdminOverviewOut(BaseModel):
@@ -15,28 +15,33 @@ class AdminOverviewOut(BaseModel):
 # ---- Plans (tariff rejalari) ----
 class PlanCreate(BaseModel):
     name: str
-    price_amount: int = Field(ge=0)
     currency: str = "UZS"
-    billing_period_months: int = Field(default=1, ge=1, le=60)
-    max_devices: int | None = Field(default=None, ge=1)
+    # Per ESP32 receiver, with a per-period floor. Monthly and annual rates are
+    # independent -- the annual discount is a commercial decision, not a fixed ratio.
+    price_per_device_monthly: int = Field(ge=0)
+    price_per_device_annual: int = Field(ge=0)
+    min_price_monthly: int = Field(default=0, ge=0)
+    min_price_annual: int = Field(default=0, ge=0)
 
 
 class PlanUpdate(BaseModel):
     name: str | None = None
-    price_amount: int | None = Field(default=None, ge=0)
     currency: str | None = None
-    billing_period_months: int | None = Field(default=None, ge=1, le=60)
-    max_devices: int | None = Field(default=None, ge=1)
+    price_per_device_monthly: int | None = Field(default=None, ge=0)
+    price_per_device_annual: int | None = Field(default=None, ge=0)
+    min_price_monthly: int | None = Field(default=None, ge=0)
+    min_price_annual: int | None = Field(default=None, ge=0)
     is_active: bool | None = None
 
 
 class PlanOut(BaseModel):
     id: int
     name: str
-    price_amount: int
     currency: str
-    billing_period_months: int
-    max_devices: int | None
+    price_per_device_monthly: int
+    price_per_device_annual: int
+    min_price_monthly: int
+    min_price_annual: int
     is_active: bool
     created_at: datetime
 
@@ -47,7 +52,13 @@ class PlanOut(BaseModel):
 # ---- Payments (to'lovlar) ----
 class PaymentCreate(BaseModel):
     amount: int = Field(ge=0)
-    period_months: int = Field(default=1, ge=1, le=60)
+    # NULL == use the clinic's configured billing_period_months. An explicit value is an
+    # exception (a negotiated one-off period), not the normal path.
+    period_months: int | None = Field(default=None, ge=1, le=60)
+    # `amount` is checked against what the clinic actually owes so a mistyped figure
+    # can't be stored silently. A part payment or a negotiated one-off is still
+    # recordable -- but only by ticking this on purpose.
+    allow_amount_mismatch: bool = False
     note: str | None = None
     # Client-generated (e.g. a UUID minted once per form-open): a retried/duplicated
     # POST with the same key returns the original payment instead of recording and
@@ -83,6 +94,15 @@ class AdminClinicUpdate(BaseModel):
     clear_plan: bool = False
     custom_price_amount: int | None = Field(default=None, ge=0)
     clear_custom_price: bool = False
+    # 1 == monthly, 12 == annual; picks which of the plan's two rates applies.
+    billing_period_months: int | None = None
+    # Promotional discount: percent + duration. discount_started_at is stamped
+    # server-side when the discount is first applied. clear_discount=true removes all
+    # three at once (a discount is one deal, not three independent fields).
+    discount_percent: int | None = None
+    discount_months: int | None = None
+    clear_discount: bool = False
+    enforcement_enabled: bool | None = None
 
 
 class AdminClinicOut(BaseModel):
@@ -99,12 +119,22 @@ class AdminClinicOut(BaseModel):
 class ClinicBilling(BaseModel):
     plan_id: int | None
     plan_name: str | None
+    # list_price == before any promo discount; effective_price == what is actually owed.
+    list_price: int | None
     effective_price: int | None
     custom_price_amount: int | None
     currency: str
+    billing_period_months: int
+    device_count: int
     paid_until: datetime | None
-    effective_status: EffectiveStatus  # trial | active | suspended | overdue
-    max_devices: int | None
+    effective_status: EffectiveStatus  # trial | active | suspended | grace | overdue
+    days_until_expiry: int | None
+    blocked_at: datetime | None
+    enforcement_enabled: bool
+    suspension_reason: SuspensionReason | None
+    discount_percent: int | None
+    discount_months: int | None
+    discount_ends_at: datetime | None
 
 
 class AdminClinicListItem(AdminClinicOut):

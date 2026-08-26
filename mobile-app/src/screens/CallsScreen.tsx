@@ -11,14 +11,21 @@ import {
   View,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { ackCall, ApiError, Call, getActiveCalls } from '../api';
+import { ackCall, ApiError, BillingNotice, Call, getActiveCalls, getBillingNotice } from '../api';
 import { POLL_INTERVAL_MS } from '../config';
 import { useTheme } from '../ThemeContext';
 import ThemeToggle from '../components/ThemeToggle';
+import BillingBanner from '../components/BillingBanner';
 import { elapsedSince } from '../time';
 import { isWatchConnected, resyncWatch } from '../wearSync';
 
 const WATCH_CHECK_MS = 30000;
+
+// Obuna holati kuniga ko'pi bilan bir marta o'zgaradi (days_left — butun kun),
+// shuning uchun chaqiruv polling'idan (10 s) mutlaqo alohida va juda kam
+// so'raladi: ilova ochilganda/foreground'ga qaytganda va har 6 soatda. Oxirgi
+// javob state'da saqlanib turadi, so'rovlar orasida banner o'chib-yonmaydi.
+const BILLING_CHECK_MS = 6 * 60 * 60 * 1000;
 
 interface Props {
   acknowledgedBy: string;
@@ -37,6 +44,9 @@ export default function CallsScreen({ acknowledgedBy, onLogout, focusCallId, onF
   const [, forceTick] = useState(0);
   const [watchConnected, setWatchConnected] = useState<boolean | null>(null);
   const [watchSyncing, setWatchSyncing] = useState(false);
+  const [billing, setBilling] = useState<BillingNotice | null>(null);
+  // Faqat shu sessiya uchun: yopilgan eslatma ilova qayta ochilganda yana chiqadi.
+  const [billingDismissed, setBillingDismissed] = useState(false);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appState = useRef<AppStateStatus>(AppState.currentState);
@@ -112,6 +122,28 @@ export default function CallsScreen({ acknowledgedBy, onLogout, focusCallId, onF
     return () => {
       cancelled = true;
       clearInterval(watchTimer);
+      subscription.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const checkBilling = () => {
+      // Xato bo'lsa getBillingNotice() null qaytaradi — bu holda oxirgi ma'lum
+      // qiymatni saqlab qolamiz, tarmoq uzilishi bannerni o'chirmasligi kerak.
+      getBillingNotice().then((notice) => {
+        if (!cancelled && notice) setBilling(notice);
+      });
+    };
+
+    checkBilling();
+    const billingTimer = setInterval(checkBilling, BILLING_CHECK_MS);
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') checkBilling();
+    });
+    return () => {
+      cancelled = true;
+      clearInterval(billingTimer);
       subscription.remove();
     };
   }, []);
@@ -215,6 +247,10 @@ export default function CallsScreen({ acknowledgedBy, onLogout, focusCallId, onF
           </TouchableOpacity>
         </View>
       </View>
+
+      {billing?.warn && !billingDismissed ? (
+        <BillingBanner notice={billing} onDismiss={() => setBillingDismissed(true)} />
+      ) : null}
 
       <TouchableOpacity
         style={[

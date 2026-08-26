@@ -1,0 +1,11 @@
+[Unit]
+Description=NurseCall: obuna muddati tugayotgan klinikalar haqida ogohlantirish
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/nursecall_backend
+EnvironmentFile=/root/nursecall_backend/.env
+ExecStart=/root/nursecall_backend/.venv/bin/python -m jobs.check_expiring_subscriptions
+TimeoutStartSec=300

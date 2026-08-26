@@ -1,40 +1,14 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException
-from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import DEVICE_ONLINE_WINDOW_SECONDS
 from app.core.security import generate_device_key, hash_secret, verify_secret
 from app.models import Device
-from app.repositories import clinic_repo, device_repo, plan_repo
+from app.repositories import device_repo
 from app.schemas.device import DeviceOut
-
-
-def _enforce_device_limit(db: Session, clinic_id: int) -> None:
-    """Reject registration if the clinic's plan caps device count and it's already there.
-    No plan, or a plan with max_devices=NULL, means unlimited.
-
-    The count-then-insert is serialized per clinic with a transaction advisory lock so two
-    concurrent registrations can't both pass the check and exceed the cap. Namespace -1
-    keeps this distinct from the call-ingestion room lock, which uses (clinic_id, room_id)
-    with positive room ids."""
-    clinic = clinic_repo.get(db, clinic_id)
-    if clinic is None or clinic.plan_id is None:
-        return
-    plan = plan_repo.get(db, clinic.plan_id)
-    if plan is None or plan.max_devices is None:
-        return
-    db.execute(
-        text("SELECT pg_advisory_xact_lock((:cid)::int, (-1)::int)"), {"cid": clinic_id}
-    )
-    current = device_repo.count_by_clinic(db).get(clinic_id, 0)
-    if current >= plan.max_devices:
-        raise HTTPException(
-            status_code=409,
-            detail=f"Plan device limit reached ({plan.max_devices}) — upgrade the plan to add more",
-        )
 
 
 def online_cutoff() -> datetime:
@@ -91,7 +65,8 @@ def register_device(
     be turned back into it -- the ESP32 fetches it (once, within a security window)
     over /devices/announce instead of it ever being shown on a dashboard.
     """
-    _enforce_device_limit(db, clinic_id)
+    # No device cap: pricing is per receiver, so an extra device raises the bill rather
+    # than being refused.
     plaintext_key = generate_device_key()
     try:
         # the repo flushes on create, so the duplicate-key error can surface here too

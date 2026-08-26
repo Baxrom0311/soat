@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, Query
 from sqlalchemy.orm import Session
 
-from app.core.deps import CurrentUser, get_clinic_user, get_db
+from app.core.deps import CurrentUser, get_clinic_user, get_clinic_user_ungated, get_db
 from app.schemas.call import (
     AckIn,
     AckOut,
@@ -32,8 +32,10 @@ async def create_call(
     )
 
 
+# Alerting path: never billing-gated. A blocked clinic's nurses must still see and
+# acknowledge live calls -- only management (history/reports/CRUD below) is withheld.
 @router.get("/active", response_model=list[ActiveCallOut])
-def list_active_calls(user: CurrentUser = Depends(get_clinic_user), db: Session = Depends(get_db)):
+def list_active_calls(user: CurrentUser = Depends(get_clinic_user_ungated), db: Session = Depends(get_db)):
     return call_service.list_active_calls(db, user.clinic_id, staff_id=user.staff_id, role=user.role)
 
 
@@ -50,7 +52,7 @@ def call_history(
 async def acknowledge_call(
     call_id: int,
     body: AckIn,
-    user: CurrentUser = Depends(get_clinic_user),
+    user: CurrentUser = Depends(get_clinic_user_ungated),  # alerting path -- see /active
     db: Session = Depends(get_db),
 ):
     acknowledged_by = body.acknowledged_by or user.name or user.email

@@ -78,3 +78,8 @@ INFO:     127.0.0.1:65077 - "POST /api/v1/admin/discovered-devices/deadbeef0001/
 INFO:     127.0.0.1:65077 - "GET /api/v1/admin/discovered-devices HTTP/1.1" 200 OK
 INFO:     127.0.0.1:65072 - "GET /api/v1/admin/devices HTTP/1.1" 200 OK
 INFO:     127.0.0.1:65079 - "GET /admin HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49493 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49496 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49497 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49498 - "GET /api/v1/meta/version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49499 - "GET /api/v1/meta/version HTTP/1.1" 404 Not Found

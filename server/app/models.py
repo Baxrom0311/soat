@@ -16,22 +16,31 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
-from app.enums import CallStatus, StaffRole, SubscriptionStatus
+from app.enums import CallStatus, StaffRole, SubscriptionStatus, SuspensionReason
 
 
 class Plan(Base):
-    """A subscription tariff the superadmin defines once and assigns to clinics.
-    Editing the price here re-prices every clinic on the plan that has no override."""
+    """A named price sheet the superadmin defines once and assigns to clinics.
+
+    Pricing is per ESP32 receiver (one per floor), charged linearly, with a floor: a
+    one-device clinic still costs a site visit, an install and ongoing support, so
+    pure linear pricing would be sold at a loss. Monthly and annual per-device rates
+    are stored independently rather than deriving one from the other -- the annual
+    discount is a commercial decision that changes per campaign, and forcing a fixed
+    ratio would mean routing every exception through custom_price_amount.
+
+    All amounts are whole currency units (so'm), never fractional.
+    """
 
     __tablename__ = "plans"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
-    price_amount: Mapped[int] = mapped_column(BigInteger, nullable=False)  # whole currency units (so'm)
     currency: Mapped[str] = mapped_column(String, nullable=False, default="UZS")
-    billing_period_months: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    # NULL == unlimited devices on this plan.
-    max_devices: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    price_per_device_monthly: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    price_per_device_annual: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    min_price_monthly: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+    min_price_annual: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
     # Soft archive: an archived plan can't be newly assigned but clinics already on it keep working.
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
@@ -56,11 +65,40 @@ class Clinic(Base):
     )
     # Billing: plan assignment + optional per-clinic price override + paid-through date.
     plan_id: Mapped[int | None] = mapped_column(ForeignKey("plans.id"), nullable=True)
-    # NULL == charge the plan's price; set == this clinic's negotiated price instead.
+    # NULL == charge the plan's computed price; set == this clinic's negotiated price
+    # instead. A time-limited discount (below) still applies on top of either.
     custom_price_amount: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    # Whether this clinic is billed monthly (1) or annually (12) -- picks which of the
+    # plan's two rates applies and how far a payment pushes paid_until.
+    billing_period_months: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     # Access is auto-gated once this instant passes (unless status is trial). NULL == not
     # payment-gated yet (freshly created clinic before any billing is set up).
     paid_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Time-limited promotional discount ("first 3 months at 50%"). Stored as
+    # percent + duration + start rather than an end date so it matches how the deal is
+    # actually spoken and sold, and so the system -- not somebody's memory -- is what
+    # remembers to put the price back up when the campaign ends.
+    discount_percent: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    discount_months: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    discount_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Per-clinic kill switch for AUTOMATIC payment enforcement (overdue -> grace ->
+    # blocked). Defaults on: a clinic whose enforcement was silently left off would run
+    # unpaid indefinitely and the mistake would surface months later, whereas the
+    # opposite mistake surfaces as an immediate phone call and takes seconds to undo.
+    # Manual suspension ignores this flag -- an explicit block always blocks.
+    enforcement_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    suspension_reason: Mapped[SuspensionReason | None] = mapped_column(
+        SAEnum(
+            SuspensionReason,
+            name="suspension_reason",
+            native_enum=True,
+            values_callable=lambda enum_cls: [e.value for e in enum_cls],
+        ),
+        nullable=True,
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

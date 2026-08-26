@@ -1,0 +1,14 @@
+[Unit]
+Description=NurseCall obuna ogohlantirishini har kuni ishga tushiradi
+
+[Timer]
+# Server soati UTC; 05:30 UTC == 10:30 Toshkent vaqti. Maqsad -- vendor ish kuni
+# boshida klinikaga qo'ng'iroq qilishi, shuning uchun tunda emas. 03:15 sloti DB
+# backup timeriga tegishli.
+OnCalendar=*-*-* 05:30:00
+Persistent=true
+RandomizedDelaySec=300
+Unit=nursecall-billing-warn.service
+
+[Install]
+WantedBy=timers.target

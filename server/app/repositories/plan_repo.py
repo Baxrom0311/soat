@@ -10,17 +10,19 @@ def create(
     db: Session,
     *,
     name: str,
-    price_amount: int,
     currency: str,
-    billing_period_months: int,
-    max_devices: int | None,
+    price_per_device_monthly: int,
+    price_per_device_annual: int,
+    min_price_monthly: int,
+    min_price_annual: int,
 ) -> Plan:
     plan = Plan(
         name=name,
-        price_amount=price_amount,
         currency=currency,
-        billing_period_months=billing_period_months,
-        max_devices=max_devices,
+        price_per_device_monthly=price_per_device_monthly,
+        price_per_device_annual=price_per_device_annual,
+        min_price_monthly=min_price_monthly,
+        min_price_annual=min_price_annual,
     )
     db.add(plan)
     db.flush()

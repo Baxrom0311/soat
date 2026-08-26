@@ -169,6 +169,28 @@ export function InboxIcon(props: IconProps) {
   );
 }
 
+/** Nav icon for the clinic-facing "Obuna" (subscription/billing) tab. */
+export function BillingIcon(props: IconProps) {
+  return (
+    <svg {...base} className={props.className}>
+      <rect x="2.5" y="5" width="19" height="14" rx="2.5" />
+      <path d="M2.5 10h19" />
+      <path d="M6.5 14.5h3M14 14.5h3.5" />
+    </svg>
+  );
+}
+
+/** Action icon for "view/print the bill". */
+export function PrintIcon(props: IconProps) {
+  return (
+    <svg {...base} className={props.className}>
+      <path d="M7 8V3.5h10V8" />
+      <rect x="3.5" y="8" width="17" height="7.5" rx="2" />
+      <path d="M7 13h10v7.5H7z" />
+    </svg>
+  );
+}
+
 export function WarningIcon(props: IconProps) {
   return (
     <svg {...base} className={props.className}>

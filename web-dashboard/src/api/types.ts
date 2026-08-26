@@ -5,13 +5,29 @@ export type SubscriptionStatus = 'trial' | 'active' | 'suspended';
 /** What the superadmin UI shows per clinic — adds the auto-computed 'overdue'. */
 export type EffectiveStatus = 'trial' | 'active' | 'suspended' | 'grace' | 'overdue';
 
+/**
+ * Why a clinic is suspended. This distinction is load-bearing, not cosmetic:
+ * recording a payment automatically lifts a `payment_lapse` suspension, but never
+ * a `manual` one (that stays until a human un-suspends it).
+ */
+export type SuspensionReason = 'payment_lapse' | 'manual';
+
+/** 1 == monthly, 12 == annual. Picks which of a plan's two per-device rates applies. */
+export type BillingPeriodMonths = 1 | 12;
+
+/**
+ * Pricing is PER ESP32 receiver: price_per_device_* × device count, floored at
+ * min_price_*. Monthly and annual rates are independent numbers — the annual
+ * discount is a commercial decision, not a fixed ratio.
+ */
 export interface Plan {
   id: number;
   name: string;
-  price_amount: number;
   currency: string;
-  billing_period_months: number;
-  max_devices: number | null;
+  price_per_device_monthly: number;
+  price_per_device_annual: number;
+  min_price_monthly: number;
+  min_price_annual: number;
   is_active: boolean;
   created_at: string;
 }
@@ -27,15 +43,61 @@ export interface Payment {
   paid_at: string;
 }
 
+/** The superadmin's per-clinic billing view (attached to every clinic row). */
 export interface ClinicBilling {
   plan_id: number | null;
   plan_name: string | null;
+  /** Before any promotional discount. */
+  list_price: number | null;
+  /** What the clinic actually owes per period — discount already applied. */
   effective_price: number | null;
   custom_price_amount: number | null;
   currency: string;
+  billing_period_months: number;
+  device_count: number;
   paid_until: string | null;
   effective_status: EffectiveStatus;
-  max_devices: number | null;
+  days_until_expiry: number | null;
+  /** The instant management access actually cuts off (end of the grace window). */
+  blocked_at: string | null;
+  enforcement_enabled: boolean;
+  suspension_reason: SuspensionReason | null;
+  discount_percent: number | null;
+  discount_months: number | null;
+  discount_ends_at: string | null;
+}
+
+/**
+ * The clinic's OWN view of its subscription (GET /api/v1/clinic/billing).
+ * Admin-only and deliberately free of vendor controls (enforcement_enabled,
+ * suspension_reason) — those are not facts the clinic can act on.
+ */
+export interface ClinicSelfBilling {
+  effective_status: EffectiveStatus;
+  paid_until: string | null;
+  days_until_expiry: number | null;
+  blocked_at: string | null;
+  is_blocked: boolean;
+  is_in_grace: boolean;
+  billing_period_months: number;
+  currency: string;
+  list_price: number | null;
+  effective_price: number | null;
+  device_count: number;
+  discount_percent: number | null;
+  discount_ends_at: string | null;
+  plan_name: string | null;
+  needs_warning: boolean;
+}
+
+/**
+ * The only billing route open to non-admins (GET /api/v1/clinic/billing-notice):
+ * carries no financial data at all, just enough for a "obuna tugayapti" banner.
+ */
+export interface ClinicBillingNotice {
+  warn: boolean;
+  days_left: number | null;
+  blocked: boolean;
 }
 
 export interface AuthResponse {
@@ -64,7 +126,10 @@ export interface JwtPayload {
 export interface Clinic {
   id: number;
   name: string;
+  /** Raw DB column, kept for older clients: reads "active" for a clinic that is
+   *  actually in grace or overdue. New code must use effective_status. */
   subscription_status: string;
+  effective_status: EffectiveStatus;
   created_at: string;
 }
 

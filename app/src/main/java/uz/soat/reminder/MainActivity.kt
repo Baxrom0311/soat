@@ -75,10 +75,23 @@ private fun statusColor(status: ConnectionStatus): Color = when (status) {
     else -> Color(0xFFF44336)
 }
 
+/** null qaytsa — ko'rsatishga arzigulik hech narsa yo'q. */
+private fun billingText(notice: BillingNotice): String? = when {
+    // Boshqaruv to'xtatilgan bo'lsa ham chaqiruvlar ishlashda davom etadi
+    // (backend'da ogohlantirish yo'li ataylab bloklanmaydi) — hamshira behuda
+    // xavotir olmasligi uchun buni aytib qo'yamiz.
+    notice.blocked -> "Obuna muddati tugadi — boshqaruv to'xtatilgan. Chaqiruvlar ishlayapti."
+    !notice.warn -> null
+    notice.daysLeft == null -> "Obuna muddati tugayapti"
+    notice.daysLeft <= 0 -> "Obuna muddati tugadi"
+    else -> "Obuna ${notice.daysLeft} kundan keyin tugaydi"
+}
+
 @Composable
 fun CallMonitorScreen() {
     val calls by CallState.activeCalls.collectAsState()
     val status by CallState.status.collectAsState()
+    val billing by CallState.billingNotice.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
@@ -112,11 +125,25 @@ fun CallMonitorScreen() {
                         style = MaterialTheme.typography.body2
                     )
                     status == ConnectionStatus.UNAUTHORIZED -> LoginForm()
-                    calls.isEmpty() -> Text(
-                        text = "Faol chaqiruvlar yo'q",
-                        maxLines = 2,
-                        style = MaterialTheme.typography.body2
-                    )
+                    calls.isEmpty() -> {
+                        Text(
+                            text = "Faol chaqiruvlar yo'q",
+                            maxLines = 2,
+                            style = MaterialTheme.typography.body2
+                        )
+                        // Obuna ogohlantirishi faqat shu shoxda — chaqiruv bo'lsa ekran
+                        // butunlay chaqiruvga tegishli bo'lishi kerak.
+                        billing?.let { notice ->
+                            billingText(notice)?.let { msg ->
+                                Text(
+                                    text = msg,
+                                    maxLines = 3,
+                                    style = MaterialTheme.typography.caption2,
+                                    color = Color(0xFFFFB300)
+                                )
+                            }
+                        }
+                    }
                     else -> calls.forEach { call ->
                         Chip(
                             modifier = Modifier.fillMaxWidth(),

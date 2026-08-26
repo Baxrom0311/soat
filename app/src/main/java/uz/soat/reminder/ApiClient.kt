@@ -13,6 +13,10 @@ import java.util.concurrent.TimeUnit
 class UnauthorizedException : IOException("Token yaroqsiz yoki muddati o'tgan")
 class InvalidCredentialsException : IOException("Email yoki parol noto'g'ri")
 
+/** Obuna holati haqidagi ogohlantirish. Pul/narx ma'lumoti yo'q — hamshira
+ * faqat "obuna tugayapti" faktini ko'rishi kerak. */
+data class BillingNotice(val warn: Boolean, val daysLeft: Int?, val blocked: Boolean)
+
 object ApiClient {
     // Production backend (adb orqali provisioning paytida boshqasiga o'zgartirilishi mumkin,
     // masalan lokal sinov uchun LAN IP + port 8000).
@@ -67,6 +71,34 @@ object ApiClient {
                     null
                 }
             }
+        }
+    }
+
+    // Hech qachon exception tashlamaydi: to'lov tekshiruvining yiqilishi (tarmoq,
+    // 401, buzilgan javob) chaqiruv kuzatuv siklini bezovta qilmasligi kerak —
+    // ma'lumot yo'q bo'lsa null qaytariladi va ekranda shunchaki hech narsa
+    // ko'rsatilmaydi.
+    fun fetchBillingNotice(context: Context): BillingNotice? {
+        return try {
+            val request = Request.Builder()
+                .url("${baseUrl(context)}/api/v1/clinic/billing-notice")
+                .header("Authorization", authHeader(context))
+                .get()
+                .build()
+
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return null
+                val body = response.body?.string() ?: return null
+                val o = JSONObject(body)
+                BillingNotice(
+                    warn = o.optBoolean("warn", false),
+                    // days_left null bo'lishi mumkin — bunda kunlar soni yozilmaydi
+                    daysLeft = if (o.isNull("days_left")) null else o.optInt("days_left"),
+                    blocked = o.optBoolean("blocked", false)
+                )
+            }
+        } catch (_: Exception) {
+            null
         }
     }
 

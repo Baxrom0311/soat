@@ -8,10 +8,13 @@ import type {
   AdminOverview,
   AuthResponse,
   AuthSession,
+  BillingPeriodMonths,
   ButtonBinding,
   ClaimDeviceInput,
   ClaimDeviceResponse,
   Clinic,
+  ClinicBillingNotice,
+  ClinicSelfBilling,
   ContactRequest,
   Device,
   DeviceCreateResponse,
@@ -78,14 +81,25 @@ export function triggerUnauthorized(): void {
   onUnauthorized?.();
 }
 
-/** 402 == clinic subscription suspended: flips the whole app into the suspended screen. */
-let onSuspended: (() => void) | null = null;
-export function setSuspendedHandler(fn: (() => void) | null) {
-  onSuspended = fn;
+/**
+ * 402 == this clinic is billing-blocked.
+ *
+ * The backend only ever returns 402 from clinic MANAGEMENT routes: the alerting path
+ * (active calls, ack, the WS stream) and the clinic's own billing screens are
+ * deliberately ungated, so an unpaid invoice can never turn into a patient pressing a
+ * button and nobody coming. A 402 therefore means "these particular screens are
+ * withheld", NOT "the app is over" — this handler only records the blocked FLAG so the
+ * UI can show a banner and withhold the management tabs. It must never take the whole
+ * app over, and the ApiError is still thrown so the calling tab can render its own
+ * inline notice.
+ */
+let onBlocked: ((blocked: boolean) => void) | null = null;
+export function setBlockedHandler(fn: ((blocked: boolean) => void) | null) {
+  onBlocked = fn;
 }
-/** For the WebSocket handshake being rejected with 4402 (billing-blocked), mirroring REST 402. */
-export function triggerSuspended(): void {
-  onSuspended?.();
+/** For non-request signals of the same fact (e.g. a WebSocket closed with 4402). */
+export function triggerBlocked(blocked = true): void {
+  onBlocked?.(blocked);
 }
 
 async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
@@ -110,7 +124,7 @@ async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
   }
 
   if (resp.status === 402) {
-    onSuspended?.();
+    onBlocked?.(true);
     throw new ApiError(402, 'subscription_suspended');
   }
 
@@ -132,6 +146,12 @@ export const api = {
     }),
 
   getClinic: () => request<Clinic>('/api/v1/clinic/me'),
+
+  // ---- Clinic-facing billing (works while the clinic is BLOCKED) ----
+  /** Clinic ADMIN only — carries the clinic's prices. */
+  getClinicBilling: () => request<ClinicSelfBilling>('/api/v1/clinic/billing'),
+  /** Any clinic member, nurses included: no financial data, just the warn/blocked flags. */
+  getClinicBillingNotice: () => request<ClinicBillingNotice>('/api/v1/clinic/billing-notice'),
 
   getStaff: () => request<Staff[]>('/api/v1/staff'),
   createStaff: (input: { email: string; password: string; role: string; name: string; floors: number[] }) =>
@@ -193,30 +213,42 @@ export const api = {
       clear_plan?: boolean;
       custom_price_amount?: number;
       clear_custom_price?: boolean;
+      billing_period_months?: BillingPeriodMonths;
+      // A discount is one deal, not three fields: percent + months go together, and
+      // clear_discount removes the whole thing.
+      discount_percent?: number;
+      discount_months?: number;
+      clear_discount?: boolean;
+      enforcement_enabled?: boolean;
     }
   ) =>
     request<AdminClinic>(`/api/v1/admin/clinics/${clinicId}`, {
       method: 'PATCH',
       body: JSON.stringify(input),
     }),
+  /** Ends a trial: trial → active, and stamps paid_until. 409 if not on trial. */
+  startBilling: (clinicId: number) =>
+    request<AdminClinic>(`/api/v1/admin/clinics/${clinicId}/start-billing`, { method: 'POST' }),
 
   // ---- Plans (tariff rejalari) ----
   getPlans: () => request<Plan[]>('/api/v1/admin/plans'),
   createPlan: (input: {
     name: string;
-    price_amount: number;
     currency?: string;
-    billing_period_months?: number;
-    max_devices?: number | null;
+    price_per_device_monthly: number;
+    price_per_device_annual: number;
+    min_price_monthly?: number;
+    min_price_annual?: number;
   }) => request<Plan>('/api/v1/admin/plans', { method: 'POST', body: JSON.stringify(input) }),
   updatePlan: (
     planId: number,
     input: Partial<{
       name: string;
-      price_amount: number;
       currency: string;
-      billing_period_months: number;
-      max_devices: number | null;
+      price_per_device_monthly: number;
+      price_per_device_annual: number;
+      min_price_monthly: number;
+      min_price_annual: number;
       is_active: boolean;
     }>
   ) => request<Plan>(`/api/v1/admin/plans/${planId}`, { method: 'PATCH', body: JSON.stringify(input) }),
@@ -227,7 +259,15 @@ export const api = {
     request<Payment[]>(`/api/v1/admin/clinics/${clinicId}/payments`),
   recordPayment: (
     clinicId: number,
-    input: { amount: number; period_months: number; note?: string; idempotency_key?: string }
+    input: {
+      amount: number;
+      /** Omitted == use the clinic's own configured billing period. */
+      period_months?: number;
+      note?: string;
+      idempotency_key?: string;
+      /** Only set after the operator has been shown the 422 and affirmed the figure. */
+      allow_amount_mismatch?: boolean;
+    }
   ) =>
     request<Payment>(`/api/v1/admin/clinics/${clinicId}/payments`, {
       method: 'POST',
@@ -285,6 +325,34 @@ export function decodeJwtPayload<T = Record<string, unknown>>(token: string): T 
   } catch {
     return null;
   }
+}
+
+/**
+ * Opens the printable bill (GET /api/v1/clinic/bill) in a new window.
+ *
+ * The route is bearer-authenticated and returns raw HTML, so a plain `<a href>` would
+ * arrive without the Authorization header and 401. Instead we fetch it ourselves, wrap
+ * the HTML in a Blob and hand the browser a blob: URL — which the new window can render
+ * (and the user can print or save) with no further request to the API.
+ */
+export async function openClinicBill(): Promise<void> {
+  const token = getToken();
+  const resp = await fetch('/api/v1/clinic/bill', {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!resp.ok) {
+    throw new ApiError(resp.status, `Hisobni olib bo'lmadi (${resp.status})`);
+  }
+  const html = await resp.text();
+  const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+  const win = window.open(url, '_blank');
+  if (!win) {
+    URL.revokeObjectURL(url);
+    throw new ApiError(0, "Brauzer yangi oynani bloklab qo'ydi — pop-up'ga ruxsat bering.");
+  }
+  // Revoking immediately can race the new window's own load in some browsers; give it
+  // a moment, then release so a long session doesn't accumulate blob URLs.
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 export function wsUrl(token: string): string {

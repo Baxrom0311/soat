@@ -46,3 +46,13 @@ class EffectiveStatus(StrEnum):
     SUSPENDED = "suspended"
     GRACE = "grace"
     OVERDUE = "overdue"
+
+
+class SuspensionReason(StrEnum):
+    """Why a clinic ended up suspended. The distinction is load-bearing: recording a
+    payment lifts a PAYMENT_LAPSE suspension automatically, but a MANUAL one (contract
+    dispute, hardware not returned) must stay blocked until a superadmin clears it --
+    otherwise a clinic could simply wire money and re-enable itself."""
+
+    PAYMENT_LAPSE = "payment_lapse"
+    MANUAL = "manual"

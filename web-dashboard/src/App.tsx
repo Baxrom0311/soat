@@ -3,7 +3,6 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthPage } from './components/AuthPage';
 import { DashboardLayout } from './components/DashboardLayout';
 import { SuperAdminLayout } from './components/SuperAdminLayout';
-import { SuspendedScreen } from './components/SuspendedScreen';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 // /login — faqat autentifikatsiya. Allaqachon kirgan bo'lsa, rolga qarab
@@ -17,10 +16,16 @@ function LoginRoute() {
   return <AuthPage />;
 }
 
+// A billing-blocked clinic is deliberately NOT bounced out of the dashboard here.
+// The backend only gates clinic MANAGEMENT with 402 -- live calls, acknowledgment, the
+// WS stream and the clinic's own billing screens all stay open on purpose, so replacing
+// the whole app with a suspended screen would (a) hide the active-call board that must
+// never go dark over an invoice and (b) hide the one screen that explains how to pay.
+// Blocked-ness is surfaced inside DashboardLayout instead: a persistent banner, plus a
+// per-tab notice on just the tabs the server actually withholds.
 function RequireClinicStaff({ children }: { children: ReactNode }) {
-  const { token, session, suspended } = useAuth();
+  const { token, session } = useAuth();
   if (!token) return <Navigate to="/login" replace />;
-  if (suspended) return <SuspendedScreen />;
   if (session?.role === 'superadmin') return <Navigate to="/admin" replace />;
   return <>{children}</>;
 }

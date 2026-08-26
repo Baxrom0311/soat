@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.core import billing
 from app.core.deps import CurrentUser
-from app.enums import StaffRole, SubscriptionStatus
+from app.enums import StaffRole, SubscriptionStatus, SuspensionReason
 from app.models import Clinic, Device, Payment, Plan, Staff
 from app.repositories import (
     audit_repo,
@@ -59,10 +59,11 @@ def create_plan(
     db: Session,
     *,
     name: str,
-    price_amount: int,
     currency: str,
-    billing_period_months: int,
-    max_devices: int | None,
+    price_per_device_monthly: int,
+    price_per_device_annual: int,
+    min_price_monthly: int,
+    min_price_annual: int,
     actor: CurrentUser,
     ip_address: str | None = None,
 ) -> Plan:
@@ -70,10 +71,11 @@ def create_plan(
         plan = plan_repo.create(
             db,
             name=name,
-            price_amount=price_amount,
             currency=currency,
-            billing_period_months=billing_period_months,
-            max_devices=max_devices,
+            price_per_device_monthly=price_per_device_monthly,
+            price_per_device_annual=price_per_device_annual,
+            min_price_monthly=min_price_monthly,
+            min_price_annual=min_price_annual,
         )
         db.flush()
         audit_service.record(
@@ -82,7 +84,14 @@ def create_plan(
             action="plan.created",
             target_type="plan",
             target_id=plan.id,
-            after={"name": name, "price_amount": price_amount, "currency": currency},
+            after={
+                "name": name,
+                "currency": currency,
+                "price_per_device_monthly": price_per_device_monthly,
+                "price_per_device_annual": price_per_device_annual,
+                "min_price_monthly": min_price_monthly,
+                "min_price_annual": min_price_annual,
+            },
             ip_address=ip_address,
         )
         db.commit()
@@ -99,13 +108,11 @@ def update_plan(
     plan = plan_repo.get(db, plan_id)
     if plan is None:
         raise HTTPException(status_code=404, detail="Plan not found")
-    # `changes` is already exclude_unset, so a present key was intentionally sent. Only
-    # max_devices is nullable (null == unlimited); a null for any NOT NULL column is a
-    # no-op rather than a 500.
-    nullable = {"max_devices"}
+    # `changes` is already exclude_unset, so a present key was intentionally sent. Every
+    # Plan column is NOT NULL, so a null is a no-op rather than a 500.
     before = {field: getattr(plan, field) for field in changes}
     for field, value in changes.items():
-        if value is None and field not in nullable:
+        if value is None:
             continue
         setattr(plan, field, value)
     audit_service.record(
@@ -163,19 +170,44 @@ def delete_plan(db: Session, plan_id: int, *, actor: CurrentUser, ip_address: st
 # ---------------------------------------------------------------- Clinics
 
 
-def _billing_view(clinic: Clinic, plans: dict[int, Plan], now: datetime) -> ClinicBilling:
+def _billing_view(clinic: Clinic, plans: dict[int, Plan], device_count: int, now: datetime) -> ClinicBilling:
     plan = plans.get(clinic.plan_id) if clinic.plan_id else None
-    plan_price = plan.price_amount if plan else None
     return ClinicBilling(
         plan_id=clinic.plan_id,
         plan_name=plan.name if plan else None,
-        effective_price=billing.effective_price(clinic, plan_price),
+        list_price=billing.list_price(clinic, plan, device_count),
+        effective_price=billing.effective_price(clinic, plan, device_count, now),
         custom_price_amount=clinic.custom_price_amount,
         currency=plan.currency if plan else "UZS",
+        billing_period_months=clinic.billing_period_months,
+        device_count=device_count,
         paid_until=clinic.paid_until,
         effective_status=billing.effective_status(clinic, now),
-        max_devices=plan.max_devices if plan else None,
+        days_until_expiry=billing.days_until_expiry(clinic, now),
+        blocked_at=billing.blocked_at(clinic),
+        enforcement_enabled=clinic.enforcement_enabled,
+        suspension_reason=clinic.suspension_reason,
+        discount_percent=clinic.discount_percent,
+        discount_months=clinic.discount_months,
+        discount_ends_at=billing.discount_ends_at(clinic),
     )
+
+
+def _clinic_audit_snapshot(clinic: Clinic) -> dict:
+    """Everything update_clinic can change, in one shape, so the audit before/after pair
+    is always symmetric. Datetimes are stringified -- the AuditLog columns are JSON."""
+    return {
+        "name": clinic.name,
+        "subscription_status": clinic.subscription_status,
+        "suspension_reason": clinic.suspension_reason,
+        "plan_id": clinic.plan_id,
+        "custom_price_amount": clinic.custom_price_amount,
+        "billing_period_months": clinic.billing_period_months,
+        "discount_percent": clinic.discount_percent,
+        "discount_months": clinic.discount_months,
+        "discount_started_at": clinic.discount_started_at.isoformat() if clinic.discount_started_at else None,
+        "enforcement_enabled": clinic.enforcement_enabled,
+    }
 
 
 def _list_item(
@@ -187,16 +219,17 @@ def _list_item(
     active_calls: dict,
     now: datetime,
 ) -> AdminClinicListItem:
+    device_count = device_counts.get(clinic.id, 0)
     return AdminClinicListItem(
         id=clinic.id,
         name=clinic.name,
         subscription_status=clinic.subscription_status,
         created_at=clinic.created_at,
         staff_count=staff_counts.get(clinic.id, 0),
-        device_count=device_counts.get(clinic.id, 0),
+        device_count=device_count,
         room_count=room_counts.get(clinic.id, 0),
         active_calls=active_calls.get(clinic.id, 0),
-        billing=_billing_view(clinic, plans, now),
+        billing=_billing_view(clinic, plans, device_count, now),
     )
 
 
@@ -249,23 +282,28 @@ def update_clinic(
     clear_plan: bool,
     custom_price_amount: int | None,
     clear_custom_price: bool,
+    billing_period_months: int | None,
+    discount_percent: int | None,
+    discount_months: int | None,
+    clear_discount: bool,
+    enforcement_enabled: bool | None,
     actor: CurrentUser,
     ip_address: str | None = None,
 ) -> AdminClinicListItem:
     clinic = clinic_repo.get(db, clinic_id)
     if clinic is None:
         raise HTTPException(status_code=404, detail="Clinic not found")
-    before = {
-        "name": clinic.name,
-        "subscription_status": clinic.subscription_status,
-        "plan_id": clinic.plan_id,
-        "custom_price_amount": clinic.custom_price_amount,
-    }
+    before = _clinic_audit_snapshot(clinic)
 
     if name is not None:
         clinic.name = name
     if subscription_status is not None:
         clinic.subscription_status = subscription_status
+        # A human clicking "suspend" is by definition a manual block -- it must survive a
+        # payment being recorded, unlike an automatic payment-lapse suspension.
+        clinic.suspension_reason = (
+            SuspensionReason.MANUAL if subscription_status == SubscriptionStatus.SUSPENDED else None
+        )
 
     if clear_plan:
         clinic.plan_id = None
@@ -284,15 +322,82 @@ def update_clinic(
     elif custom_price_amount is not None:
         clinic.custom_price_amount = custom_price_amount
 
-    after = {
-        "name": clinic.name,
-        "subscription_status": clinic.subscription_status,
-        "plan_id": clinic.plan_id,
-        "custom_price_amount": clinic.custom_price_amount,
-    }
+    if billing_period_months is not None:
+        if billing_period_months not in (1, billing.ANNUAL_PERIOD_MONTHS):
+            raise HTTPException(
+                status_code=422,
+                detail="To'lov davri faqat 1 (oylik) yoki 12 (yillik) bo'lishi mumkin",
+            )
+        clinic.billing_period_months = billing_period_months
+
+    if clear_discount:
+        clinic.discount_percent = None
+        clinic.discount_months = None
+        clinic.discount_started_at = None
+    elif discount_percent is not None or discount_months is not None:
+        if discount_percent is None or discount_months is None:
+            raise HTTPException(
+                status_code=422,
+                detail="Chegirma uchun foiz va oylar sonini birga yuborish kerak",
+            )
+        if not 1 <= discount_percent <= 100:
+            raise HTTPException(status_code=422, detail="Chegirma foizi 1 dan 100 gacha bo'lishi kerak")
+        if discount_months < 1:
+            raise HTTPException(status_code=422, detail="Chegirma muddati kamida 1 oy bo'lishi kerak")
+        # Only (re)stamp the start when the discount is newly applied or its terms change,
+        # so editing something else on the clinic doesn't silently extend the campaign.
+        if (
+            clinic.discount_started_at is None
+            or clinic.discount_percent != discount_percent
+            or clinic.discount_months != discount_months
+        ):
+            clinic.discount_started_at = datetime.now(timezone.utc)
+        clinic.discount_percent = discount_percent
+        clinic.discount_months = discount_months
+
+    if enforcement_enabled is not None:
+        clinic.enforcement_enabled = enforcement_enabled
+
+    after = _clinic_audit_snapshot(clinic)
     audit_service.record(
         db, actor, action="clinic.updated", target_type="clinic", target_id=clinic.id,
         before=before, after=after, ip_address=ip_address,
+    )
+    db.commit()
+    db.refresh(clinic)
+    return _one_list_item(db, clinic)
+
+
+def start_billing(
+    db: Session, clinic_id: int, *, actor: CurrentUser, ip_address: str | None = None
+) -> AdminClinicListItem:
+    """Ends a trial deliberately: there is intentionally no trial timer, so this is what
+    the vendor clicks once a clinic agrees to start paying. paid_until is set one billing
+    period ahead, i.e. the first period is granted up front and the invoice follows."""
+    clinic = clinic_repo.get(db, clinic_id)
+    if clinic is None:
+        raise HTTPException(status_code=404, detail="Clinic not found")
+    if clinic.subscription_status != SubscriptionStatus.TRIAL:
+        raise HTTPException(
+            status_code=409,
+            detail="Klinika sinov muddatida emas — to'lovni boshlash faqat sinov holatidan mumkin",
+        )
+    now = datetime.now(timezone.utc)
+    before = {
+        "subscription_status": clinic.subscription_status,
+        "paid_until": clinic.paid_until.isoformat() if clinic.paid_until else None,
+    }
+    clinic.subscription_status = SubscriptionStatus.ACTIVE
+    clinic.paid_until = billing.add_months(now, clinic.billing_period_months)
+    audit_service.record(
+        db, actor, action="clinic.billing_started", target_type="clinic", target_id=clinic.id,
+        before=before,
+        after={
+            "subscription_status": clinic.subscription_status,
+            "paid_until": clinic.paid_until.isoformat(),
+            "billing_period_months": clinic.billing_period_months,
+        },
+        ip_address=ip_address,
     )
     db.commit()
     db.refresh(clinic)
@@ -345,9 +450,9 @@ def reset_staff_password(
 
 
 def record_payment(
-    db: Session, clinic_id: int, *, amount: int, period_months: int, note: str | None,
+    db: Session, clinic_id: int, *, amount: int, period_months: int | None, note: str | None,
     recorded_by: str | None, actor: CurrentUser, ip_address: str | None = None,
-    idempotency_key: str | None = None,
+    idempotency_key: str | None = None, allow_amount_mismatch: bool = False,
 ) -> PaymentOut:
     # A network retry (or, less likely given the dashboard's own submit-guard, a real
     # double-click) resending the exact same request must return the payment that
@@ -367,16 +472,40 @@ def record_payment(
         raise HTTPException(status_code=404, detail="Clinic not found")
 
     now = datetime.now(timezone.utc)
+    # The period comes from the clinic's own configuration; an explicit body value is
+    # only honoured as a deliberate exception.
+    period_months = period_months if period_months is not None else clinic.billing_period_months
+
+    if not allow_amount_mismatch:
+        plan = plan_repo.get(db, clinic.plan_id) if clinic.plan_id else None
+        device_count = device_repo.count_by_clinic(db).get(clinic_id, 0)
+        expected = billing.effective_price(clinic, plan, device_count, now)
+        # A typo'd figure would otherwise be stored as gospel and quietly corrupt the
+        # revenue record; a genuine part payment sets allow_amount_mismatch instead.
+        if expected is not None and amount != expected:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"Summa mos kelmadi: klinika uchun kutilgan summa {expected}, "
+                    f"yuborilgani {amount}. Qasddan boshqa summa kiritmoqchi bo'lsangiz, "
+                    "allow_amount_mismatch=true yuboring"
+                ),
+            )
+
     # Extend from the later of "now" and the current paid-through date, so paying early
     # stacks onto the remaining time instead of throwing it away, while paying after a
     # lapse restarts from today.
     base = clinic.paid_until if (clinic.paid_until and clinic.paid_until > now) else now
     new_paid_until = billing.add_months(base, period_months)
     clinic.paid_until = new_paid_until
-    # First payment activates a trial. A deliberate manual 'suspended' is left untouched
-    # (only a manual reactivation clears it); an 'active' clinic stays active.
+    # First payment activates a trial. A payment-lapse suspension is lifted -- the lapse
+    # is exactly what money fixes. A MANUAL suspension is left alone on purpose: paying
+    # must never undo a deliberate human block.
     if clinic.subscription_status == SubscriptionStatus.TRIAL:
         clinic.subscription_status = SubscriptionStatus.ACTIVE
+    elif billing.is_payment_lapse_suspension(clinic):
+        clinic.subscription_status = SubscriptionStatus.ACTIVE
+        clinic.suspension_reason = None
 
     try:
         payment = payment_repo.create(
@@ -475,8 +604,8 @@ def register_fleet_device(
 ) -> tuple[Device, str]:
     if clinic_repo.get(db, clinic_id) is None:
         raise HTTPException(status_code=404, detail="Clinic not found")
-    # device_service handles key generation/hashing, the plan device-limit 409 and the
-    # duplicate device_id 409, and commits its own transaction
+    # device_service handles key generation/hashing and the duplicate device_id 409, and
+    # commits its own transaction
     device, plaintext_key = device_service.register_device(db, clinic_id, device_id=device_id, floor=floor)
     audit_service.record(
         db, actor, action="device.registered", target_type="device", target_id=device.id,

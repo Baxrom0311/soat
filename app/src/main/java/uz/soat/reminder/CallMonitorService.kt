@@ -39,6 +39,12 @@ class CallMonitorService : Service() {
         private const val ALERT_NOTIFICATION_OFFSET = 1000
 
         private const val POLL_INTERVAL_MS = 5000L
+
+        // Obuna holati eng ko'pi bilan kunda bir marta o'zgaradi (days_left butun
+        // kunlarda), shuning uchun uni har 5 sekundda so'rash ma'nosiz tarmoq/batareya
+        // sarfi bo'lardi. 720 * 5s ≈ 1 soat: kun ichida o'zgarish ~1 soat kechikish
+        // bilan ko'rinadi, oradagi vaqtda oxirgi ma'lum qiymat ko'rsatilib turadi.
+        private const val BILLING_POLL_EVERY_N = 720
     }
 
     override fun onCreate() {
@@ -100,8 +106,19 @@ class CallMonitorService : Service() {
         // bo'lmasligi uchun birinchi muvaffaqiyatli poll jim o'tkaziladi —
         // ular baribir ekran ro'yxatida ko'rinadi.
         var firstPollDone = false
+        var loopCount = 0L
 
         while (scope.isActive) {
+            // Birinchi aylanishda va keyin har ~1 soatda. fetchBillingNotice hech qachon
+            // tashlamaydi, shuning uchun chaqiruv logikasidan oldin turishi xavfsiz;
+            // muvaffaqiyatsiz bo'lsa oxirgi ma'lum qiymat saqlanib qoladi.
+            if (loopCount % BILLING_POLL_EVERY_N == 0L) {
+                ApiClient.fetchBillingNotice(applicationContext)?.let {
+                    CallState.billingNotice.value = it
+                }
+            }
+            loopCount++
+
             try {
                 val calls = ApiClient.fetchActiveCalls(applicationContext)
                 CallState.activeCalls.value = calls

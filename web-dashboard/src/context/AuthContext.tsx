@@ -6,8 +6,8 @@ import {
   decodeJwtPayload,
   getSession,
   getToken,
+  setBlockedHandler,
   setSession as persistSession,
-  setSuspendedHandler,
   setToken as persistToken,
   setUnauthorizedHandler,
 } from '../api/client';
@@ -16,7 +16,13 @@ import type { AuthResponse, AuthSession, JwtPayload } from '../api/types';
 interface AuthContextValue {
   token: string | null;
   session: AuthSession | null;
-  suspended: boolean;
+  /**
+   * The clinic is billing-blocked: management is withheld, but alerting and the
+   * clinic's own "Obuna" screen stay fully usable. Purely informational — nothing
+   * routes off this, it only drives the banner and the per-tab notices.
+   */
+  blocked: boolean;
+  setBlocked: (blocked: boolean) => void;
   login: (auth: AuthResponse) => void;
   logout: () => void;
 }
@@ -37,28 +43,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     return stored;
   });
-  const [suspended, setSuspended] = useState(false);
+  const [blocked, setBlocked] = useState(false);
 
   const login = useCallback((auth: AuthResponse) => {
     persistToken(auth.access_token);
     persistSession({ role: auth.role, name: auth.name, clinic_id: auth.clinic_id });
-    setSuspended(false);
+    setBlocked(false);
     setTokenState(auth.access_token);
   }, []);
 
   const logout = useCallback(() => {
     clearToken();
     clearSession();
-    setSuspended(false);
+    setBlocked(false);
     setTokenState(null);
   }, []);
 
   useEffect(() => {
     setUnauthorizedHandler(() => setTokenState(null));
-    setSuspendedHandler(() => setSuspended(true));
+    setBlockedHandler((next) => setBlocked(next));
     return () => {
       setUnauthorizedHandler(null);
-      setSuspendedHandler(null);
+      setBlockedHandler(null);
     };
   }, []);
 
@@ -79,8 +85,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [token]);
 
   const value = useMemo(
-    () => ({ token, session, suspended, login, logout }),
-    [token, session, suspended, login, logout]
+    () => ({ token, session, blocked, setBlocked, login, logout }),
+    [token, session, blocked, login, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

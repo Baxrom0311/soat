@@ -1,6 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from app.core import billing
 from app.core.deps import get_current_user_ws
 from app.database import SessionLocal
 from app.repositories import clinic_repo, staff_floor_repo
@@ -21,18 +20,20 @@ async def ws_calls(websocket: WebSocket, token: str | None = None):
         await websocket.close(code=4401)  # custom close code: unauthorized
         return
 
-    # Same billing gate as the REST reads (get_clinic_user): a suspended/overdue clinic
-    # doesn't get a live board either. Device ingestion is unaffected — it never opens
-    # this socket. 4402 mirrors the REST 402 so the dashboard shows the suspended screen.
+    # NOT billing-gated, matching GET /api/v1/calls/active (get_clinic_user_ungated):
+    # this socket is how a live call reaches the board a nurse is watching, so gating it
+    # would mean an unpaid invoice can stop a patient's call from being seen. Only
+    # management is withheld from a blocked clinic. The two must agree -- gating one and
+    # not the other would leave the board silently stale instead of visibly blocked.
+    # 4402 is therefore no longer sent; an unknown clinic still gets 4401.
     db = SessionLocal()
     try:
         clinic = clinic_repo.get(db, user.clinic_id)
-        blocked = clinic is None or billing.is_blocked(clinic)
         floors = staff_floor_repo.get_visible_floors(db, user.staff_id, user.role) or []
     finally:
         db.close()
-    if blocked:
-        await websocket.close(code=4402)  # custom close code: subscription blocked
+    if clinic is None:
+        await websocket.close(code=4401)
         return
 
     manager.register(websocket, user.clinic_id, role=user.role, floors=floors)
