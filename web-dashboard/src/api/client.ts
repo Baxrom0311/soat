@@ -355,7 +355,16 @@ export async function openClinicBill(): Promise<void> {
   window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
-export function wsUrl(token: string): string {
+/** The socket URL carries NO credential. The token goes in the subprotocol instead
+ *  (see wsProtocols): a query string is written verbatim into uvicorn's and nginx's
+ *  access logs, which had left months of live session tokens sitting in plaintext. */
+export function wsUrl(): string {
   const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  return `${proto}://${window.location.host}/ws/calls?token=${encodeURIComponent(token)}`;
+  return `${proto}://${window.location.host}/ws/calls`;
+}
+
+/** Passed as the WebSocket subprotocol list; the server reads element 1 as the JWT and
+ *  echoes "bearer" back. Subprotocol values are not logged by either proxy layer. */
+export function wsProtocols(token: string): string[] {
+  return ['bearer', token];
 }

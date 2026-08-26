@@ -48,11 +48,16 @@ def update_device(
 @router.post("/heartbeat", response_model=HeartbeatOut)
 def heartbeat(
     body: HeartbeatIn,
+    request: Request,
     x_device_key: str | None = Header(default=None),
     db: Session = Depends(get_db),
 ):
     # Device-key auth, never subscription-gated: heartbeats are patient-safety plumbing.
-    device_service.heartbeat(db, device_id=body.device_id, plaintext_key=x_device_key)
+    # The IP is only for the pre-bcrypt rate limit inside the service.
+    client_ip = request.client.host if request.client else "unknown"
+    device_service.heartbeat(
+        db, device_id=body.device_id, plaintext_key=x_device_key, client_ip=client_ip
+    )
     return HeartbeatOut(ok=True)
 
 

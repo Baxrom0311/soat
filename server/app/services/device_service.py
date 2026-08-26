@@ -5,10 +5,45 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import DEVICE_ONLINE_WINDOW_SECONDS
+from app.core.rate_limit import SlidingWindowLimiter
 from app.core.security import generate_device_key, hash_secret, verify_secret
 from app.models import Device
 from app.repositories import device_repo
 from app.schemas.device import DeviceOut
+
+# Verified against when the device_id is unknown, so response timing can't be used to
+# discover which device_ids exist. Same trick as auth_service._DUMMY_HASH.
+_DUMMY_DEVICE_HASH = hash_secret("timing-equalizer-not-a-real-device-key")
+
+# Guards the CPU cost of device-key auth itself. Verifying a key is a deliberately slow
+# bcrypt (~230ms), and both callers are UNAUTHENTICATED, so without a check that runs
+# BEFORE the hash a few dozen concurrent wrong-key requests saturate the CPU and exhaust
+# the small DB pool -- and a real button press then queues behind them or times out.
+# Keyed by source IP because there is no authenticated identity yet at this point.
+#
+# protect_limited=False: this limiter sits on the patient-call path, so a full key table
+# (an unrelated attacker rotating addresses) must never turn into a refused press. See
+# rate_limit's module docstring.
+#
+# Sized well above any real device: an ESP32 heartbeats every ~30s and posts a call per
+# press, so a whole clinic's fleet behind one NAT address stays far under this.
+DEVICE_AUTH_RATE_LIMIT_MAX = 120
+DEVICE_AUTH_RATE_LIMIT_WINDOW_SECONDS = 60
+_device_auth_limiter = SlidingWindowLimiter(
+    max_events=DEVICE_AUTH_RATE_LIMIT_MAX,
+    window_seconds=DEVICE_AUTH_RATE_LIMIT_WINDOW_SECONDS,
+    protect_limited=False,
+)
+
+
+def check_device_auth_rate(client_ip: str) -> None:
+    """Must be called BEFORE authenticate_device on every unauthenticated entry point.
+    Raises 429, which the ESP32 firmware already treats as retryable (it queues and
+    retries with backoff), so a genuine press is delayed rather than lost."""
+    if not _device_auth_limiter.check(client_ip):
+        raise HTTPException(
+            status_code=429, detail="Too many device requests from this address, retry shortly"
+        )
 
 
 def online_cutoff() -> datetime:
@@ -89,16 +124,29 @@ def register_device(
 
 def authenticate_device(db: Session, *, device_id: str, plaintext_key: str | None) -> Device:
     """Looks up a device by its (globally unique) device_id and verifies its API key.
-    Used only by the unauthenticated /calls ingestion and heartbeat endpoints."""
+    Used only by the unauthenticated /calls ingestion and heartbeat endpoints.
+
+    Timing-equalized the same way login is (auth_service._DUMMY_HASH): the verify runs
+    against a real bcrypt hash even when the device_id is unknown. Short-circuiting
+    made an unknown id answer in a few ms and a known one in ~230ms -- a 50x gap that
+    is trivially measurable remotely, which turned device_id into an enumerable oracle
+    and gave an attacker the one input they need to aim a bcrypt-CPU flood at the
+    ingestion endpoint.
+    """
     device = device_repo.get_by_device_id(db, device_id)
-    if device is None or not plaintext_key or not verify_secret(plaintext_key, device.device_api_key_hash):
+    stored_hash = device.device_api_key_hash if device is not None else _DUMMY_DEVICE_HASH
+    # `or ""` keeps the verify running for a missing header too, so a malformed request
+    # costs the same as a wrong key rather than returning early.
+    key_ok = verify_secret(plaintext_key or "", stored_hash)
+    if device is None or not plaintext_key or not key_ok:
         raise HTTPException(status_code=401, detail="Invalid device key")
     return device
 
 
-def heartbeat(db: Session, *, device_id: str, plaintext_key: str | None) -> None:
+def heartbeat(db: Session, *, device_id: str, plaintext_key: str | None, client_ip: str = "unknown") -> None:
     """Marks the device as alive. Deliberately not gated on subscription status:
     device connectivity is patient-safety infrastructure, not a billable feature."""
+    check_device_auth_rate(client_ip)
     device = authenticate_device(db, device_id=device_id, plaintext_key=plaintext_key)
     device_repo.touch_last_seen(db, device)
     db.commit()

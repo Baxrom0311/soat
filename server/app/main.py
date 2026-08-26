@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
+from app.core import log_redaction
 from app.core.config import ENVIRONMENT
 from app.database import Base, SessionLocal, engine
 from app.routers import admin, auth, buttons, calls, clinic, contact, devices, meta, push_tokens, rooms, staff, unassigned, ws
@@ -14,6 +15,11 @@ from app.routers import admin, auth, buttons, calls, clinic, contact, devices, m
 # app-level logging (e.g. app.services.push_service's Expo push delivery logs) never
 # reaches the console/server.log because the root logger has no handler attached.
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+
+# Must run AFTER basicConfig so the filter lands on configured loggers. Strips
+# `token=`/`password=`-style values out of every log line -- see log_redaction for why
+# this is enforced centrally instead of per call site.
+log_redaction.install()
 
 # Idempotent (checkfirst) for tables and, on Postgres, for the native ENUM types
 # registered on Base.metadata too -- harmlessly no-ops against types/tables an

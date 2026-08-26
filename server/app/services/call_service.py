@@ -33,7 +33,7 @@ from app.core.rate_limit import SlidingWindowLimiter
 from app.repositories import button_repo, call_repo, device_repo, staff_floor_repo, unassigned_repo
 from app.schemas.call import ActiveCallOut, AckOut, CallCreateOut, HistoryCallOut
 from app.services import push_service
-from app.services.device_service import authenticate_device
+from app.services.device_service import authenticate_device, check_device_auth_rate
 from app.ws_manager import manager
 
 # Keyed by clinic_id (only known once the posting device's key has authenticated it),
@@ -51,9 +51,15 @@ def _ingest_sync(
     plaintext_key: str | None,
     ev1527_code: int,
     press_id: str | None,
+    client_ip: str = "unknown",
 ) -> tuple[CallCreateOut | None, int, dict | None, dict | None]:
     """All blocking work for one ingestion. Returns (out, clinic_id, ws_event, push_args);
     out None means unknown code -> the async wrapper broadcasts ws_event then raises 404."""
+    # Before authenticate_device on purpose: verifying the key is a ~230ms bcrypt, and
+    # this endpoint is unauthenticated, so an IP-keyed ceiling has to come first or a
+    # wrong-key flood costs us CPU we never budgeted. The per-clinic limiter below can
+    # only run after the key identifies a clinic.
+    check_device_auth_rate(client_ip)
     device = authenticate_device(db, device_id=device_id, plaintext_key=plaintext_key)
 
     if not _ingest_limiter.check(str(device.clinic_id)):
@@ -154,6 +160,7 @@ async def create_call_from_device(
     ev1527_code: int,
     press_id: str | None = None,
     background_tasks: BackgroundTasks | None = None,
+    client_ip: str = "unknown",
 ) -> CallCreateOut:
     out, clinic_id, event, push_args = await run_in_threadpool(
         _ingest_sync,
@@ -162,6 +169,7 @@ async def create_call_from_device(
         plaintext_key=plaintext_key,
         ev1527_code=ev1527_code,
         press_id=press_id,
+        client_ip=client_ip,
     )
     if event is not None:
         # Fire-and-forget: a slow/stuck dashboard socket must never delay the

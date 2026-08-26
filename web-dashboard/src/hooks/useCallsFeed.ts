@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { api, triggerBlocked, triggerUnauthorized, wsUrl } from '../api/client';
+import { api, triggerBlocked, triggerUnauthorized, wsProtocols, wsUrl } from '../api/client';
 import type { ActiveCall, HistoryCall, UnassignedSignal, WsMessage, WsUnassignedSignal } from '../api/types';
 
 export type ConnStatus = 'connecting' | 'live' | 'disconnected';
@@ -137,7 +137,7 @@ export function useCallsFeed(token: string | null, blocked = false) {
 
     function connectWs() {
       if (cancelled) return;
-      const ws = new WebSocket(wsUrl(token!));
+      const ws = new WebSocket(wsUrl(), wsProtocols(token!));
       wsRef.current = ws;
 
       ws.onopen = () => setConnStatus('live');

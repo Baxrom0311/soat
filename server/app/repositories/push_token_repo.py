@@ -6,7 +6,7 @@ token), so upsert looks the token up by its own value first -- if it already exi
 just re-points clinic_id/staff_id instead of raising a unique-constraint violation.
 """
 
-from sqlalchemy import delete as sa_delete, select
+from sqlalchemy import delete as sa_delete, func, select
 from sqlalchemy.orm import Session
 
 from app.models import PushToken
@@ -30,6 +30,16 @@ def list_by_clinic_for_floor(db: Session, clinic_id: int, floor: int) -> list[Pu
             .where(PushToken.clinic_id == clinic_id, PushToken.staff_id.in_(visible_staff_ids))
             .order_by(PushToken.id)
         ).all()
+    )
+
+
+def get_by_token(db: Session, token: str) -> PushToken | None:
+    return db.scalar(select(PushToken).where(PushToken.expo_push_token == token))
+
+
+def count_for_staff(db: Session, staff_id: int) -> int:
+    return db.scalar(
+        select(func.count()).select_from(PushToken).where(PushToken.staff_id == staff_id)
     )
 
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, Header, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, Query, Request
 from sqlalchemy.orm import Session
 
 from app.core.deps import CurrentUser, get_clinic_user, get_clinic_user_ungated, get_db
@@ -19,13 +19,18 @@ router = APIRouter(prefix="/api/v1/calls", tags=["calls"])
 async def create_call(
     body: CallCreate,
     background_tasks: BackgroundTasks,
+    request: Request,
     x_device_key: str | None = Header(default=None),
     db: Session = Depends(get_db),
 ):
+    # The IP feeds the pre-bcrypt rate limit in device_service; the per-clinic limit
+    # further down can only apply once the key has been verified.
+    client_ip = request.client.host if request.client else "unknown"
     return await call_service.create_call_from_device(
         db,
         device_id=body.device_id,
         plaintext_key=x_device_key,
+        client_ip=client_ip,
         ev1527_code=body.ev1527_code,
         press_id=body.press_id,
         background_tasks=background_tasks,

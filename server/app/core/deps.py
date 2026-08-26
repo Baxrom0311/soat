@@ -9,7 +9,7 @@ from app.core import billing
 from app.core.security import decode_token
 from app.database import SessionLocal
 from app.enums import StaffRole
-from app.repositories import clinic_repo
+from app.repositories import clinic_repo, staff_repo
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -46,8 +46,36 @@ def _user_from_payload(payload: dict) -> CurrentUser:
     )
 
 
+def revalidate_against_db(db: Session, user: CurrentUser) -> CurrentUser:
+    """Re-derives identity and authority from the staff row instead of trusting the
+    token's claims.
+
+    A JWT is a bearer credential good for its whole lifetime (a year, for the watch),
+    and /auth/refresh reissues one from the presented token. Without this read, deleting
+    a staff account did NOT end its access: the holder could keep calling refresh
+    forever, reading calls and acknowledging real patient alerts -- so a genuine call
+    would be marked handled and disappear from the nurses' board. Demotion had the same
+    hole: role travelled in the claims, so an ex-admin kept admin powers (including
+    minting device credentials) until the token happened to expire.
+
+    Costs one indexed primary-key SELECT per request, on top of the clinic read the
+    clinic-scoped dependencies already do.
+    """
+    staff = staff_repo.get_by_id(db, user.staff_id)
+    if staff is None:
+        raise HTTPException(status_code=401, detail="Account no longer exists")
+    return CurrentUser(
+        staff_id=staff.id,
+        clinic_id=staff.clinic_id,
+        role=staff.role.value,
+        email=staff.email,
+        name=staff.name,
+    )
+
+
 def get_current_user(
     creds: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    db: Session = Depends(get_db),
 ) -> CurrentUser:
     if creds is None or not creds.credentials:
         raise HTTPException(status_code=401, detail="Missing bearer token")
@@ -55,7 +83,7 @@ def get_current_user(
         payload = decode_token(creds.credentials)
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
-    return _user_from_payload(payload)
+    return revalidate_against_db(db, _user_from_payload(payload))
 
 
 def _resolve_clinic(user: CurrentUser, db: Session):
@@ -134,12 +162,20 @@ def require_superadmin(user: CurrentUser = Depends(get_current_user)) -> Current
     return user
 
 
-def get_current_user_ws(token: str | None) -> CurrentUser | None:
-    """Same as get_current_user but for the WS handshake, where the token arrives as a query param."""
+def get_current_user_ws(token: str | None, db: Session | None = None) -> CurrentUser | None:
+    """Same as get_current_user but for the WS handshake, which is not a normal request
+    and so cannot use Depends. Pass `db` to get the same staff revalidation the REST
+    path does -- without it a deleted account could still hold an open call stream."""
     if not token:
         return None
     try:
         payload = decode_token(token)
     except jwt.PyJWTError:
         return None
-    return _user_from_payload(payload)
+    user = _user_from_payload(payload)
+    if db is None:
+        return user
+    try:
+        return revalidate_against_db(db, user)
+    except HTTPException:
+        return None
