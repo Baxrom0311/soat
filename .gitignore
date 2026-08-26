@@ -7,6 +7,8 @@ __pycache__/
 .venv/
 venv/
 server/.env
+server/server.log
+server/*.log
 
 # --- Node / Expo (mobile-app/, web-dashboard/) ---
 node_modules/
