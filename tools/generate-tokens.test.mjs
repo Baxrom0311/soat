@@ -3,6 +3,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { emitCss } from './lib/emit-css.mjs';
+import { contrastRatio } from './lib/contrast.mjs';
+import { validate } from './generate-tokens.mjs';
 
 const tokens = JSON.parse(readFileSync(new URL('../tokens.json', import.meta.url), 'utf8'));
 
@@ -40,4 +42,39 @@ test('rail.slots is unitless while rail lengths keep px', () => {
   const css = emitCss(tokens);
   assert.match(css, /--rail-slots:\s*3;/);
   assert.match(css, /--rail-empty-stroke:\s*1\.5px;/);
+});
+
+test('contrastRatio matches known WCAG pairs', () => {
+  assert.equal(Math.round(contrastRatio('#FFFFFF', '#000000') * 100) / 100, 21);
+  assert.ok(Math.abs(contrastRatio('#14191A', '#FFFFFF') - 17.74) < 0.15);
+});
+
+test('the shipped tokens satisfy every invariant', () => {
+  assert.deepEqual(validate(tokens), []);
+});
+
+test('a call fill below 4.5:1 against its ink fails Rule 2', () => {
+  const bad = structuredClone(tokens);
+  bad.call.fill.light[0] = '#FF9A90'; // far too light for white ink
+  const errs = validate(bad);
+  assert.ok(errs.some((e) => /Rule 2/.test(e)), errs.join('\n'));
+});
+
+test('a non-monotonic page-contrast ramp fails', () => {
+  const bad = structuredClone(tokens);
+  bad.call.fill.light = ['#8A100A', '#A81810', '#C4241A']; // reversed
+  assert.ok(validate(bad).some((e) => /monotonic/i.test(e)));
+});
+
+test('a weight outside the enum fails', () => {
+  const bad = structuredClone(tokens);
+  bad.type.mgmt.body.weight = 620;
+  assert.ok(validate(bad).some((e) => /weight/i.test(e)));
+});
+
+test('borderField clears 3:1 against surface in both themes', () => {
+  for (const theme of ['light', 'dark']) {
+    const r = contrastRatio(tokens.color.borderField[theme], tokens.color.surface[theme]);
+    assert.ok(r >= 3.0, `${theme}: ${r}`);
+  }
 });
