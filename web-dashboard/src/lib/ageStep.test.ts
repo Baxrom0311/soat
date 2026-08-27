@@ -5,16 +5,16 @@ const at = (secondsAgo: number) => new Date(Date.UTC(2026, 0, 1, 12, 0, 0) - sec
 const NOW = new Date(Date.UTC(2026, 0, 1, 12, 0, 0));
 
 describe('ageStep', () => {
-  it('is step 1 from 0s up to but not including 30s', () => {
+  it('is step 1 from 0s up to but not including 120s', () => {
     expect(ageStep(at(0), NOW)).toBe(1);
-    expect(ageStep(at(29), NOW)).toBe(1);
+    expect(ageStep(at(119), NOW)).toBe(1);
   });
-  it('is step 2 from 30s up to but not including 120s', () => {
-    expect(ageStep(at(30), NOW)).toBe(2);
-    expect(ageStep(at(119), NOW)).toBe(2);
+  it('is step 2 from 120s up to but not including 600s', () => {
+    expect(ageStep(at(120), NOW)).toBe(2);
+    expect(ageStep(at(599), NOW)).toBe(2);
   });
-  it('is step 3 from 120s onward, without an upper bound', () => {
-    expect(ageStep(at(120), NOW)).toBe(3);
+  it('is step 3 from 600s onward, without an upper bound', () => {
+    expect(ageStep(at(600), NOW)).toBe(3);
     expect(ageStep(at(86_400), NOW)).toBe(3);
   });
   it('treats a future timestamp as brand new rather than throwing', () => {

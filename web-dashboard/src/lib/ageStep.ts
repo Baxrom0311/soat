@@ -1,7 +1,7 @@
 /** Mirrors call.thresholdsSec in tokens.json. The spec puts the thresholds there and
  *  nowhere else; this constant is the web target's copy and tokens.css carries the same
  *  numbers, so --check catches a divergence. */
-const THRESHOLDS_SEC = [0, 30, 120] as const;
+const THRESHOLDS_SEC = [0, 120, 600] as const;
 
 export type AgeStep = 1 | 2 | 3;
 

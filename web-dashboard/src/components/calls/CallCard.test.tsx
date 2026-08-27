@@ -22,12 +22,12 @@ describe('CallCard', () => {
     const { container, rerender } = render(<CallCard roomNumber="1" floor={1} createdAt={ago(5)} now={NOW} />);
     expect(container.querySelectorAll('[data-rail-slot]').length).toBe(3);
     expect(container.querySelectorAll('[data-rail-slot="on"]').length).toBe(1);
-    rerender(<CallCard roomNumber="1" floor={1} createdAt={ago(300)} now={NOW} />);
+    rerender(<CallCard roomNumber="1" floor={1} createdAt={ago(600)} now={NOW} />);
     expect(container.querySelectorAll('[data-rail-slot="on"]').length).toBe(3);
   });
 
   it('carries the age step as a data attribute so CSS selects the fill', () => {
-    const { container } = render(<CallCard roomNumber="1" floor={1} createdAt={ago(60)} now={NOW} />);
+    const { container } = render(<CallCard roomNumber="1" floor={1} createdAt={ago(200)} now={NOW} />);
     expect(container.querySelector('[data-step="2"]')).toBeTruthy();
   });
 

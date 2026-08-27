@@ -82,18 +82,18 @@
   --size-desk-card-min: 320px;
   --size-tile-brand: 40px;
   --size-icon: 20px;
-  --rail-desk-w: 6px;
-  --rail-desk-h: 20px;
-  --rail-desk-gap: 4px;
-  --rail-phone-w: 5px;
-  --rail-phone-h: 18px;
-  --rail-phone-gap: 4px;
-  --rail-wall-w: 12px;
+  --rail-desk-w: 10px;
+  --rail-desk-h: 28px;
+  --rail-desk-gap: 6px;
+  --rail-phone-w: 8px;
+  --rail-phone-h: 22px;
+  --rail-phone-gap: 5px;
+  --rail-wall-w: 16px;
   --rail-wall-h: 40px;
-  --rail-wall-gap: 8px;
-  --rail-watch-w: 4px;
-  --rail-watch-h: 14px;
-  --rail-watch-gap: 3px;
+  --rail-wall-gap: 10px;
+  --rail-watch-w: 5px;
+  --rail-watch-h: 12px;
+  --rail-watch-gap: 4px;
   --rail-slots: 3;
   --rail-empty-stroke: 1.5px;
   --type-mgmt-eyebrow-size: 11px;
@@ -191,8 +191,8 @@
   --motion-fast: 120ms;
   --motion-base: 180ms;
   --motion-ease: cubic-bezier(0.2, 0, 0.2, 1);
-  --call-threshold-2: 30;
-  --call-threshold-3: 120;
+  --call-threshold-2: 120;
+  --call-threshold-3: 600;
   color-scheme: light;
 }
 
