@@ -600,11 +600,12 @@ tbody tr:last-child td { border-bottom: none; }
 .sub-pill.active { background: color-mix(in srgb, var(--color-ok) 16%, transparent); color: var(--color-ok); }
 .sub-pill.suspended { background: var(--color-attn-soft); color: var(--color-attn); }
 /* Overdue but still inside the grace window: on notice, but not yet an outage.
-   The old cyan accent-2 tint that used to set this apart from .trial is gone
-   (single accent now); the dashed border is the remaining differentiator so a
-   superadmin can still tell "needs following up" apart from "actually blocked". */
-.sub-pill.grace { background: var(--color-accent-soft); color: var(--color-accent); border: 1px dashed var(--color-accent); }
-.sub-pill.overdue { background: var(--color-attn-soft); color: var(--color-attn); border: 1px dashed var(--color-attn); }
+   Moved onto the amber (attn) family so it separates from .trial by HUE, not just
+   border style -- .trial stays teal/no-border as the purely informational state.
+   .grace and .overdue share the amber hue (both are payment problems, adjacent
+   points on one axis) and are told apart by border weight: dashed vs solid. */
+.sub-pill.grace { background: var(--color-attn-soft); color: var(--color-attn); border: 1px dashed var(--color-attn); }
+.sub-pill.overdue { background: var(--color-attn-soft); color: var(--color-attn); border: var(--border-field) solid var(--color-attn); }
 /* Contact-request states: an unhandled lead is a to-do (warn tint, like an open
    item), a handled one is done (ok tint) -- same vocabulary as the billing pills. */
 .sub-pill.unhandled { background: var(--color-attn-soft); color: var(--color-attn); }
