@@ -4,6 +4,7 @@ import { AuthPage } from './components/AuthPage';
 import { DashboardLayout } from './components/DashboardLayout';
 import { SuperAdminLayout } from './components/SuperAdminLayout';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { WallView } from './routes/WallView';
 
 // /login — faqat autentifikatsiya. Allaqachon kirgan bo'lsa, rolga qarab
 // tegishli panelga yo'naltiradi (superadmin va klinika xodimi endi butunlay
@@ -48,6 +49,17 @@ function App() {
             element={
               <RequireClinicStaff>
                 <DashboardLayout />
+              </RequireClinicStaff>
+            }
+          />
+          {/* /wall: same auth guard as /app (the feed needs a token, and a wall
+              monitor is logged in once and left running), but deliberately outside
+              DashboardLayout -- no sidebar, no nav, no theme toggle. */}
+          <Route
+            path="/wall"
+            element={
+              <RequireClinicStaff>
+                <WallView />
               </RequireClinicStaff>
             }
           />

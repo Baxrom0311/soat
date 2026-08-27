@@ -1,0 +1,100 @@
+/* web-dashboard/src/routes/wall.css
+   Full-bleed, forced-dark, never-scroll monitor. Tokens only, no literals. */
+
+.wall-body { overflow: hidden; cursor: none; }
+
+.wall {
+  min-height: 100vh;
+  padding: var(--gutter-wall);
+  background: var(--color-bg);
+  overflow: hidden;
+}
+
+.wall__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  min-height: var(--control-64);
+  margin-bottom: var(--space-24);
+}
+
+.wall__title {
+  font-size: var(--type-mgmt-card-title-size);
+  line-height: var(--type-mgmt-card-title-lh);
+  font-weight: var(--type-mgmt-card-title-weight);
+  color: var(--color-text1);
+}
+
+.wall__top-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+}
+
+.wall__conn { display: flex; align-items: center; }
+.wall__dot {
+  width: var(--space-8);
+  height: var(--space-8);
+  border-radius: var(--radius-full);
+  background: var(--color-attn);
+  display: inline-block;
+}
+.wall__dot--live { background: var(--color-ok); }
+
+.wall__clock {
+  font-family: var(--font-mono);
+  font-size: var(--type-mgmt-page-title-size);
+  line-height: var(--type-mgmt-page-title-lh);
+  font-weight: var(--type-mgmt-page-title-weight);
+  color: var(--color-text1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 1 Hz blinking colon: the cheapest possible proof that the page is not a frozen tab.
+   Chrome only -- the call cards themselves never animate. */
+@keyframes wall-colon { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+.wall__clock-colon { animation: wall-colon 1s steps(1, end) infinite; }
+@media (prefers-reduced-motion: reduce) { .wall__clock-colon { animation: none; } }
+
+.wall__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--size-wall-card-min), 1fr));
+  gap: var(--space-24);
+}
+
+.wall__solo {
+  display: grid;
+  place-items: stretch;
+  min-height: calc(100vh - var(--control-64) - var(--space-24) - (2 * var(--gutter-wall)));
+}
+
+.wall__overflow {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-8);
+  padding: var(--space-24);
+  background: var(--color-surface);
+  border: var(--border-hairline) solid var(--color-border-strong);
+  border-radius: var(--radius-4);
+}
+.wall__overflow-count {
+  font-size: var(--type-alert-overflow-count-size);
+  line-height: var(--type-alert-overflow-count-lh);
+  font-weight: var(--type-alert-overflow-count-weight);
+  color: var(--color-text1);
+  font-variant-numeric: tabular-nums;
+}
+.wall__overflow-meta {
+  font-size: var(--type-alert-overflow-meta-size);
+  font-weight: var(--type-alert-overflow-meta-weight);
+  color: var(--color-text2);
+}
+
+.wall__empty {
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - var(--control-64) - var(--space-24) - (2 * var(--gutter-wall)));
+  font-size: var(--type-mgmt-page-title-size);
+  color: var(--color-text2);
+}
