@@ -78,3 +78,10 @@ test('borderField clears 3:1 against surface in both themes', () => {
     assert.ok(r >= 3.0, `${theme}: ${r}`);
   }
 });
+
+test('an alpha-bearing call.fill value fails Rule 1', () => {
+  const bad = structuredClone(tokens);
+  bad.call.fill.light[0] = '#C4241A80';
+  const errs = validate(bad);
+  assert.ok(errs.some((e) => /Rule 1/.test(e)), errs.join('\n'));
+});

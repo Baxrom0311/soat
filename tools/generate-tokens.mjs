@@ -51,6 +51,11 @@ export function validate(t) {
   for (const [k, v] of Object.entries({ ...t.call.ink, ...t.call.edge, ...t.call.slab })) {
     if (typeof v === 'string' && v.length > 7) errs.push(`Rule 1: call token ${k} is 8-digit (${v}); the alert register forbids alpha`);
   }
+  for (const theme of ['light', 'dark']) {
+    (t.call.fill[theme] ?? []).forEach((v, i) => {
+      if (typeof v === 'string' && v.length > 7) errs.push(`Rule 1: call.fill.${theme}[${i}] is 8-digit (${v}); the alert register forbids alpha`);
+    });
+  }
 
   // Weight enum.
   const allowed = new Set(t.font.weights);
