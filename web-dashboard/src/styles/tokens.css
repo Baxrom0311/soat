@@ -180,6 +180,12 @@
   --type-alert-overflow-meta-size: 24px;
   --type-alert-overflow-meta-lh: 28px;
   --type-alert-overflow-meta-weight: 500;
+  --type-alert-clock-wall-size: 40px;
+  --type-alert-clock-wall-lh: 44px;
+  --type-alert-clock-wall-weight: 700;
+  --type-alert-clock-wall-empty-size: 96px;
+  --type-alert-clock-wall-empty-lh: 100px;
+  --type-alert-clock-wall-empty-weight: 700;
   --font-sans: Inter, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --motion-fast: 120ms;

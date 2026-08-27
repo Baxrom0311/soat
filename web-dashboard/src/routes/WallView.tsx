@@ -3,27 +3,66 @@ import { useSearchParams } from 'react-router-dom';
 import { CallCard } from '../components/calls/CallCard';
 import { elapsedLabel } from '../lib/ageStep';
 import { useAuth } from '../context/AuthContext';
-import { useCallsFeed } from '../hooks/useCallsFeed';
+import { useCallsFeed, type ConnStatus } from '../hooks/useCallsFeed';
 import type { ActiveCall } from '../api/types';
 import './wall.css';
 
 const MAX_CARDS = 11; // 12 grid slots on 1920x1080; slot 12 is the overflow tile
 
-const CONN_LABEL: Record<string, string> = {
-  connecting: 'ulanmoqda…',
-  live: 'jonli ulanish',
-  disconnected: 'uzildi, qayta ulanmoqda…',
+/**
+ * §6.2's three connection visuals. `connecting` (no connection has ever been
+ * established this session) reads as a neutral "no connection" ring rather than
+ * something alarming; `disconnected` (a socket that WAS live and dropped, and is
+ * actively retrying) is the one that should read as attn -- it is the state a nurse
+ * actually needs to notice.
+ */
+const CONN_VISUAL: Record<ConnStatus, { dotClass: string; label: string }> = {
+  connecting: { dotClass: 'wall__dot--off', label: 'Ulanish yoʻq' },
+  live: { dotClass: 'wall__dot--live', label: 'Ulangan' },
+  disconnected: { dotClass: 'wall__dot--attn', label: 'Qayta ulanmoqda' },
 };
 
-/** Exported separately so the display-only guarantee can be tested without the feed. */
+/** Status dot + visible label. Rendering the label only in a `title` attribute is
+ *  useless on a route where the cursor is hidden and nobody hovers. */
+function ConnBadge({ status }: { status: ConnStatus }) {
+  const visual = CONN_VISUAL[status];
+  return (
+    <span className="wall__conn">
+      <span className={`wall__dot ${visual.dotClass}`} />
+      <span className="wall__conn-label">{visual.label}</span>
+    </span>
+  );
+}
+
+/** HH:MM with the colon blinking at 1Hz -- the cheapest possible proof that a wall
+ *  monitor's tab is not frozen. Chrome only: the calls themselves never blink.
+ *  `variant` selects the top-bar size (40/700 text-1) vs. the empty-state size
+ *  (96/700 text-2) per §6.2. */
+function WallClock({ variant }: { variant: 'bar' | 'empty' }) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const two = (n: number) => String(n).padStart(2, '0');
+  return (
+    <span className={`wall__clock wall__clock--${variant}`}>
+      {two(now.getHours())}
+      <span className="wall__clock-colon">:</span>
+      {two(now.getMinutes())}
+    </span>
+  );
+}
+
+/**
+ * Exported separately so the display-only guarantee can be tested without the feed.
+ * Handles calls.length >= 1 only -- the zero-call case is a dedicated full-screen
+ * state (`WallEmpty`), not a branch of the grid.
+ */
 export function WallGrid({ calls, now }: { calls: ActiveCall[]; now?: Date }) {
   const ordered = [...calls].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   );
-
-  if (ordered.length === 0) {
-    return <div className="wall__empty">Faol chaqiruvlar yo'q</div>;
-  }
 
   if (ordered.length === 1) {
     const c = ordered[0];
@@ -48,7 +87,10 @@ export function WallGrid({ calls, now }: { calls: ActiveCall[]; now?: Date }) {
         <div className="wall__overflow">
           <span className="wall__overflow-count">+{hidden.length}</span>
           <span className="wall__overflow-meta">
-            eng qadimgisi {elapsedLabel(hidden[hidden.length - 1].created_at, now)}
+            {/* hidden is ascending oldest->newest (same sort as `ordered`); hidden[0] is
+                the OLDEST hidden call -- the one a triage decision actually needs, not
+                hidden[hidden.length - 1] which is the newest and least urgent of the lot. */}
+            eng qadimgisi {elapsedLabel(hidden[0].created_at, now)}
           </span>
         </div>
       )}
@@ -56,21 +98,18 @@ export function WallGrid({ calls, now }: { calls: ActiveCall[]; now?: Date }) {
   );
 }
 
-/** HH:MM with the colon blinking at 1Hz -- the cheapest possible proof that a wall
- *  monitor's tab is not frozen. Chrome only: the calls themselves never blink. */
-function WallClock() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  const two = (n: number) => String(n).padStart(2, '0');
+/**
+ * §6.2's empty state: black page, one centred clock, the message beneath it, and the
+ * connection dot. Deliberately no green tick, no "all calm" badge -- a wall that
+ * congratulates itself when idle trains everyone in the corridor to stop looking at it.
+ */
+export function WallEmpty({ connStatus }: { connStatus: ConnStatus }) {
   return (
-    <span className="wall__clock">
-      {two(now.getHours())}
-      <span className="wall__clock-colon">:</span>
-      {two(now.getMinutes())}
-    </span>
+    <div className="wall__emptyscreen">
+      <WallClock variant="empty" />
+      <p className="wall__empty-msg">Faol chaqiruv yoʻq</p>
+      <ConnBadge status={connStatus} />
+    </div>
   );
 }
 
@@ -108,6 +147,14 @@ export function WallView() {
     return all.filter((c) => c.floor === floor);
   }, [feed.activeCalls, floor]);
 
+  if (calls.length === 0) {
+    return (
+      <div className="wall wall--empty">
+        <WallEmpty connStatus={feed.connStatus} />
+      </div>
+    );
+  }
+
   return (
     <div className="wall">
       <div className="wall__top">
@@ -115,10 +162,8 @@ export function WallView() {
           NurseCall{floor !== null && !Number.isNaN(floor) ? ` — ${floor}-qavat` : ''}
         </span>
         <div className="wall__top-right">
-          <div className="wall__conn" title={CONN_LABEL[feed.connStatus]}>
-            <span className={`wall__dot ${feed.connStatus === 'live' ? 'wall__dot--live' : ''}`} />
-          </div>
-          <WallClock />
+          <WallClock variant="bar" />
+          <ConnBadge status={feed.connStatus} />
         </div>
       </div>
       <WallGrid calls={calls} />

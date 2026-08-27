@@ -22,7 +22,9 @@
   font-size: var(--type-mgmt-card-title-size);
   line-height: var(--type-mgmt-card-title-lh);
   font-weight: var(--type-mgmt-card-title-weight);
-  color: var(--color-text1);
+  /* text-2, deliberately -- the clinic name is not information anyone at the wall
+     needs, per §6.2. */
+  color: var(--color-text2);
 }
 
 .wall__top-right {
@@ -31,23 +33,43 @@
   gap: var(--space-16);
 }
 
-.wall__conn { display: flex; align-items: center; }
+.wall__conn { display: flex; align-items: center; gap: var(--space-8); }
+.wall__conn-label {
+  font-size: var(--type-mgmt-dense-size);
+  line-height: var(--type-mgmt-dense-lh);
+  font-weight: var(--type-mgmt-dense-weight);
+}
+
 .wall__dot {
   width: var(--space-8);
   height: var(--space-8);
   border-radius: var(--radius-full);
-  background: var(--color-attn);
   display: inline-block;
+  /* default / 'connecting': hollow text-3 ring -- no connection yet this session */
+  background: transparent;
+  border: var(--border-hairline) solid var(--color-text3);
 }
-.wall__dot--live { background: var(--color-ok); }
+.wall__dot ~ .wall__conn-label { color: var(--color-text3); }
+.wall__dot--live { background: var(--color-ok); border-color: var(--color-ok); }
+.wall__dot--live ~ .wall__conn-label { color: var(--color-text1); }
+.wall__dot--attn { background: var(--color-attn); border-color: var(--color-attn); }
+.wall__dot--attn ~ .wall__conn-label { color: var(--color-attn); }
 
 .wall__clock {
   font-family: var(--font-mono);
-  font-size: var(--type-mgmt-page-title-size);
-  line-height: var(--type-mgmt-page-title-lh);
-  font-weight: var(--type-mgmt-page-title-weight);
-  color: var(--color-text1);
   font-variant-numeric: tabular-nums;
+}
+.wall__clock--bar {
+  font-size: var(--type-alert-clock-wall-size);
+  line-height: var(--type-alert-clock-wall-lh);
+  font-weight: var(--type-alert-clock-wall-weight);
+  color: var(--color-text1);
+}
+.wall__clock--empty {
+  font-size: var(--type-alert-clock-wall-empty-size);
+  line-height: var(--type-alert-clock-wall-empty-lh);
+  font-weight: var(--type-alert-clock-wall-empty-weight);
+  color: var(--color-text2);
 }
 
 /* 1 Hz blinking colon: the cheapest possible proof that the page is not a frozen tab.
@@ -91,10 +113,18 @@
   color: var(--color-text2);
 }
 
-.wall__empty {
-  display: grid;
-  place-items: center;
-  min-height: calc(100vh - var(--control-64) - var(--space-24) - (2 * var(--gutter-wall)));
-  font-size: var(--type-mgmt-page-title-size);
-  color: var(--color-text2);
+/* Dedicated full-screen empty state per §6.2: black page, one centred clock, the
+   message beneath it, and the connection dot. No illustration, no "all calm" badge. */
+.wall--empty { display: grid; place-items: center; }
+.wall__emptyscreen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-16);
+}
+.wall__empty-msg {
+  font-size: var(--type-mgmt-card-title-size);
+  line-height: var(--type-mgmt-card-title-lh);
+  font-weight: var(--type-mgmt-card-title-weight);
+  color: var(--color-text3);
 }
