@@ -36,8 +36,11 @@ function staticVars(t) {
   for (const [k, v] of Object.entries(t.rail)) {
     if (typeof v === 'object') {
       for (const [dim, n] of Object.entries(v)) out.push(`  --rail-${KEBAB(k)}-${dim}: ${n}px;`);
+    } else if (k === 'slots') {
+      // rail.slots is a count of rail segments (a loop bound), not a length — no unit.
+      out.push(`  --rail-${KEBAB(k)}: ${v};`);
     } else {
-      // Correction 3: scalar rail.* values are consumed as border widths — emit with px.
+      // Correction 3: scalar rail.* lengths (e.g. emptyStroke) are consumed as border widths — emit with px.
       out.push(`  --rail-${KEBAB(k)}: ${v}px;`);
     }
   }

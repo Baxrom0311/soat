@@ -35,3 +35,9 @@ test('a css-excluded token is not emitted to css', () => {
   const css = emitCss(tokens);
   assert.doesNotMatch(css, /room-phone-solo/);
 });
+
+test('rail.slots is unitless while rail lengths keep px', () => {
+  const css = emitCss(tokens);
+  assert.match(css, /--rail-slots:\s*3;/);
+  assert.match(css, /--rail-empty-stroke:\s*1\.5px;/);
+});
