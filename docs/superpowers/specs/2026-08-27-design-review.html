@@ -1,0 +1,441 @@
+<title>NurseCall Design System</title>
+<style>
+  /* ============ page tokens (light is the base) ============ */
+  :root {
+    --bg: #F6F7F7;
+    --surface: #FFFFFF;
+    --sunken: #EEF0F0;
+    --border: #E2E5E5;
+    --border-strong: #C7CCCC;
+    --t1: #14191A;
+    --t2: #4A5456;
+    --t3: #6C7679;
+    --accent: #0C6A62;
+    --accent-soft: #0C6A621F;
+    --attn: #8A5A00;
+    --shadow: 0 1px 2px rgba(16,27,29,.06);
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0E1213;
+      --surface: #171C1D;
+      --sunken: #0A0E0F;
+      --border: #272E2F;
+      --border-strong: #394142;
+      --t1: #E9EDED;
+      --t2: #A4AEAE;
+      --t3: #7B8586;
+      --accent: #35C9B6;
+      --accent-soft: #35C9B62E;
+      --attn: #E0A63A;
+      --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0E1213;
+    --surface: #171C1D;
+    --sunken: #0A0E0F;
+    --border: #272E2F;
+    --border-strong: #394142;
+    --t1: #E9EDED;
+    --t2: #A4AEAE;
+    --t3: #7B8586;
+    --accent: #35C9B6;
+    --accent-soft: #35C9B62E;
+    --attn: #E0A63A;
+    --shadow: none;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--t1);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 56px 28px 96px; }
+
+  h1 { font-size: clamp(1.9rem, 4vw, 2.5rem); line-height: 1.1; margin: 0 0 14px; letter-spacing: -.02em; text-wrap: balance; }
+  h2 { font-size: 1.35rem; margin: 0 0 6px; letter-spacing: -.015em; }
+  h3 { font-size: 1rem; margin: 0 0 10px; }
+  p { margin: 0 0 14px; color: var(--t2); max-width: 68ch; }
+  .lede { font-size: 1.06rem; color: var(--t2); max-width: 70ch; }
+  code { font-family: var(--mono); font-size: .88em; background: var(--sunken); padding: 1px 5px; border-radius: 4px; color: var(--t1); }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: .69rem; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 12px;
+  }
+  section { margin-top: 64px; }
+  .sec-head { border-bottom: 1px solid var(--border-strong); padding-bottom: 14px; margin-bottom: 26px; }
+
+  /* ---------- swatches ---------- */
+  .swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+  .sw { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface); }
+  .sw-chip { height: 62px; }
+  .sw-meta { padding: 9px 11px; }
+  .sw-name { font-family: var(--mono); font-size: .74rem; color: var(--t1); }
+  .sw-val { font-family: var(--mono); font-size: .69rem; color: var(--t3); }
+  .sw-note { font-size: .74rem; color: var(--t2); margin-top: 3px; }
+
+  /* ---------- theme comparison panels ---------- */
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .panel { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .panel-label {
+    font-family: var(--mono); font-size: .69rem; letter-spacing: .08em; text-transform: uppercase;
+    padding: 9px 13px; border-bottom: 1px solid var(--border); color: var(--t3); background: var(--surface);
+  }
+  .panel-body { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+  .lightsim { background: #F6F7F7; }
+  .darksim  { background: #0E1213; }
+
+  /* ---------- the call card specimen ---------- */
+  .call {
+    position: relative; border-radius: 10px; padding: 18px 20px 16px;
+    display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 6px 14px;
+    color: #FFFFFF;
+  }
+  .call-room { font-size: 62px; font-weight: 700; line-height: .95; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .call-floor { font-size: 14px; font-weight: 600; opacity: 1; }
+  .call-timer { font-family: var(--mono); font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+  .call-slab {
+    grid-column: 1 / -1; margin-top: 12px; background: #fff; border-radius: 7px;
+    text-align: center; padding: 13px 0; font-size: 14px; font-weight: 700; letter-spacing: .01em;
+  }
+  .rail { position: absolute; top: 16px; right: 20px; display: flex; gap: 4px; }
+  .rail i { display: block; width: 15px; height: 5px; border-radius: 1px; border: 1.5px solid #fff; }
+  .rail i.on { background: #fff; }
+  .step-cap { font-family: var(--mono); font-size: .69rem; color: var(--t3); letter-spacing: .06em; text-transform: uppercase; }
+
+  /* ---------- type specimen ---------- */
+  .type-row { display: grid; grid-template-columns: 132px 1fr; gap: 16px; align-items: baseline; padding: 13px 0; border-bottom: 1px solid var(--border); }
+  .type-row:last-child { border-bottom: 0; }
+  .type-key { font-family: var(--mono); font-size: .72rem; color: var(--t3); }
+
+  /* ---------- table specimen ---------- */
+  .tbl-wrap { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); }
+  table { width: 100%; border-collapse: collapse; font-size: .94rem; }
+  th {
+    text-align: left; padding: 11px 16px; font-size: .78rem; font-weight: 600; color: var(--t3);
+    border-bottom: 1px solid var(--border-strong); background: var(--sunken);
+  }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--t2); font-variant-numeric: tabular-nums; }
+  tr:last-child td { border-bottom: 0; }
+  td.k { color: var(--t1); }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; vertical-align: middle; }
+  .dot.on { background: #146B3A; }
+  .dot.off { background: transparent; border: 1.5px solid var(--t3); }
+  .mono-plate { font-family: var(--mono); font-size: .82rem; background: var(--sunken); padding: 2px 6px; border-radius: 4px; }
+
+  /* ---------- device mockups ---------- */
+  .devices { display: grid; grid-template-columns: 260px 1fr; gap: 26px; align-items: start; }
+  .phone {
+    width: 260px; border: 1px solid var(--border-strong); border-radius: 22px; overflow: hidden;
+    background: #0E1213; padding: 14px 12px 16px;
+  }
+  .phone-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; padding: 0 4px; }
+  .phone-title { color: #E9EDED; font-size: 15px; font-weight: 600; }
+  .phone-count { color: #7B8586; font-size: 12px; font-family: var(--mono); }
+  .watch {
+    width: 178px; height: 178px; border-radius: 50%; background: #000;
+    border: 7px solid var(--border-strong); display: grid; place-items: center; padding: 20px; text-align: center;
+  }
+  .watch-room { color: #fff; font-size: 46px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+  .watch-floor { color: #A8B2AF; font-size: 13px; font-weight: 500; margin-top: 5px; }
+  .watch-slab { margin-top: 11px; background: #fff; color: #CB2F22; border-radius: 999px; font-size: 12px; font-weight: 700; padding: 6px 12px; display: inline-block; }
+  .cap { font-size: .8rem; color: var(--t3); margin-top: 10px; }
+
+  /* ---------- wall mockup ---------- */
+  .wall { background: #0E1213; border-radius: 10px; padding: 20px; }
+  .wall-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+  .wall-floor-label { color: #A4AEAE; font-size: 13px; font-family: var(--mono); letter-spacing: .09em; text-transform: uppercase; }
+  .wall-clock { color: #E9EDED; font-family: var(--mono); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .wall-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .wall-card { border-radius: 8px; padding: 14px 14px 12px; color: #fff; position: relative; }
+  .wall-room { font-size: 54px; font-weight: 700; line-height: .95; font-variant-numeric: tabular-nums; }
+  .wall-sub { display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px; }
+  .wall-fl { font-size: 13px; font-weight: 600; }
+  .wall-tm { font-family: var(--mono); font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* ---------- callout ---------- */
+  .callout { border: 1px solid var(--border); border-left: 3px solid var(--attn); border-radius: 8px; background: var(--surface); padding: 16px 18px; }
+  .callout h3 { color: var(--attn); }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .changes { display: grid; grid-template-columns: repeat(auto-fit, minmax(238px, 1fr)); gap: 14px; }
+  .change { border: 1px solid var(--border); border-radius: 9px; padding: 15px 17px; background: var(--surface); }
+  .change h3 { font-family: var(--mono); font-size: .78rem; color: var(--accent); letter-spacing: .04em; }
+  .change ul { margin: 0; padding-left: 17px; color: var(--t2); font-size: .89rem; }
+  .change li { margin-bottom: 5px; }
+
+  @media (max-width: 860px) {
+    .pair, .devices { grid-template-columns: 1fr; }
+    .wall-grid { grid-template-columns: 1fr 1fr; }
+    .type-row { grid-template-columns: 1fr; gap: 2px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <div class="eyebrow">Dizayn tizimi · ko'rib chiqish uchun</div>
+  <h1>Qizil rang faqat bemorga tegishli</h1>
+  <p class="lede">To'rtta interfeys bitta manbadan boshqariladi. Butun interfeys sokin va neytral — shuning uchun bitta qizil karta ekrandagi <strong>yagona</strong> to'yingan narsa bo'ladi va uni o'tkazib yuborish mumkin emas.</p>
+  <p style="font-size:.86rem;color:var(--t3)">Bu sahifa tizim shriftida ko'rsatilgan; haqiqiy mahsulot Inter bilan chiqadi. Qolgan hamma qiymat — ranglar, o'lchamlar, kontrast nisbatlari — spetsifikatsiyadan aynan olingan.</p>
+
+  <!-- ================= 1. CALL CARD ================= -->
+  <section>
+    <div class="sec-head">
+      <h2>Chaqiruv kartasi — uch bosqich, ikki tema</h2>
+      <p>Eng muhim ekran. Chaqiruv kutgani sayin uch bosqichda o'zgaradi. Rang <em>yagona</em> signal emas: qavatchalar soni (1/2/3), raqam o'lchami va chegara qalinligi ham o'zgaradi — shuning uchun rang ko'rmaydigan odam ham tartibni to'liq o'qiydi.</p>
+    </div>
+
+    <div class="pair">
+      <div class="panel">
+        <div class="panel-label">Kunduzgi tema</div>
+        <div class="panel-body lightsim">
+          <div class="step-cap">1 — yangi · 0–29 s</div>
+          <div class="call" style="background:#C4241A;box-shadow:inset 0 0 0 2px #6E0A06">
+            <div class="rail"><i class="on"></i><i></i><i></i></div>
+            <div><div class="call-room">214</div><div class="call-floor">2-qavat</div></div>
+            <div class="call-timer">0:12</div>
+            <div class="call-slab" style="color:#C4241A">Tasdiqlash</div>
+          </div>
+          <div class="step-cap">2 — kutmoqda · 30–119 s</div>
+          <div class="call" style="background:#A81810;box-shadow:inset 0 0 0 2px #6E0A06">
+            <div class="rail"><i class="on"></i><i class="on"></i><i></i></div>
+            <div><div class="call-room" style="font-size:72px">108</div><div class="call-floor">1-qavat</div></div>
+            <div class="call-timer">1:47</div>
+            <div class="call-slab" style="color:#A81810">Tasdiqlash</div>
+          </div>
+          <div class="step-cap">3 — kechikdi · 120 s+</div>
+          <div class="call" style="background:#8A100A;box-shadow:inset 0 0 0 4px #6E0A06">
+            <div class="rail"><i class="on"></i><i class="on"></i><i class="on"></i></div>
+            <div><div class="call-room" style="font-size:82px">305</div><div class="call-floor">3-qavat</div></div>
+            <div class="call-timer">6:03</div>
+            <div class="call-slab" style="color:#8A100A">Tasdiqlash</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-label">Tungi tema</div>
+        <div class="panel-body darksim">
+          <div class="step-cap">1 — yangi · 0–29 s</div>
+          <div class="call" style="background:#B9271B;box-shadow:inset 0 0 0 2px #FF6B54">
+            <div class="rail"><i class="on"></i><i></i><i></i></div>
+            <div><div class="call-room">214</div><div class="call-floor">2-qavat</div></div>
+            <div class="call-timer">0:12</div>
+            <div class="call-slab" style="color:#B9271B">Tasdiqlash</div>
+          </div>
+          <div class="step-cap">2 — kutmoqda · 30–119 s</div>
+          <div class="call" style="background:#CB2F22;box-shadow:inset 0 0 0 2px #FF6B54">
+            <div class="rail"><i class="on"></i><i class="on"></i><i></i></div>
+            <div><div class="call-room" style="font-size:72px">108</div><div class="call-floor">1-qavat</div></div>
+            <div class="call-timer">1:47</div>
+            <div class="call-slab" style="color:#CB2F22">Tasdiqlash</div>
+          </div>
+          <div class="step-cap">3 — kechikdi · 120 s+</div>
+          <div class="call" style="background:#D93726;box-shadow:inset 0 0 0 4px #FF6B54">
+            <div class="rail"><i class="on"></i><i class="on"></i><i class="on"></i></div>
+            <div><div class="call-room" style="font-size:82px">305</div><div class="call-floor">3-qavat</div></div>
+            <div class="call-timer">6:03</div>
+            <div class="call-slab" style="color:#D93726">Tasdiqlash</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:22px">
+      <h3>Ochiq aytiladigan xavf</h3>
+      <p>Kunduzgi temada qarish <em>quyuqlashish</em> yo'nalishida ketadi: eng yangi chaqiruv eng yorqin, eng eskisi esa deyarli qora-qizil. Odam odatda "yorqinroq = shoshilinch" deb o'rgangan — bu qoida unga qarshi ketadi. Nega shunday: har bosqich <strong>sahifa foniga nisbatan</strong> kontrastni oshirishi kerak, aks holda bosqich ko'rinmaydi. Qolgan to'rtta signal (joylashuv, qavatchalar, o'lcham, chegara) ikki temada ham bir xil yo'nalishda ishlaydi. Bu narsani haqiqiy smenada kuzatib ko'rish kerak; agar xalaqit bersa, tuzatish uch hex qiymatini o'zgartirish — qayta loyihalash emas.</p>
+    </div>
+  </section>
+
+  <!-- ================= 2. WALL ================= -->
+  <section>
+    <div class="sec-head">
+      <h2>Devor monitori — alohida sahifa</h2>
+      <p>Hamshira postidagi ekranga qo'yiladi, 4 metrdan o'qiladi. <strong>Tasdiqlash tugmasi yo'q</strong> — yonidan o'tgan har kim bosib qo'ymasligi uchun. Eng eski chaqiruv doim birinchi turadi.</p>
+    </div>
+    <div class="wall">
+      <div class="wall-top">
+        <span class="wall-floor-label">Barcha qavatlar · jonli</span>
+        <span class="wall-clock">14:32</span>
+      </div>
+      <div class="wall-grid">
+        <div class="wall-card" style="background:#D93726;box-shadow:inset 0 0 0 6px #FF6B54">
+          <div class="rail" style="top:12px;right:12px"><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          <div class="wall-room">305</div>
+          <div class="wall-sub"><span class="wall-fl">3-qavat</span><span class="wall-tm">6:03</span></div>
+        </div>
+        <div class="wall-card" style="background:#CB2F22;box-shadow:inset 0 0 0 3px #FF6B54">
+          <div class="rail" style="top:12px;right:12px"><i class="on"></i><i class="on"></i><i></i></div>
+          <div class="wall-room">108</div>
+          <div class="wall-sub"><span class="wall-fl">1-qavat</span><span class="wall-tm">1:47</span></div>
+        </div>
+        <div class="wall-card" style="background:#B9271B;box-shadow:inset 0 0 0 3px #FF6B54">
+          <div class="rail" style="top:12px;right:12px"><i class="on"></i><i></i><i></i></div>
+          <div class="wall-room">214</div>
+          <div class="wall-sub"><span class="wall-fl">2-qavat</span><span class="wall-tm">0:12</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="cap">Haqiqiy o'lchamda xona raqami 112–148px. 43″ 1080p panelda bu 40–53 mm balandlikdagi harf — 4 metrdan o'qish uchun kerakli me'yordan 2–2,6 barobar katta. Ekranda 11 tagacha chaqiruv sig'adi, ortiqchasi "+N" bo'lib ko'rsatiladi.</p>
+  </section>
+
+  <!-- ================= 3. PHONE + WATCH ================= -->
+  <section>
+    <div class="sec-head">
+      <h2>Telefon va soat</h2>
+      <p>Telefon: koridorda, bir qo'l band. Soat: bilakda, 1–2 sekundlik qarash. Ikkalasi ham faqat qora temada.</p>
+    </div>
+    <div class="devices">
+      <div>
+        <div class="phone">
+          <div class="phone-top"><span class="phone-title">Faol chaqiruvlar</span><span class="phone-count">3</span></div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="call" style="background:#D93726;box-shadow:inset 0 0 0 4px #FF6B54;padding:14px 15px 12px">
+              <div class="rail" style="top:12px;right:15px"><i class="on"></i><i class="on"></i><i class="on"></i></div>
+              <div><div class="call-room" style="font-size:52px">305</div><div class="call-floor" style="font-size:13px">3-qavat</div></div>
+              <div class="call-timer" style="font-size:16px">6:03</div>
+              <div class="call-slab" style="color:#D93726;font-size:13px;padding:12px 0">Tasdiqlash</div>
+            </div>
+            <div class="call" style="background:#B9271B;box-shadow:inset 0 0 0 2px #FF6B54;padding:14px 15px 12px">
+              <div class="rail" style="top:12px;right:15px"><i class="on"></i><i></i><i></i></div>
+              <div><div class="call-room" style="font-size:42px">214</div><div class="call-floor" style="font-size:13px">2-qavat</div></div>
+              <div class="call-timer" style="font-size:16px">0:12</div>
+              <div class="call-slab" style="color:#B9271B;font-size:13px;padding:12px 0">Tasdiqlash</div>
+            </div>
+          </div>
+        </div>
+        <p class="cap">Onboarding ekrani olib tashlandi — hamshira darhol kirish oynasini ko'radi.</p>
+      </div>
+      <div>
+        <div class="watch">
+          <div>
+            <div class="watch-room">214</div>
+            <div class="watch-floor">2-qavat</div>
+            <div class="watch-slab">Tasdiqlash</div>
+          </div>
+        </div>
+        <p class="cap">Soatda "Xona" so'zi olib tashlandi — 48sp o'lchamda u butun qatorni egallaydi va hech narsa qo'shmaydi. Soat endi mahsulotning qolgan qismi bilan bir xil ranglardan foydalanadi; ilgari bitta ham umumiy rang yo'q edi.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 4. MANAGEMENT ================= -->
+  <section>
+    <div class="sec-head">
+      <h2>Boshqaruv ekranlari</h2>
+      <p>Boshqa vazifa, boshqa uslub: zich, tinch, aniq. Teal rang <strong>faqat</strong> bosiladigan narsalarda. Jadval ustunlari bir tekis — raqamlar bir xil kenglikda teriladi.</p>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Xona</th><th>Qavat</th><th>Qurilma</th><th>Holat</th><th>Oxirgi chaqiruv</th></tr></thead>
+        <tbody>
+          <tr><td class="k">108</td><td>1</td><td><span class="mono-plate">esp32-a41f9c</span></td><td><span class="dot on"></span>Onlayn</td><td>14:30</td></tr>
+          <tr><td class="k">214</td><td>2</td><td><span class="mono-plate">esp32-7b02de</span></td><td><span class="dot on"></span>Onlayn</td><td>14:32</td></tr>
+          <tr><td class="k">305</td><td>3</td><td><span class="mono-plate">esp32-c1183a</span></td><td><span class="dot off"></span>Oflayn</td><td>09:12</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="cap">Holat rangga bog'liq emas: onlayn — to'la nuqta, oflayn — bo'sh halqa. Ya'ni rang ko'rmaydigan odam ham, oq-qora chop etilsa ham o'qiladi.</p>
+
+    <div style="margin-top:26px">
+      <h3 style="color:var(--t1)">Menyu ikki guruhga bo'linadi</h3>
+      <p>Chaqiruvlar kuniga 100 marta ochiladi, Xodimlar oyiga bir marta — hozir ular bir xil ko'rinadi va bir xil masofada turadi. "Noma'lum signallar" alohida bo'lim bo'lishdan to'xtaydi va Qurilmalar ichiga kiradi, chunki u aslida qurilmaning holati.</p>
+    </div>
+  </section>
+
+  <!-- ================= 5. PALETTE ================= -->
+  <section>
+    <div class="sec-head">
+      <h2>Palitra</h2>
+      <p>Binafsha butunlay ketdi. Teal — faqat aksent. Qizil — faqat chaqiruv. Ogohlantirish va xatolar uchun <strong>sariq</strong> ishlatiladi, qizil emas: o'chirish tugmasi ham sariq bo'ladi. Bu qizilni band qilishning haqiqiy narxi va biz uni ataylab to'laymiz.</p>
+    </div>
+    <div class="swatch-grid">
+      <div class="sw"><div class="sw-chip" style="background:#0C6A62"></div><div class="sw-meta"><div class="sw-name">accent</div><div class="sw-val">#0C6A62 / #35C9B6</div><div class="sw-note">Bosiladigan hamma narsa</div></div></div>
+      <div class="sw"><div class="sw-chip" style="background:#8A5A00"></div><div class="sw-meta"><div class="sw-name">attn</div><div class="sw-val">#8A5A00 / #E0A63A</div><div class="sw-note">Ogohlantirish, xato, o'chirish</div></div></div>
+      <div class="sw"><div class="sw-chip" style="background:#146B3A"></div><div class="sw-meta"><div class="sw-name">ok</div><div class="sw-val">#146B3A / #3FC97E</div><div class="sw-note">Onlayn, to'landi</div></div></div>
+      <div class="sw"><div class="sw-chip" style="background:linear-gradient(90deg,#C4241A 33%,#A81810 33% 66%,#8A100A 66%)"></div><div class="sw-meta"><div class="sw-name">call.fill</div><div class="sw-val">3 bosqich · kunduzgi</div><div class="sw-note">Faqat bemor chaqiruvi</div></div></div>
+      <div class="sw"><div class="sw-chip" style="background:linear-gradient(90deg,#B9271B 33%,#CB2F22 33% 66%,#D93726 66%)"></div><div class="sw-meta"><div class="sw-name">call.fill</div><div class="sw-val">3 bosqich · tungi</div><div class="sw-note">Yo'nalish tema bo'yicha o'zgaradi</div></div></div>
+      <div class="sw"><div class="sw-chip" style="background:#F6F7F7;border-bottom:1px solid var(--border)"></div><div class="sw-meta"><div class="sw-name">bg / surface</div><div class="sw-val">#F6F7F7 / #0E1213</div><div class="sw-note">Hech qachon tuslanmaydi</div></div></div>
+    </div>
+    <p class="cap">Asosiy matn kontrasti 17,7:1 (kunduzgi) va 14,6:1 (tungi). Tizimda AA me'yoridan past kulrang <strong>umuman yo'q</strong>. Har uch qizil bosqich o'z foniga nisbatan 3:1 dan, oq matnga nisbatan 4,5:1 dan yuqori.</p>
+  </section>
+
+  <!-- ================= 6. TYPE ================= -->
+  <section>
+    <div class="sec-head">
+      <h2>Shrift</h2>
+      <p>Hamma joyda Inter. Sora ketdi. Mono faqat to'rtta narsaga qoladi: qurilma ID, EV1527 kodi, taymer va soat. O'lchamlar soni telefonda 10 tadan 8 taga tushdi.</p>
+    </div>
+    <div style="border:1px solid var(--border);border-radius:10px;background:var(--surface);padding:6px 20px">
+      <div class="type-row"><span class="type-key">display · 28/650</span><span style="font-size:28px;font-weight:600;letter-spacing:-.02em">Chaqiruvlar</span></div>
+      <div class="type-row"><span class="type-key">title · 20/600</span><span style="font-size:20px;font-weight:600;letter-spacing:-.015em">Noma'lum signallar</span></div>
+      <div class="type-row"><span class="type-key">body · 15/400</span><span style="font-size:15px">Bemor bir marta bosadi, hamshira soniyalarda biladi.</span></div>
+      <div class="type-row"><span class="type-key">label · 13/500</span><span style="font-size:13px;font-weight:500;color:var(--t2)">Qavat bo'yicha biriktirish</span></div>
+      <div class="type-row"><span class="type-key">mono · 13/500</span><span class="mono-plate">esp32-a41f9c · EV1527 987654</span></div>
+    </div>
+    <p class="cap">O'zbek lotin matni uchun alohida qoidalar: eng kichik o'lcham 15px (13px da <code>o'</code> va <code>g'</code> shovqinga aylanadi), 22px dan past harflar zichlashtirilmaydi, katta harfli sarlavhalar yo'q (o'zbekcha katta harfda ~18% kengroq chiqadi va arzon ko'rinadi), va apostrof uchun bitta belgi — <code>ʻ</code> — kanonik qilib olinadi.</p>
+  </section>
+
+  <!-- ================= 7. WHAT CHANGES ================= -->
+  <section>
+    <div class="sec-head">
+      <h2>Nima o'zgaradi</h2>
+      <p>Funksiya qo'shilmaydi va olib tashlanmaydi. Backend butunlay tegilmaydi.</p>
+    </div>
+    <div class="changes">
+      <div class="change">
+        <h3>web-dashboard</h3>
+        <ul>
+          <li>Binafsha → teal, tokenlar generatordan</li>
+          <li>Chaqiruvlar ekrani butunlay qayta yasaladi</li>
+          <li>Yangi <code>/wall</code> sahifasi</li>
+          <li>Menyu ikki guruhga bo'linadi</li>
+          <li>Jadvallar zichroq, raqamlar bir tekis</li>
+        </ul>
+      </div>
+      <div class="change">
+        <h3>landing.html</h3>
+        <ul>
+          <li>Bir xil ranglar, lekin kengroq kompozitsiya</li>
+          <li>Inter base64 bo'lib ichiga joylashtiriladi</li>
+          <li>Tokenlar belgilangan joyga generatordan quyiladi</li>
+        </ul>
+      </div>
+      <div class="change">
+        <h3>mobile-app</h3>
+        <ul>
+          <li>Eski ko'k → umumiy tokenlar</li>
+          <li>Onboarding olib tashlanadi</li>
+          <li>Inter yuklanadi (<code>expo-font</code>)</li>
+          <li>Chaqiruv kartasi qayta yasaladi</li>
+          <li>SafeArea, 44px tegish maydonlari</li>
+        </ul>
+      </div>
+      <div class="change">
+        <h3>app (soat)</h3>
+        <ul>
+          <li>7 ta xom hex → <code>Tokens.kt</code></li>
+          <li>Nomi "NurseCall" bo'ladi</li>
+          <li>Brend bildirishnoma ikonkasi</li>
+          <li>Tasdiqlagan odamning haqiqiy ismi yoziladi</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>Keyingi qadam</h2></div>
+    <p>Bu yo'nalishni tasdiqlasangiz, spetsifikatsiyani repoga yozib commit qilaman. Keyin kelishganimizdek: <strong>avval bitta ekran</strong> — veb-paneldagi Chaqiruvlar — to'liq yasaladi va skrinshot ko'rsatiladi. Yoqsa, qolgan hammasi shu tizim bo'yicha ketadi.</p>
+    <p style="color:var(--t3);font-size:.88rem">Kod hali yozilmadi. Yozilmaydi ham — siz "boshla" demaguningizcha.</p>
+  </section>
+
+</div>
