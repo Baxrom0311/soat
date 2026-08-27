@@ -598,10 +598,12 @@ tbody tr:last-child td { border-bottom: none; }
 .sub-pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
 .sub-pill.trial { background: var(--color-accent-soft); color: var(--color-accent); }
 .sub-pill.active { background: color-mix(in srgb, var(--color-ok) 16%, transparent); color: var(--color-ok); }
-.sub-pill.suspended { background: var(--color-attn-soft); color: var(--color-attn); }
+/* Suspended differs from grace/overdue in KIND, not severity: a human switched
+   the clinic off, rather than a payment lapsing further. It gets the inert/grey
+   family (matching this codebase's existing convention for an offline device --
+   a hollow text3-toned state), not another point on the amber axis. */
+.sub-pill.suspended { background: var(--color-surface-sunken); color: var(--color-text3); border: 1px solid var(--color-border-strong); }
 /* Overdue but still inside the grace window: on notice, but not yet an outage.
-   Moved onto the amber (attn) family so it separates from .trial by HUE, not just
-   border style -- .trial stays teal/no-border as the purely informational state.
    .grace and .overdue share the amber hue (both are payment problems, adjacent
    points on one axis) and are told apart by border weight: dashed vs solid. */
 .sub-pill.grace { background: var(--color-attn-soft); color: var(--color-attn); border: 1px dashed var(--color-attn); }
