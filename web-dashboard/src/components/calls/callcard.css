@@ -1,0 +1,89 @@
+/* web-dashboard/src/components/calls/callcard.css
+   Alert register: token values only, no literals, no motion, no shadow, no alpha. */
+
+.call-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-16);
+  align-items: center;
+  padding: var(--space-20);
+  border-radius: var(--radius-3);
+  min-height: 0;              /* never `height` — OS font scaling must grow the card */
+  color: var(--call-ink);
+  background: var(--call-fill-1);
+  outline: var(--call-edge-w-desk-phone-1) solid var(--call-edge);
+  outline-offset: calc(-1 * var(--call-edge-w-desk-phone-1));
+}
+.call-card[data-step='2'] { background: var(--call-fill-2); outline-width: var(--call-edge-w-desk-phone-2); outline-offset: calc(-1 * var(--call-edge-w-desk-phone-2)); }
+.call-card[data-step='3'] { background: var(--call-fill-3); outline-width: var(--call-edge-w-desk-phone-3); outline-offset: calc(-1 * var(--call-edge-w-desk-phone-3)); }
+
+.call-card__rail { display: flex; flex-direction: column; gap: var(--rail-desk-gap); }
+.call-card__rail > span {
+  display: block;
+  width: var(--rail-desk-w);
+  height: var(--rail-desk-h);
+  border-radius: 1px;
+  border: var(--rail-empty-stroke, 1.5px) solid var(--call-ink);
+}
+.call-card__rail > [data-rail-slot='on'] { background: var(--call-ink); }
+
+.call-card__room {
+  font-size: var(--type-alert-room-desk-size-1);
+  line-height: var(--type-alert-room-desk-lh);
+  font-weight: var(--type-alert-room-desk-weight);
+  letter-spacing: var(--type-alert-room-desk-tracking);
+  font-variant-numeric: tabular-nums;
+}
+.call-card[data-step='2'] .call-card__room { font-size: var(--type-alert-room-desk-size-2); }
+.call-card[data-step='3'] .call-card__room { font-size: var(--type-alert-room-desk-size-3); }
+
+.call-card__meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-12);
+  margin-top: var(--space-12);
+}
+.call-card__floor {
+  font-size: var(--type-alert-floor-desk-size);
+  line-height: var(--type-alert-floor-desk-lh);
+  font-weight: var(--type-alert-floor-desk-weight);
+}
+.call-card__timer {
+  font-family: var(--font-mono);
+  font-size: var(--type-alert-timer-desk-size);
+  line-height: var(--type-alert-timer-desk-lh);
+  font-weight: var(--type-alert-timer-desk-weight);
+  font-variant-numeric: tabular-nums;
+}
+
+.call-card__slab {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-16);
+  min-height: var(--control-36);
+  border: 0;
+  border-radius: var(--radius-2);
+  background: var(--call-slab);
+  color: var(--call-fill-1);
+  font-family: inherit;
+  font-size: var(--type-alert-ack-desk-size);
+  font-weight: var(--type-alert-ack-desk-weight);
+  cursor: pointer;
+}
+.call-card[data-step='2'] .call-card__slab { color: var(--call-fill-2); }
+.call-card[data-step='3'] .call-card__slab { color: var(--call-fill-3); }
+.call-card__slab:disabled { cursor: default; }
+.call-card__slab:focus-visible { outline: var(--border-focus) solid var(--call-ink); outline-offset: var(--border-focus-offset); }
+
+/* --- wall sizes: same component, different token arrays --- */
+.call-card[data-size='wall'] .call-card__room { font-size: var(--type-alert-room-wall-size-1); }
+.call-card[data-size='wall'][data-step='2'] .call-card__room { font-size: var(--type-alert-room-wall-size-2); }
+.call-card[data-size='wall'][data-step='3'] .call-card__room { font-size: var(--type-alert-room-wall-size-3); }
+.call-card[data-size='wall'] .call-card__floor { font-size: var(--type-alert-floor-wall-size); }
+.call-card[data-size='wall'] .call-card__timer { font-size: var(--type-alert-timer-wall-size); }
+.call-card[data-size='wall'] .call-card__rail > span { width: var(--rail-wall-w); height: var(--rail-wall-h); }
+.call-card[data-size='wall'] .call-card__rail { gap: var(--rail-wall-gap); }
+.call-card[data-size='wallSolo'] .call-card__room { font-size: var(--type-alert-room-wall-solo-size-1); }
+.call-card[data-size='wallSolo'][data-step='2'] .call-card__room { font-size: var(--type-alert-room-wall-solo-size-2); }
+.call-card[data-size='wallSolo'][data-step='3'] .call-card__room { font-size: var(--type-alert-room-wall-solo-size-3); }
