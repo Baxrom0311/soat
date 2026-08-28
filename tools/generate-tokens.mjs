@@ -1,7 +1,7 @@
 // tools/generate-tokens.mjs
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { emitCss } from './lib/emit-css.mjs';
-import { contrastRatio } from './lib/contrast.mjs';
+import { contrastRatio, luminance } from './lib/contrast.mjs';
 
 const ROOT = new URL('../', import.meta.url);
 const tokens = JSON.parse(readFileSync(new URL('tokens.json', ROOT), 'utf8'));
@@ -32,11 +32,21 @@ export function validate(t) {
       }
     });
 
-    if (inv.pageContrastMonotonic) {
-      const ramp = fills.map((f) => contrastRatio(f, bg));
-      for (let i = 1; i < ramp.length; i++) {
-        if (ramp[i] <= ramp[i - 1]) {
-          errs.push(`Page contrast not monotonic in ${theme}: step ${i} (${ramp[i].toFixed(2)}) <= step ${i - 1} (${ramp[i - 1].toFixed(2)}) — a step nobody can see is not a step`);
+    if (inv.luminanceMonotonic) {
+      const lum = fills.map((f) => luminance(f));
+      for (let i = 1; i < lum.length; i++) {
+        if (lum[i] <= lum[i - 1]) {
+          errs.push(`Luminance not monotonic in ${theme}: step ${i} (${lum[i].toFixed(4)}) <= step ${i - 1} (${lum[i - 1].toFixed(4)}) — an older call must look more alarming, not less`);
+        }
+      }
+    }
+
+    if (inv.adjacentStepMin && inv.adjacentStepMin[theme] != null) {
+      const min = inv.adjacentStepMin[theme];
+      for (let i = 1; i < fills.length; i++) {
+        const r = contrastRatio(fills[i], fills[i - 1]);
+        if (r < min) {
+          errs.push(`Adjacent step contrast in ${theme}: step ${i - 1} vs ${i} (${fills[i - 1]} vs ${fills[i]}) is ${r.toFixed(3)}:1 (min ${min}) — the steps must be tellable apart`);
         }
       }
     }

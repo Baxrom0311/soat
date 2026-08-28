@@ -23,8 +23,8 @@ test('redefines only tokens in the dark blocks, guarded both ways', () => {
 
 test('call fills emit as indexed step tokens', () => {
   const css = emitCss(tokens);
-  assert.match(css, /--call-fill-1:\s*#C4241A/);
-  assert.match(css, /--call-fill-3:\s*#8A100A/);
+  assert.match(css, /--call-fill-1:\s*#8A100A/);
+  assert.match(css, /--call-fill-3:\s*#C4241A/);
 });
 
 test('alert type step arrays emit one token per step', () => {
@@ -60,10 +60,30 @@ test('a call fill below 4.5:1 against its ink fails Rule 2', () => {
   assert.ok(errs.some((e) => /Rule 2/.test(e)), errs.join('\n'));
 });
 
-test('a non-monotonic page-contrast ramp fails', () => {
+test('the old darkening light ramp now fails luminanceMonotonic', () => {
   const bad = structuredClone(tokens);
-  bad.call.fill.light = ['#8A100A', '#A81810', '#C4241A']; // reversed
-  assert.ok(validate(bad).some((e) => /monotonic/i.test(e)));
+  bad.call.fill.light = ['#C4241A', '#A81810', '#8A100A']; // the old (pre-fix) darkening ramp
+  const errs = validate(bad);
+  assert.ok(errs.some((e) => /luminance/i.test(e)), errs.join('\n'));
+});
+
+test('a too-close adjacent pair fails adjacentStepMin', () => {
+  const bad = structuredClone(tokens);
+  // #8A100A vs a colour within 1.05:1 of it (well under the 1.25 light floor).
+  bad.call.fill.light[1] = '#8D110B';
+  const errs = validate(bad);
+  assert.ok(errs.some((e) => /adjacent/i.test(e)), errs.join('\n'));
+});
+
+test('the dark ramp is not held to the light adjacentStepMin threshold', () => {
+  const darkRatios = [
+    contrastRatio(tokens.call.fill.dark[0], tokens.call.fill.dark[1]),
+    contrastRatio(tokens.call.fill.dark[1], tokens.call.fill.dark[2]),
+  ];
+  // The dark ramp genuinely sits below the light floor (1.25) — if the
+  // implementation applied one global threshold, these would fail it.
+  assert.ok(darkRatios.every((r) => r < 1.25), darkRatios.join(', '));
+  assert.deepEqual(validate(tokens), []);
 });
 
 test('a weight outside the enum fails', () => {
