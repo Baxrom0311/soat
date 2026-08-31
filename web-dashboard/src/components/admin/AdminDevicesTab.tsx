@@ -328,9 +328,12 @@ export function AdminDevicesTab() {
 
   return (
     <section className="tab-panel">
-      <div className="section-head">
-        <h2>Qurilmalar (barcha klinikalar)</h2>
-      </div>
+      <header className="page-header-row">
+        <div>
+          <h1 className="page-header-title">Barcha qurilmalar</h1>
+          <p className="page-header-desc">Klinikalar bo'yicha ESP32 mikrokontrollerlari apparat nazorati.</p>
+        </div>
+      </header>
 
       <DiscoveredDevicesSection clinics={clinics} onClaimed={() => loadDevices(filterClinic)} />
 

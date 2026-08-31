@@ -43,10 +43,13 @@ export function ContactRequestsTab() {
 
   return (
     <section className="tab-panel">
-      <div className="section-head">
-        <h2>So'rovlar</h2>
-        <span className={`count-badge ${pending === 0 ? 'zero' : ''}`}>{pending}</span>
-      </div>
+      <header className="page-header-row">
+        <div>
+          <h1 className="page-header-title">Aloqa so'rovlari</h1>
+          <p className="page-header-desc">Landing saytidan kelgan murojaatlar va lidiya so'rovlari.</p>
+        </div>
+        {pending > 0 && <span className="badge badge--attn">{pending} yangi</span>}
+      </header>
 
       {rowError && <p className="form-error">{rowError}</p>}
 

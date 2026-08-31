@@ -243,9 +243,12 @@ export function AdminPlansTab() {
 
   return (
     <section className="tab-panel">
-      <div className="section-head">
-        <h2>Tarif rejalari</h2>
-      </div>
+      <header className="page-header-row">
+        <div>
+          <h1 className="page-header-title">Tarif rejalari</h1>
+          <p className="page-header-desc">Klinikalar uchun obuna stavkalari va narxlash qoidalari.</p>
+        </div>
+      </header>
 
       <div className="panel-card glass">
         <h3>

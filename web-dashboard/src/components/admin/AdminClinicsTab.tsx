@@ -546,9 +546,12 @@ export function AdminClinicsTab() {
 
   return (
     <section className="tab-panel">
-      <div className="section-head">
-        <h2>Klinikalar</h2>
-      </div>
+      <header className="page-header-row">
+        <div>
+          <h1 className="page-header-title">Klinikalar boshqaruvi</h1>
+          <p className="page-header-desc">Tizimdagi barcha klinikalar, ularning obuna tariflari va to'lovlari.</p>
+        </div>
+      </header>
 
       <div className="panel-card glass">
         <h3>

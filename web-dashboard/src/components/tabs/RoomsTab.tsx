@@ -70,9 +70,12 @@ export function RoomsTab() {
 
   return (
     <section className="tab-panel">
-      <div className="section-head">
-        <h2>Xonalar</h2>
-      </div>
+      <header className="page-header-row">
+        <div>
+          <h1 className="page-header-title">Xonalar</h1>
+          <p className="page-header-desc">Klinikadagi palatalar va xonalarni ro'yxati hamda boshqaruvi.</p>
+        </div>
+      </header>
 
       <div className="panel-card glass">
         <h3>

@@ -188,12 +188,15 @@ export function BillingTab() {
 
   return (
     <section className="tab-panel">
-      <div className="section-head">
-        <h2>Obuna</h2>
+      <header className="page-header-row">
+        <div>
+          <h1 className="page-header-title">Obuna va to'lovlar</h1>
+          <p className="page-header-desc">Klinika obuna holati va hisob-faktura ma'lumotlari.</p>
+        </div>
         <span className={`sub-pill ${billing.effective_status}`}>
           {STATUS_LABEL[billing.effective_status]}
         </span>
-      </div>
+      </header>
 
       <div className={`panel-card glass billing-hero ${billing.is_blocked ? 'billing-hero--blocked' : ''}`}>
         <p className="billing-hero__note">{STATUS_NOTE[billing.effective_status]}</p>

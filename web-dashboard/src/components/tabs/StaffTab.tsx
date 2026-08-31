@@ -117,9 +117,12 @@ export function StaffTab() {
 
   return (
     <section className="tab-panel">
-      <div className="section-head">
-        <h2>Xodimlar</h2>
-      </div>
+      <header className="page-header-row">
+        <div>
+          <h1 className="page-header-title">Xodimlar</h1>
+          <p className="page-header-desc">Hamshiralar va administratorlar ro'yxati hamda qavat birikmalari.</p>
+        </div>
+      </header>
 
       {isAdmin && (
         <div className="panel-card glass">
