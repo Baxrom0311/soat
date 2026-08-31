@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthPage } from './components/AuthPage';
 import { DashboardLayout } from './components/DashboardLayout';
 import { SuperAdminLayout } from './components/SuperAdminLayout';
+import { WallView } from './routes/WallView';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 // /login — faqat autentifikatsiya. Allaqachon kirgan bo'lsa, rolga qarab
@@ -43,6 +44,14 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginRoute />} />
+          <Route
+            path="/wall"
+            element={
+              <RequireClinicStaff>
+                <WallView />
+              </RequireClinicStaff>
+            }
+          />
           <Route
             path="/app/*"
             element={

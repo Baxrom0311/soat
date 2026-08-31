@@ -1,0 +1,88 @@
+/* web-dashboard/src/routes/wall.css */
+.wall-body { overflow: hidden; cursor: none; }
+.wall { min-height: 100vh; padding: var(--gutter-wall); background: var(--color-bg); box-sizing: border-box; }
+.wall__top {
+  display: flex; align-items: baseline; justify-content: space-between;
+  min-height: var(--control-64); margin-bottom: var(--space-24);
+}
+.wall__clinic-name {
+  font-size: var(--type-mgmt-card-title-size);
+  color: var(--color-text2);
+}
+.wall__top-right {
+  display: flex; align-items: baseline; gap: var(--space-24);
+}
+.wall__clock {
+  font-family: var(--font-mono);
+  font-size: var(--type-alert-timer-wall-size);
+  font-weight: var(--type-alert-timer-wall-weight);
+  color: var(--color-text1);
+  font-variant-numeric: tabular-nums;
+}
+.wall__conn {
+  font-size: var(--type-mgmt-dense-size);
+  color: var(--color-text2);
+  display: flex; align-items: center; gap: var(--space-8);
+}
+.wall__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--size-wall-card-min), 1fr));
+  gap: var(--space-24);
+}
+.wall__solo { display: grid; place-items: stretch; min-height: calc(100vh - var(--control-64) - var(--space-24) - (2 * var(--gutter-wall))); }
+.wall__overflow {
+  display: flex; flex-direction: column; justify-content: center; gap: var(--space-8);
+  padding: var(--space-24);
+  background: var(--color-surface);
+  border: var(--border-hairline) solid var(--color-border-strong);
+  border-radius: var(--radius-4);
+}
+.wall__overflow-count {
+  font-size: var(--type-alert-overflow-count-size);
+  line-height: var(--type-alert-overflow-count-lh);
+  font-weight: var(--type-alert-overflow-count-weight);
+  color: var(--color-text1);
+  font-variant-numeric: tabular-nums;
+}
+.wall__overflow-meta {
+  font-size: var(--type-alert-overflow-meta-size);
+  font-weight: var(--type-alert-overflow-meta-weight);
+  color: var(--color-text2);
+}
+
+.wall__empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: calc(100vh - var(--control-64) - (2 * var(--gutter-wall)));
+}
+.wall__empty-clock {
+  font-family: var(--font-mono);
+  font-size: 96px;
+  font-weight: 700;
+  color: var(--color-text2);
+  font-variant-numeric: tabular-nums;
+}
+.wall__empty-title {
+  margin-top: var(--space-16);
+  font-size: var(--type-mgmt-card-title-size);
+  color: var(--color-text3);
+}
+.wall__empty-conn {
+  margin-top: var(--space-12);
+  font-size: var(--type-mgmt-meta-size);
+  color: var(--color-text3);
+  display: flex; align-items: center; gap: var(--space-8);
+}
+
+.dot--attn {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--color-attn);
+}
+.dot--hollow {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  border: 1.5px solid var(--color-text3); box-sizing: border-box;
+}
+
+/* 1 Hz blinking colon: the cheapest proof that the page is not a frozen tab. */
+@keyframes wall-colon { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+.wall__clock-colon { animation: wall-colon 1s steps(1, end) infinite; }
+@media (prefers-reduced-motion: reduce) { .wall__clock-colon { animation: none; } }

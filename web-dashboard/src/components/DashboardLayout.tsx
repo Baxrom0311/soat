@@ -169,6 +169,7 @@ export function DashboardLayout() {
               activeCalls={feed.activeCalls}
               history={feed.history}
               ackCall={feed.ackCall}
+              connStatus={feed.connStatus}
               historyBlocked={blocked}
             />
           )}

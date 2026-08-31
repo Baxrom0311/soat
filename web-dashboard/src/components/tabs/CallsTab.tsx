@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { CallsLive } from '../calls/CallsLive';
 import type { ActiveCall, HistoryCall } from '../../api/types';
+import type { ConnStatus } from '../../hooks/useCallsFeed';
 
 interface CallsTabProps {
   activeCalls: Map<number, ActiveCall>;
   history: HistoryCall[];
   ackCall: (callId: number) => Promise<void>;
+  connStatus?: ConnStatus;
   /** Call HISTORY is a management route and answers 402 for a blocked clinic — the
    *  live board above it is ungated and keeps working. */
   historyBlocked?: boolean;
@@ -20,90 +22,12 @@ function fmtTime(iso: string): string {
   });
 }
 
-function ageBucket(seconds: number): number {
-  if (seconds >= 120) return 3;
-  if (seconds >= 60) return 2;
-  if (seconds >= 15) return 1;
-  return 0;
-}
-
-function timerClass(seconds: number): string {
-  if (seconds >= 120) return 't-danger';
-  if (seconds >= 60) return 't-warn';
-  return '';
-}
-
-function fmtElapsed(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${String(s).padStart(2, '0')}`;
-}
-
-function CallCard({ call, now, onAck }: { call: ActiveCall; now: number; onAck: (id: number) => void }) {
-  const [busy, setBusy] = useState(false);
-  const seconds = Math.max(0, Math.floor((now - new Date(call.created_at).getTime()) / 1000));
-
-  async function handleAck() {
-    setBusy(true);
-    try {
-      await onAck(call.call_id);
-    } catch {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className={`call-card age-${ageBucket(seconds)}`}>
-      <div className="room">Xona {call.room_number}</div>
-      <div className="floor">{call.floor}-qavat</div>
-      <div className={`timer ${timerClass(seconds)}`}>{fmtElapsed(seconds)}</div>
-      <button className="ack-btn" disabled={busy} onClick={handleAck}>
-        {busy ? '...' : 'Qabul qilindi'}
-      </button>
-    </div>
-  );
-}
-
-export function CallsTab({ activeCalls, history, ackCall, historyBlocked = false }: CallsTabProps) {
-  const [now, setNow] = useState(() => Date.now());
-  const [ackError, setAckError] = useState('');
-
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(id);
-  }, []);
-
-  const sorted = [...activeCalls.values()].sort(
-    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-  );
-
-  async function handleAck(callId: number) {
-    setAckError('');
-    try {
-      await ackCall(callId);
-    } catch (err) {
-      setAckError(err instanceof Error ? err.message : 'Xato');
-      // rethrow so CallCard knows the ack failed and re-enables its button
-      throw err;
-    }
-  }
-
+export function CallsTab({ activeCalls, history, ackCall, connStatus = 'live', historyBlocked = false }: CallsTabProps) {
   return (
     <section className="tab-panel">
-      <div className="section-head">
-        <h2>Faol chaqiruvlar</h2>
-        <span className={`count-badge ${sorted.length === 0 ? 'zero' : ''}`}>{sorted.length}</span>
-      </div>
-      {ackError && <p className="auth-error">{ackError}</p>}
-      <div className="active-grid">
-        {sorted.length === 0 ? (
-          <p className="empty-msg">Hozircha faol chaqiruvlar yo'q.</p>
-        ) : (
-          sorted.map((call) => <CallCard key={call.call_id} call={call} now={now} onAck={handleAck} />)
-        )}
-      </div>
+      <CallsLive calls={[...activeCalls.values()]} onAck={ackCall} connStatus={connStatus} />
 
-      <h2 className="hist-title">Tarix (oxirgi 50 ta)</h2>
+      <h2 className="hist-title" style={{ marginTop: 'var(--space-32)' }}>Bugungi tarix (oxirgi 50 ta)</h2>
       {historyBlocked ? (
         <p className="empty-msg">
           Obuna to'lanmagani uchun tarix vaqtincha yopilgan. Yuqoridagi faol chaqiruvlar

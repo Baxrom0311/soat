@@ -1,95 +1,45 @@
-/* ================= THEME TOKENS (Sneat purple/indigo retheme) ================= */
-/* ================= LIGHT (:root) ================= */
+@import './tokens.css';
+
 :root {
-  /* -- page backgrounds: Sneat neutral gray-blue body, no colored blobs -- */
-  --bg-0: #f5f5f9;
-  --bg-1: #ffffff;
-  --bg-2: #eeedf3;
-  /* NOTE: Sneat has no ambient mesh/blob background. Neutralized so .mesh
-     renders as a faint, near-invisible wash instead of the old blue/teal glow. */
-  --blob-a: rgba(105, 108, 255, 0.05);
-  --blob-b: rgba(3, 195, 236, 0.04);
-  --blob-c: rgba(113, 221, 55, 0.04);
-
-  /* -- surfaces: opaque white cards, not translucent glass -- */
-  --surface: #ffffff;
-  --surface-strong: #ffffff;
-  --surface-soft: #fafafb;
-  --border: rgba(50, 49, 64, 0.1);
-  --border-strong: rgba(50, 49, 64, 0.18);
-  --grid-line: rgba(50, 49, 64, 0.06);
-
-  /* -- text: Sneat's neutral ink-gray, not navy -- */
-  --text-1: #32324b;
-  --text-2: #4a4a68;
-  --text-3: #a1acb8;
-
-  /* -- primary: Sneat purple/indigo -- */
-  --accent: #696cff;
-  --accent-hover: #5f61e6;
-  --accent-ink: #ffffff;
-  --accent-soft: rgba(105, 108, 255, 0.16);
-  --accent-2: #03c3ec;
-  --accent-2-soft: rgba(3, 195, 236, 0.16);
-
-  /* -- semantic status colors: Sneat's exact palette -- */
-  --warn: #ff3e1d;
-  --warn-soft: rgba(255, 62, 29, 0.16);
-  --ok: #71dd37;
-  --ok-soft: rgba(113, 221, 55, 0.16);
-  --caution: #ffab00;
-  --caution-soft: rgba(255, 171, 0, 0.16);
-  --info: #03c3ec;
-  --info-soft: rgba(3, 195, 236, 0.16);
-
-  /* -- shadows: soft, low-elevation Sneat card shadow -- */
-  --shadow-lg: 0 8px 24px -4px rgba(50, 49, 64, 0.1);
-  --shadow-md: 0 4px 14px -4px rgba(50, 49, 64, 0.09);
-  --shadow-sm: 0 2px 6px 0 rgba(50, 49, 64, 0.06);
-
-  /* -- radii: Sneat's generous rounding -- */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-
-  /* ---- Sidebar (Sneat-style left nav shell) ---- */
-  --sidebar-width: 260px;
-  --sidebar-width-collapsed: 80px;
-  --sidebar-bg: #ffffff;
-  --sidebar-border: rgba(50, 49, 64, 0.08);
-  --sidebar-item-active-bg: rgba(105, 108, 255, 0.12);
-  --sidebar-item-active-fg: var(--accent);
-  --sidebar-item-fg: #697a8d;
-
-  --font-display: "Sora", sans-serif;
-  --font-body: "Inter", sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
-
-  color-scheme: light;
-}
-
-/* Night mode is opt-in only: there is deliberately NO prefers-color-scheme block.
-   The OS theme of whatever machine a nurse station happens to run must not decide
-   how the clinic dashboard looks -- index.html stamps data-theme explicitly (day
-   unless the user chose night), so the forced selector below is the only path in. */
-
-/* ================= DARK (forced [data-theme="dark"]) ================= */
-:root[data-theme="dark"] {
-  --bg-0: #26233a; --bg-1: #2b2843; --bg-2: #302d4d;
-  --blob-a: rgba(105, 108, 255, 0.10); --blob-b: rgba(3, 195, 236, 0.06); --blob-c: rgba(113, 221, 55, 0.05);
-  --surface: #2f2b48; --surface-strong: #34304f; --surface-soft: #282544;
-  --border: rgba(219, 219, 253, 0.1); --border-strong: rgba(219, 219, 253, 0.18); --grid-line: rgba(219, 219, 253, 0.07);
-  --text-1: #e6e5f5; --text-2: #b6b4d6; --text-3: #7c7aa3;
-  --accent: #696cff; --accent-hover: #8285ff; --accent-ink: #ffffff; --accent-soft: rgba(105, 108, 255, 0.24);
-  --accent-2: #1ed8f9; --accent-2-soft: rgba(30, 216, 249, 0.18);
-  --warn: #ff6947; --warn-soft: rgba(255, 105, 71, 0.2);
-  --ok: #85e043; --ok-soft: rgba(133, 224, 67, 0.18);
-  --caution: #ffbb33; --caution-soft: rgba(255, 187, 51, 0.18);
-  --info: #1ed8f9; --info-soft: rgba(30, 216, 249, 0.18);
-  --shadow-lg: 0 10px 30px -6px rgba(0, 0, 0, 0.45); --shadow-md: 0 6px 18px -6px rgba(0, 0, 0, 0.4); --shadow-sm: 0 3px 9px -2px rgba(0, 0, 0, 0.35);
-  --sidebar-bg: #2b2843; --sidebar-border: rgba(219, 219, 253, 0.08);
-  --sidebar-item-active-bg: rgba(105, 108, 255, 0.22); --sidebar-item-active-fg: #a8aaff; --sidebar-item-fg: #b6b4d6;
-  color-scheme: dark;
+  --bg-0: var(--color-bg);
+  --bg-1: var(--color-surface);
+  --bg-2: var(--color-surface-soft);
+  --surface: var(--color-surface);
+  --surface-strong: var(--color-surface);
+  --surface-soft: var(--color-surface-soft);
+  --border: var(--color-border);
+  --border-strong: var(--color-border-strong);
+  --grid-line: var(--color-border);
+  --text-1: var(--color-text1);
+  --text-2: var(--color-text2);
+  --text-3: var(--color-text3);
+  --accent: var(--color-accent);
+  --accent-hover: var(--color-accent-hover);
+  --accent-ink: var(--color-accent-ink);
+  --accent-soft: var(--color-accent-soft);
+  --warn: var(--color-attn);
+  --warn-soft: var(--color-attn-soft);
+  --ok: var(--color-ok);
+  --ok-soft: var(--color-accent-soft);
+  --caution: var(--color-attn);
+  --caution-soft: var(--color-attn-soft);
+  --info: var(--color-accent);
+  --info-soft: var(--color-accent-soft);
+  --shadow-lg: var(--shadow-pop);
+  --shadow-md: var(--shadow-pop);
+  --shadow-sm: none;
+  --radius-sm: var(--radius-1);
+  --radius-md: var(--radius-2);
+  --radius-lg: var(--radius-3);
+  --sidebar-width: var(--size-sidebar);
+  --sidebar-width-collapsed: var(--size-sidebar-collapsed);
+  --sidebar-bg: var(--color-surface);
+  --sidebar-border: var(--color-border);
+  --sidebar-item-active-bg: var(--color-accent-soft);
+  --sidebar-item-active-fg: var(--color-accent);
+  --sidebar-item-fg: var(--color-text2);
+  --font-display: var(--font-sans);
+  --font-body: var(--font-sans);
 }
 
 /* ================= BASE ================= */
@@ -136,8 +86,7 @@ svg { display: block; }
 .brand-mark {
   width: 30px; height: 30px;
   border-radius: 9px;
-  /* Purple-only gradient: mixing in --accent-2 (cyan) made the mark read as the
-     old blue branding rather than Sneat's purple. */
+  /* Brand tile using single accent token. */
   background: linear-gradient(155deg, var(--accent), var(--accent-hover));
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 4px 14px -4px var(--accent-soft);
@@ -229,7 +178,7 @@ svg { display: block; }
   font-size: 0.74rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--accent-2);
+  color: var(--color-accent);
   margin: 0 0 8px;
 }
 .auth-card h1 {
@@ -506,7 +455,7 @@ input::placeholder { color: var(--text-3); }
   padding: 10px;
   border: none;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background: var(--color-accent);
   color: var(--accent-ink);
   font-weight: 700;
   font-size: 0.9rem;
@@ -693,7 +642,7 @@ tbody tr:last-child td { border-bottom: none; }
 /* Overdue but still inside the grace window: on notice, but not yet an outage --
    the accent-2 (teal) tint keeps it visually distinct from suspended/overdue's warn
    red so a superadmin can tell "needs following up" apart from "actually blocked". */
-.sub-pill.grace { background: var(--accent-2-soft); color: var(--accent-2); border: 1px dashed var(--accent-2); }
+.sub-pill.grace { background: var(--color-accent-soft); color: var(--color-accent); border: 1px dashed var(--color-accent); }
 .sub-pill.overdue { background: var(--warn-soft); color: var(--warn); border: 1px dashed var(--warn); }
 /* Contact-request states: an unhandled lead is a to-do (warn tint, like an open
    item), a handled one is done (ok tint) -- same vocabulary as the billing pills. */
@@ -1088,3 +1037,56 @@ tbody tr:last-child td { border-bottom: none; }
 @media (prefers-reduced-motion: reduce) {
   .call-card.age-2, .call-card.age-3, .pairing-dot { animation: none; }
 }
+
+/* ================= /calls ================= */
+.calls-live__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  min-height: var(--control-64);
+  padding-bottom: var(--space-16);
+  border-bottom: var(--border-hairline) solid var(--color-border);
+  margin-bottom: var(--space-24);
+}
+.calls-live__title {
+  font-size: var(--type-mgmt-page-title-size);
+  line-height: var(--type-mgmt-page-title-lh);
+  font-weight: var(--type-mgmt-page-title-weight);
+  letter-spacing: var(--type-mgmt-page-title-tracking);
+  margin: 0;
+}
+/* The pill counts calls; it is a number, not a call, so it is teal. */
+.calls-live__pill {
+  border-radius: var(--radius-full);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  padding: 2px var(--space-8);
+  font-size: var(--type-mgmt-dense-size);
+  font-weight: var(--type-mgmt-dense-weight);
+  font-variant-numeric: tabular-nums;
+}
+.calls-live__wall { margin-left: auto; }
+
+.calls-live__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--size-desk-card-min), 1fr));
+  gap: var(--space-16);
+}
+
+.calls-live__empty { padding: var(--space-24) 0; }
+.calls-live__empty-line {
+  margin: 0;
+  font-size: var(--type-mgmt-body-size);
+  color: var(--color-text2);
+}
+.calls-live__empty-meta {
+  margin: var(--space-4) 0 0;
+  font-size: var(--type-mgmt-meta-size);
+  color: var(--color-text3);
+  font-variant-numeric: tabular-nums;
+}
+.dot--ok {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--color-ok); margin-right: var(--space-8);
+}
+
