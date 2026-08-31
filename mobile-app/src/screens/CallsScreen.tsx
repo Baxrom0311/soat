@@ -5,26 +5,23 @@ import {
   AppStateStatus,
   FlatList,
   RefreshControl,
+  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { ackCall, ApiError, BillingNotice, Call, getActiveCalls, getBillingNotice } from '../api';
+import { ackCall, BillingNotice, Call, getActiveCalls, getBillingNotice } from '../api';
 import { POLL_INTERVAL_MS } from '../config';
 import { useTheme } from '../ThemeContext';
 import ThemeToggle from '../components/ThemeToggle';
 import BillingBanner from '../components/BillingBanner';
 import { elapsedSince } from '../time';
 import { isWatchConnected, resyncWatch } from '../wearSync';
+import { tokens } from '../theme';
 
 const WATCH_CHECK_MS = 30000;
-
-// Obuna holati kuniga ko'pi bilan bir marta o'zgaradi (days_left — butun kun),
-// shuning uchun chaqiruv polling'idan (10 s) mutlaqo alohida va juda kam
-// so'raladi: ilova ochilganda/foreground'ga qaytganda va har 6 soatda. Oxirgi
-// javob state'da saqlanib turadi, so'rovlar orasida banner o'chib-yonmaydi.
 const BILLING_CHECK_MS = 6 * 60 * 60 * 1000;
 
 interface Props {
@@ -34,8 +31,16 @@ interface Props {
   onFocusHandled: () => void;
 }
 
+function getAgeStep(createdAtIso: string): 1 | 2 | 3 {
+  const ms = Date.now() - new Date(createdAtIso).getTime();
+  const s = Number.isFinite(ms) ? Math.max(0, Math.floor(ms / 1000)) : 0;
+  if (s < tokens.call.thresholdsSec[1]) return 1;
+  if (s < tokens.call.thresholdsSec[2]) return 2;
+  return 3;
+}
+
 export default function CallsScreen({ acknowledgedBy, onLogout, focusCallId, onFocusHandled }: Props) {
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
   const [calls, setCalls] = useState<Call[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -45,14 +50,10 @@ export default function CallsScreen({ acknowledgedBy, onLogout, focusCallId, onF
   const [watchConnected, setWatchConnected] = useState<boolean | null>(null);
   const [watchSyncing, setWatchSyncing] = useState(false);
   const [billing, setBilling] = useState<BillingNotice | null>(null);
-  // Faqat shu sessiya uchun: yopilgan eslatma ilova qayta ochilganda yana chiqadi.
   const [billingDismissed, setBillingDismissed] = useState(false);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appState = useRef<AppStateStatus>(AppState.currentState);
-  // So'rovlar tartib raqami: sekin qolib ketgan eski poll javobi yangi
-  // ma'lumot (yoki lokal ack) ustiga yozilmasligi uchun faqat eng oxirgi
-  // boshlangan so'rov natijasi qabul qilinadi.
   const fetchSeqRef = useRef(0);
 
   const fetchCalls = useCallback(async (showSpinner = false) => {
@@ -83,7 +84,6 @@ export default function CallsScreen({ acknowledgedBy, onLogout, focusCallId, onF
     fetchCalls(false);
     startPolling();
 
-    // "necha vaqtdan beri" matnini yangilab turish uchun (tarmoq so'rovisiz).
     const tickTimer = setInterval(() => forceTick((n) => n + 1), 30000);
 
     const subscription = AppState.addEventListener('change', (nextState) => {
@@ -107,143 +107,144 @@ export default function CallsScreen({ acknowledgedBy, onLogout, focusCallId, onF
   }, [fetchCalls, startPolling]);
 
   useEffect(() => {
-    let cancelled = false;
-    const checkWatch = () => {
-      isWatchConnected().then((connected) => {
-        if (!cancelled) setWatchConnected(connected);
-      });
+    let checkTimer: ReturnType<typeof setInterval> | null = null;
+    const updateWatchStatus = async () => {
+      try {
+        const ok = await isWatchConnected();
+        setWatchConnected(ok);
+      } catch {
+        setWatchConnected(false);
+      }
     };
 
-    checkWatch();
-    const watchTimer = setInterval(checkWatch, WATCH_CHECK_MS);
+    updateWatchStatus();
+    checkTimer = setInterval(updateWatchStatus, WATCH_CHECK_MS);
+
     const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') checkWatch();
+      if (state === 'active') updateWatchStatus();
     });
+
     return () => {
-      cancelled = true;
-      clearInterval(watchTimer);
+      if (checkTimer) clearInterval(checkTimer);
       subscription.remove();
     };
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    const checkBilling = () => {
-      // Xato bo'lsa getBillingNotice() null qaytaradi — bu holda oxirgi ma'lum
-      // qiymatni saqlab qolamiz, tarmoq uzilishi bannerni o'chirmasligi kerak.
-      getBillingNotice().then((notice) => {
-        if (!cancelled && notice) setBilling(notice);
-      });
+    let checkTimer: ReturnType<typeof setInterval> | null = null;
+    const fetchBilling = async () => {
+      try {
+        const notice = await getBillingNotice();
+        setBilling(notice);
+      } catch {
+        // ignore errors
+      }
     };
 
-    checkBilling();
-    const billingTimer = setInterval(checkBilling, BILLING_CHECK_MS);
+    fetchBilling();
+    checkTimer = setInterval(fetchBilling, BILLING_CHECK_MS);
+
     const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') checkBilling();
+      if (state === 'active') fetchBilling();
     });
+
     return () => {
-      cancelled = true;
-      clearInterval(billingTimer);
+      if (checkTimer) clearInterval(checkTimer);
       subscription.remove();
     };
   }, []);
 
-  const handleResyncWatch = async () => {
-    setWatchSyncing(true);
-    try {
-      await resyncWatch();
-    } finally {
-      setWatchConnected(await isWatchConnected());
-      setWatchSyncing(false);
-    }
-  };
-
   useEffect(() => {
-    if (focusCallId) {
-      // onFocusHandled darhol chaqirilsa, ro'yxat hali yuklanmasidan focusCallId
-      // null bo'lib, kartochka hech qachon belgilanmay qolar edi — avval fetch
-      // tugashini kutamiz, belgi bir necha soniya ko'rinib turadi.
-      fetchCalls(false).then(() => {
-        setTimeout(onFocusHandled, 5000);
-      });
+    if (!focusCallId) return;
+    const found = calls.find((c) => c.call_id === focusCallId);
+    if (found) {
+      onFocusHandled();
     }
-  }, [focusCallId, fetchCalls, onFocusHandled]);
+  }, [focusCallId, calls, onFocusHandled]);
 
   const handleAck = async (callId: number) => {
     setAckingId(callId);
     try {
       await ackCall(callId, acknowledgedBy);
-      // Hozir havoda bo'lgan eski poll javobi yopilgan chaqiruvni qayta
-      // "tiriltirmasligi" uchun uni bekor qilamiz.
-      fetchSeqRef.current++;
       setCalls((prev) => prev.filter((c) => c.call_id !== callId));
+      fetchCalls(false);
     } catch (e) {
-      // Server "allaqachon tasdiqlangan"ni 409 bilan, "topilmadi"ni 404 bilan
-      // qaytaradi — ikkalasida ham chaqiruv boshqa hamshira tomonidan yopilgan,
-      // kartochkani ro'yxatdan olib tashlaymiz.
-      const alreadyAcked = e instanceof ApiError && (e.status === 409 || e.status === 404);
-      const message = alreadyAcked
-        ? 'Bu chaqiruv allaqachon tasdiqlangan'
-        : e instanceof Error
-          ? e.message
-          : "Tasdiqlab bo'lmadi";
-      setError(message);
-      if (alreadyAcked) {
-        setCalls((prev) => prev.filter((c) => c.call_id !== callId));
-      }
+      setError(e instanceof Error ? e.message : "Tasdiqlashda xatolik yuz berdi");
     } finally {
       setAckingId(null);
+    }
+  };
+
+  const handleResyncWatch = async () => {
+    setWatchSyncing(true);
+    try {
+      await resyncWatch();
+      const ok = await isWatchConnected();
+      setWatchConnected(ok);
+    } catch {
+      setWatchConnected(false);
+    } finally {
+      setWatchSyncing(false);
     }
   };
 
   const renderItem = ({ item }: { item: Call }) => {
     const isHighlighted = item.call_id === focusCallId;
     const isAcking = ackingId === item.call_id;
+    const step = getAgeStep(item.created_at);
+    const stepFill = tokens.call.fill[mode][step - 1];
+
     return (
       <View
         style={[
-          styles.card,
-          { backgroundColor: colors.surface, borderColor: colors.border },
-          isHighlighted && { borderColor: colors.accent, borderWidth: 2 },
+          styles.callCard,
+          { backgroundColor: stepFill },
+          isHighlighted && styles.callCardHighlighted,
         ]}
       >
-        <View style={[styles.iconWrap, { backgroundColor: colors.background }]}>
-          <Feather name="bell" size={18} color={colors.danger} />
+        <View style={styles.cardRail}>
+          <View style={[styles.railSlot, styles.railSlotActive]} />
+          <View style={[styles.railSlot, step >= 2 && styles.railSlotActive]} />
+          <View style={[styles.railSlot, step >= 3 && styles.railSlotActive]} />
         </View>
-        <View style={styles.cardInfo}>
-          <Text style={[styles.room, { color: colors.textPrimary }]}>Xona {item.room_number}</Text>
-          <Text style={[styles.floor, { color: colors.textMuted }]}>{item.floor}-qavat</Text>
-          <Text style={[styles.waiting, { color: colors.accentAlt }]}>{elapsedSince(item.created_at)} kutmoqda</Text>
+
+        <View style={styles.cardBody}>
+          <View style={styles.cardMetaRow}>
+            <Text style={styles.floorBadge}>{item.floor}-qavat</Text>
+            <Text style={styles.timerLabel}>{elapsedSince(item.created_at)}</Text>
+          </View>
+          <Text style={styles.roomNumber}>{item.room_number}</Text>
+
+          <TouchableOpacity
+            style={[styles.ackSlab, isAcking && styles.ackSlabDisabled]}
+            onPress={() => handleAck(item.call_id)}
+            disabled={isAcking}
+          >
+            {isAcking ? (
+              <ActivityIndicator color={stepFill} size="small" />
+            ) : (
+              <Text style={[styles.ackSlabText, { color: stepFill }]}>Tasdiqlash</Text>
+            )}
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={[styles.ackButton, { backgroundColor: colors.accent }, isAcking && styles.ackButtonDisabled]}
-          onPress={() => handleAck(item.call_id)}
-          disabled={isAcking}
-        >
-          {isAcking ? (
-            <ActivityIndicator color={colors.textOnAccent} size="small" />
-          ) : (
-            <Text style={[styles.ackButtonText, { color: colors.textOnAccent }]}>Tasdiqlash</Text>
-          )}
-        </TouchableOpacity>
       </View>
     );
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={styles.header}>
         <View>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Faol chaqiruvlar</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>{calls.length} ta kutmoqda</Text>
+          <Text style={[styles.headerTitle, { color: colors.text1 }]}>Faol chaqiruvlar</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.text2 }]}>{calls.length} ta kutmoqda</Text>
         </View>
         <View style={styles.headerRight}>
           <ThemeToggle />
           <TouchableOpacity
-            style={[styles.logoutButton, { borderColor: colors.border }]}
+            style={[styles.logoutButton, { borderColor: colors.borderStrong }]}
             onPress={onLogout}
           >
-            <Text style={[styles.logoutText, { color: colors.textMuted }]}>Chiqish</Text>
+            <Text style={[styles.logoutText, { color: colors.text2 }]}>Chiqish</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -256,7 +257,7 @@ export default function CallsScreen({ acknowledgedBy, onLogout, focusCallId, onF
         style={[
           styles.watchPill,
           {
-            borderColor: watchConnected ? colors.accentAlt : colors.border,
+            borderColor: watchConnected ? colors.accent : colors.border,
             backgroundColor: colors.surface,
           },
         ]}
@@ -264,15 +265,15 @@ export default function CallsScreen({ acknowledgedBy, onLogout, focusCallId, onF
         disabled={watchSyncing}
       >
         {watchSyncing ? (
-          <ActivityIndicator color={colors.textMuted} size="small" />
+          <ActivityIndicator color={colors.text2} size="small" />
         ) : (
           <Feather
             name="watch"
             size={14}
-            color={watchConnected ? colors.accentAlt : colors.textMuted}
+            color={watchConnected ? colors.accent : colors.text2}
           />
         )}
-        <Text style={[styles.watchPillText, { color: watchConnected ? colors.accentAlt : colors.textMuted }]}>
+        <Text style={[styles.watchPillText, { color: watchConnected ? colors.accent : colors.text2 }]}>
           {watchConnected === null
             ? 'Soat tekshirilmoqda...'
             : watchConnected
@@ -282,8 +283,8 @@ export default function CallsScreen({ acknowledgedBy, onLogout, focusCallId, onF
       </TouchableOpacity>
 
       {error ? (
-        <View style={[styles.errorBanner, { borderColor: colors.danger, backgroundColor: colors.surfaceAlt }]}>
-          <Text style={[styles.errorBannerText, { color: colors.danger }]}>{error}</Text>
+        <View style={[styles.errorBanner, { borderColor: colors.attn, backgroundColor: colors.attnSoft }]}>
+          <Text style={[styles.errorBannerText, { color: colors.attn }]}>{error}</Text>
         </View>
       ) : null}
 
@@ -294,9 +295,9 @@ export default function CallsScreen({ acknowledgedBy, onLogout, focusCallId, onF
       ) : calls.length === 0 ? (
         <View style={styles.centerFill}>
           <View style={[styles.emptyIconWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Feather name="check-circle" size={26} color={colors.accentAlt} />
+            <Feather name="check-circle" size={26} color={colors.accent} />
           </View>
-          <Text style={[styles.emptyText, { color: colors.textMuted }]}>Hozircha faol chaqiruvlar yo'q</Text>
+          <Text style={[styles.emptyText, { color: colors.text2 }]}>Hozircha faol chaqiruvlar yo'q</Text>
         </View>
       ) : (
         <FlatList
@@ -313,7 +314,7 @@ export default function CallsScreen({ acknowledgedBy, onLogout, focusCallId, onF
           }
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -325,14 +326,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingHorizontal: tokens.gutter.phone,
+    paddingTop: 12,
     paddingBottom: 16,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: tokens.space[12],
   },
   headerTitle: {
     fontSize: 22,
@@ -341,11 +342,12 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 13,
     marginTop: 2,
+    fontVariant: ['tabular-nums'],
   },
   logoutButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingHorizontal: tokens.space[12],
+    paddingVertical: tokens.space[8],
+    borderRadius: tokens.radius[2],
     borderWidth: 1,
   },
   logoutText: {
@@ -356,12 +358,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    gap: 6,
-    marginHorizontal: 20,
-    marginBottom: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
+    gap: tokens.space[8],
+    marginHorizontal: tokens.gutter.phone,
+    marginBottom: tokens.space[12],
+    paddingHorizontal: tokens.space[12],
+    paddingVertical: tokens.space[8],
+    borderRadius: tokens.radius.full,
     borderWidth: 1,
   },
   watchPillText: {
@@ -369,54 +371,76 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   list: {
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-    gap: 12,
+    paddingHorizontal: tokens.gutter.phone,
+    paddingBottom: tokens.space[24],
+    gap: tokens.space[16],
   },
-  card: {
+  callCard: {
+    borderRadius: tokens.radius[3],
+    padding: tokens.space[16],
     flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
+    gap: tokens.space[12],
   },
-  iconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
+  callCardHighlighted: {
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
   },
-  cardInfo: {
+  cardRail: {
+    width: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    justifyContent: 'space-between',
+    paddingVertical: 2,
+  },
+  railSlot: {
+    width: 6,
+    height: 18,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  railSlotActive: {
+    backgroundColor: '#FFFFFF',
+  },
+  cardBody: {
     flex: 1,
   },
-  room: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  floor: {
-    fontSize: 13,
-    marginTop: 2,
-  },
-  waiting: {
-    fontSize: 13,
-    marginTop: 6,
-    fontWeight: '600',
-  },
-  ackButton: {
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    minWidth: 110,
+  cardMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  ackButtonDisabled: {
-    opacity: 0.6,
-  },
-  ackButtonText: {
-    fontSize: 14,
+  floorBadge: {
+    fontSize: 13,
     fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  timerLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontVariant: ['tabular-nums'],
+  },
+  roomNumber: {
+    fontSize: 72,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginVertical: 4,
+    fontVariant: ['tabular-nums'],
+  },
+  ackSlab: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: tokens.radius[2],
+    minHeight: tokens.control[64],
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: tokens.space[8],
+  },
+  ackSlabDisabled: {
+    opacity: 0.7,
+  },
+  ackSlabText: {
+    fontSize: 18,
+    fontWeight: '700',
   },
   centerFill: {
     flex: 1,
@@ -427,7 +451,7 @@ const styles = StyleSheet.create({
   emptyIconWrap: {
     width: 56,
     height: 56,
-    borderRadius: 16,
+    borderRadius: tokens.radius[3],
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -438,10 +462,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   errorBanner: {
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderRadius: 10,
-    padding: 10,
+    marginHorizontal: tokens.gutter.phone,
+    marginBottom: tokens.space[12],
+    borderRadius: tokens.radius[2],
+    padding: tokens.space[12],
     borderWidth: 1,
   },
   errorBannerText: {

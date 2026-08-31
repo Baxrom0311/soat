@@ -3,7 +3,6 @@ import { ActivityIndicator, AppState, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import * as Application from 'expo-application';
-import WelcomeScreen from './src/screens/WelcomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import CallsScreen from './src/screens/CallsScreen';
 import UpdateRequiredScreen from './src/screens/UpdateRequiredScreen';
@@ -51,7 +50,6 @@ function AppContent() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [outdated, setOutdated] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
-  const [showWelcome, setShowWelcome] = useState(true);
   const [focusCallId, setFocusCallId] = useState<number | null>(null);
   const pushTokenRef = useRef<string | null>(null);
   const registeringRef = useRef(false);
@@ -229,11 +227,7 @@ function AppContent() {
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       {email === null ? (
-        showWelcome ? (
-          <WelcomeScreen onContinue={() => setShowWelcome(false)} />
-        ) : (
-          <LoginScreen onLogin={handleLogin} />
-        )
+        <LoginScreen onLogin={handleLogin} />
       ) : (
         <CallsScreen
           acknowledgedBy={email}

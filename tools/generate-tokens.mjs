@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { emitCss, emitLanding } from './lib/emit-css.mjs';
+import { emitCss, emitLanding, emitTs, emitKotlin } from './lib/emit-css.mjs';
 import { contrastRatio } from './lib/contrast.mjs';
 
 const ALERT_TYPE_SCOPES = ['alert', 'watch'];
@@ -77,6 +77,8 @@ if (isCli) {
 
   const EMITTERS = {
     css: { path: tokens.meta.outputs.css, render: (t) => emitCss(t) },
+    ts: { path: tokens.meta.outputs.ts, render: (t) => emitTs(t) },
+    kotlin: { path: tokens.meta.outputs.kotlin, render: (t) => emitKotlin(t) },
     landing: { path: tokens.meta.outputs.landing, render: (t, prev) => emitLanding(t, prev) },
   };
 

@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
@@ -12,6 +13,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '../ThemeContext';
 import ThemeToggle from '../components/ThemeToggle';
+import { tokens } from '../theme';
 
 interface Props {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -41,87 +43,98 @@ export default function LoginScreen({ onLogin }: Props) {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View style={styles.topBar}>
-        <ThemeToggle />
-      </View>
-      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <View style={[styles.brandMark, { backgroundColor: colors.accent }]}>
-          <Feather name="activity" size={20} color={colors.textOnAccent} />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bg }]}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.topBar}>
+          <ThemeToggle />
         </View>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>NurseCall</Text>
-        <Text style={[styles.subtitle, { color: colors.textMuted }]}>Hamshiralar uchun chaqiruv paneli</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.borderStrong }]}>
+          <View style={[styles.brandMark, { backgroundColor: colors.accent }]}>
+            <Feather name="activity" size={20} color={colors.accentInk} />
+          </View>
+          <Text style={[styles.title, { color: colors.text1 }]}>NurseCall</Text>
+          <Text style={[styles.subtitle, { color: colors.text2 }]}>Hamshiralar uchun chaqiruv paneli</Text>
 
-        <Text style={[styles.label, { color: colors.textMuted }]}>Email</Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.textPrimary }]}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="hamshira@klinika.uz"
-          placeholderTextColor={colors.textFaint}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="email-address"
-          editable={!loading}
-        />
+          <Text style={[styles.label, { color: colors.text2 }]}>Email</Text>
+          <TextInput
+            style={[
+              styles.input,
+              { backgroundColor: colors.surfaceSoft, borderColor: colors.borderField, color: colors.text1 },
+            ]}
+            value={email}
+            onChangeText={setEmail}
+            placeholder="hamshira@klinika.uz"
+            placeholderTextColor={colors.text3}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="email-address"
+            editable={!loading}
+          />
 
-        <Text style={[styles.label, { color: colors.textMuted }]}>Parol</Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.textPrimary }]}
-          value={password}
-          onChangeText={setPassword}
-          placeholder="••••••••"
-          placeholderTextColor={colors.textFaint}
-          secureTextEntry
-          editable={!loading}
-        />
+          <Text style={[styles.label, { color: colors.text2 }]}>Parol</Text>
+          <TextInput
+            style={[
+              styles.input,
+              { backgroundColor: colors.surfaceSoft, borderColor: colors.borderField, color: colors.text1 },
+            ]}
+            value={password}
+            onChangeText={setPassword}
+            placeholder="••••••••"
+            placeholderTextColor={colors.text3}
+            secureTextEntry
+            editable={!loading}
+          />
 
-        {error ? <Text style={[styles.error, { color: colors.danger }]}>{error}</Text> : null}
+          {error ? <Text style={[styles.error, { color: colors.attn }]}>{error}</Text> : null}
 
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: colors.accent }, loading && styles.buttonDisabled]}
-          onPress={handleSubmit}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color={colors.textOnAccent} />
-          ) : (
-            <Text style={[styles.buttonText, { color: colors.textOnAccent }]}>Kirish</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: colors.accent }, loading && styles.buttonDisabled]}
+            onPress={handleSubmit}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color={colors.accentInk} />
+            ) : (
+              <Text style={[styles.buttonText, { color: colors.accentInk }]}>Kirish</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
-    padding: 24,
+    padding: tokens.gutter.phone,
   },
   topBar: {
     position: 'absolute',
     top: 20,
-    right: 24,
+    right: tokens.gutter.phone,
     zIndex: 1,
   },
   card: {
-    borderRadius: 20,
-    padding: 24,
+    borderRadius: tokens.radius[3],
+    padding: tokens.space[24],
     borderWidth: 1,
     alignItems: 'center',
   },
   brandMark: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: tokens.control[44],
+    height: tokens.control[44],
+    borderRadius: tokens.radius[2],
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: tokens.space[12],
   },
   title: {
     fontSize: 24,
@@ -131,34 +144,36 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     textAlign: 'center',
-    marginTop: 4,
-    marginBottom: 24,
+    marginTop: tokens.space[4],
+    marginBottom: tokens.space[24],
   },
   label: {
     alignSelf: 'flex-start',
     fontSize: 13,
-    marginBottom: 6,
-    marginTop: 12,
+    marginBottom: tokens.space[4],
+    marginTop: tokens.space[12],
   },
   input: {
     alignSelf: 'stretch',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderRadius: tokens.radius[2],
+    paddingHorizontal: tokens.space[16],
+    paddingVertical: tokens.space[12],
     fontSize: 16,
     borderWidth: 1,
+    fontVariant: ['tabular-nums'],
   },
   error: {
-    marginTop: 14,
+    marginTop: tokens.space[12],
     fontSize: 13,
     alignSelf: 'flex-start',
   },
   button: {
     alignSelf: 'stretch',
-    borderRadius: 12,
-    paddingVertical: 14,
+    borderRadius: tokens.radius[2],
+    minHeight: tokens.control[48],
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: tokens.space[24],
   },
   buttonDisabled: {
     opacity: 0.6,

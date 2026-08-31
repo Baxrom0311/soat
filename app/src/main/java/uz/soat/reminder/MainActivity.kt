@@ -1,7 +1,6 @@
 package uz.soat.reminder
 
 import android.Manifest
-import android.app.RemoteInput
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -9,11 +8,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -27,7 +32,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
@@ -70,16 +77,24 @@ private fun statusText(status: ConnectionStatus): String = when (status) {
 }
 
 private fun statusColor(status: ConnectionStatus): Color = when (status) {
-    ConnectionStatus.CONNECTED -> Color(0xFF4CAF50)
-    ConnectionStatus.CONNECTING -> Color(0xFFFFC107)
-    else -> Color(0xFFF44336)
+    ConnectionStatus.CONNECTED -> NurseCallTokens.ColorDark.ok
+    ConnectionStatus.CONNECTING -> NurseCallTokens.ColorDark.attn
+    else -> NurseCallTokens.ColorDark.borderField
 }
 
-/** null qaytsa — ko'rsatishga arzigulik hech narsa yo'q. */
+private fun getAgeStep(createdAtIso: String): Int {
+    val ms = System.currentTimeMillis() - runCatching {
+        java.time.Instant.parse(createdAtIso).toEpochMilli()
+    }.getOrDefault(System.currentTimeMillis())
+    val s = (ms / 1000).toInt().coerceAtLeast(0)
+    return when {
+        s < NurseCallTokens.Call.thresholdsSec[1] -> 1
+        s < NurseCallTokens.Call.thresholdsSec[2] -> 2
+        else -> 3
+    }
+}
+
 private fun billingText(notice: BillingNotice): String? = when {
-    // Boshqaruv to'xtatilgan bo'lsa ham chaqiruvlar ishlashda davom etadi
-    // (backend'da ogohlantirish yo'li ataylab bloklanmaydi) — hamshira behuda
-    // xavotir olmasligi uchun buni aytib qo'yamiz.
     notice.blocked -> "Obuna muddati tugadi — boshqaruv to'xtatilgan. Chaqiruvlar ishlayapti."
     !notice.warn -> null
     notice.daysLeft == null -> "Obuna muddati tugayapti"
@@ -98,81 +113,136 @@ fun CallMonitorScreen() {
 
     MaterialTheme {
         Scaffold(timeText = { TimeText() }) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState)
-                    .padding(horizontal = 18.dp, vertical = 30.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(
-                    text = "Chaqiruv monitor",
-                    maxLines = 1,
-                    style = MaterialTheme.typography.title3
-                )
-                Text(
-                    text = statusText(status),
-                    maxLines = 1,
-                    style = MaterialTheme.typography.caption2,
-                    color = statusColor(status)
-                )
+            if (calls.size == 1 && status == ConnectionStatus.CONNECTED) {
+                val call = calls.first()
+                val step = getAgeStep(call.createdAt)
+                val fill = NurseCallTokens.Call.fillsDark[step - 1]
 
-                when {
-                    status == ConnectionStatus.OUTDATED -> Text(
-                        text = "Bu soat ilovasi eskirgan. Telefondagi NurseCall ilovasi orqali yangi versiyani o'rnating.",
-                        maxLines = 4,
-                        style = MaterialTheme.typography.body2
-                    )
-                    status == ConnectionStatus.UNAUTHORIZED -> LoginForm()
-                    calls.isEmpty() -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(fill)
+                        .padding(12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
                         Text(
-                            text = "Faol chaqiruvlar yo'q",
-                            maxLines = 2,
-                            style = MaterialTheme.typography.body2
+                            text = "${call.floor}-qavat",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
                         )
-                        // Obuna ogohlantirishi faqat shu shoxda — chaqiruv bo'lsa ekran
-                        // butunlay chaqiruvga tegishli bo'lishi kerak.
-                        billing?.let { notice ->
-                            billingText(notice)?.let { msg ->
-                                Text(
-                                    text = msg,
-                                    maxLines = 3,
-                                    style = MaterialTheme.typography.caption2,
-                                    color = Color(0xFFFFB300)
-                                )
-                            }
-                        }
-                    }
-                    else -> calls.forEach { call ->
+                        Text(
+                            text = call.roomNumber,
+                            color = Color.White,
+                            fontSize = NurseCallTokens.Size.watchCallRoomNumberMax,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
                         Chip(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(NurseCallTokens.Size.watchCallAckHeight),
                             onClick = {
                                 scope.launch(Dispatchers.IO) {
-                                    // Xato jim yutilmasin: hamshira "bosdim" deb o'ylab
-                                    // ketib qolsa, chaqiruv ochiq qolgan bo'lar edi.
-                                    val result = runCatching {
+                                    runCatching {
                                         ApiClient.ackCall(context, call.callId, "Palata soati")
-                                    }
-                                    if (result.isFailure) {
-                                        launch(Dispatchers.Main) {
-                                            android.widget.Toast.makeText(
-                                                context,
-                                                "Tasdiqlab bo'lmadi — qayta urinib ko'ring",
-                                                android.widget.Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
                                     }
                                 }
                             },
-                            colors = ChipDefaults.chipColors(backgroundColor = Color(0xFFD32F2F)),
+                            colors = ChipDefaults.chipColors(
+                                backgroundColor = NurseCallTokens.Call.slabDark,
+                                contentColor = fill
+                            ),
                             label = {
-                                Text(text = "Xona ${call.roomNumber}", maxLines = 1)
-                            },
-                            secondaryLabel = {
-                                Text(text = "${call.floor}-qavat, tasdiqlash uchun bosing", maxLines = 1)
+                                Text(
+                                    text = "Tasdiqlash",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp,
+                                    color = fill,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
                             }
                         )
+                    }
+                }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(scrollState)
+                        .padding(horizontal = 12.dp, vertical = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = "NurseCall",
+                        maxLines = 1,
+                        style = MaterialTheme.typography.title3,
+                        color = NurseCallTokens.ColorDark.text1
+                    )
+                    Text(
+                        text = statusText(status),
+                        maxLines = 1,
+                        style = MaterialTheme.typography.caption2,
+                        color = statusColor(status)
+                    )
+
+                    when {
+                        status == ConnectionStatus.OUTDATED -> Text(
+                            text = "Ilova eskirgan. Telefondan yangilang.",
+                            maxLines = 4,
+                            style = MaterialTheme.typography.body2,
+                            color = NurseCallTokens.ColorDark.text2
+                        )
+                        status == ConnectionStatus.UNAUTHORIZED -> LoginForm()
+                        calls.isEmpty() -> {
+                            Text(
+                                text = "Faol chaqiruvlar yo'q",
+                                maxLines = 2,
+                                style = MaterialTheme.typography.body2,
+                                color = NurseCallTokens.ColorDark.text3
+                            )
+                            billing?.let { notice ->
+                                billingText(notice)?.let { msg ->
+                                    Text(
+                                        text = msg,
+                                        maxLines = 3,
+                                        style = MaterialTheme.typography.caption2,
+                                        color = NurseCallTokens.ColorDark.attn
+                                    )
+                                }
+                            }
+                        }
+                        else -> calls.forEach { call ->
+                            val step = getAgeStep(call.createdAt)
+                            val fill = NurseCallTokens.Call.fillsDark[step - 1]
+                            Chip(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(NurseCallTokens.Size.watchCallAckHeight),
+                                onClick = {
+                                    scope.launch(Dispatchers.IO) {
+                                        runCatching {
+                                            ApiClient.ackCall(context, call.callId, "Palata soati")
+                                        }
+                                    }
+                                },
+                                colors = ChipDefaults.chipColors(
+                                    backgroundColor = fill,
+                                    contentColor = Color.White
+                                ),
+                                label = {
+                                    Text(text = "Xona ${call.roomNumber}", maxLines = 1, fontWeight = FontWeight.Bold)
+                                },
+                                secondaryLabel = {
+                                    Text(text = "${call.floor}-qavat", maxLines = 1)
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -180,12 +250,6 @@ fun CallMonitorScreen() {
     }
 }
 
-// Soatning o'zidan to'g'ridan-to'g'ri kirish — Bluetooth orqali telefondan token
-// kelishini kutish shart emas (bu ilgari yagona yo'l edi, va ba'zi qurilmalarda
-// Google Play Services'ning "Failed to deliver message" degan hal qilib bo'lmaydigan
-// bug'i tufayli umuman ishlamay qolardi). Wear OS'da ekranga o'rnatilgan klaviatura
-// yo'q — matn kiritish tizimning o'z RemoteInput ekrani (klaviatura/ovoz/qo'lyozma
-// tanlovi bilan) orqali amalga oshiriladi, bu shu platformadagi standart yondashuv.
 @Composable
 private fun LoginForm() {
     val context = LocalContext.current
@@ -199,75 +263,69 @@ private fun LoginForm() {
     val remoteInputLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val data = result.data
-        val text = data?.let { RemoteInput.getResultsFromIntent(it) }
-            ?.getCharSequence(REMOTE_INPUT_KEY)?.toString()
-        if (text != null) {
-            when (pendingField) {
-                "email" -> email = text.trim()
-                "password" -> password = text
-            }
+        if (result.resultCode == ComponentActivity.RESULT_OK && result.data != null) {
+            val results = RemoteInput.getResultsFromIntent(result.data)
+            val text = results?.getCharSequence(REMOTE_INPUT_KEY)?.toString().orEmpty()
+            if (pendingField == "email") email = text
+            if (pendingField == "password") password = text
         }
         pendingField = null
     }
 
-    fun launchInput(field: String, label: String) {
-        error = null
-        pendingField = field
+    val launchInput = { fieldName: String, title: String, prefill: String ->
+        pendingField = fieldName
         val intent = RemoteInputIntentHelper.createActionRemoteInputIntent()
-        RemoteInputIntentHelper.putRemoteInputsExtra(
-            intent, listOf(RemoteInput.Builder(REMOTE_INPUT_KEY).setLabel(label).build())
-        )
+        val remoteInput = RemoteInput.Builder(REMOTE_INPUT_KEY)
+            .setLabel(title)
+            .build()
+        RemoteInputIntentHelper.putRemoteInputsExtra(intent, listOf(remoteInput))
         remoteInputLauncher.launch(intent)
     }
 
     fun submit() {
         if (email.isBlank() || password.isBlank()) {
-            error = "Email va parolni kiriting"
+            error = "Email va parol kiriting"
             return
         }
         error = null
         busy = true
         scope.launch(Dispatchers.IO) {
-            try {
-                val token = ApiClient.login(context, email.trim(), password)
-                AppPrefs.setToken(context, token)
-                // Bildirishnoma shart emas — CallMonitorService'ning keyingi poll
-                // sikli (5s ichida) tokenni o'zi qayta o'qib, avtomatik ulanadi.
-            } catch (e: Exception) {
-                launch(Dispatchers.Main) {
-                    error = e.message ?: "Kirishda xato yuz berdi"
+            val res = runCatching { ApiClient.login(context, email.trim(), password) }
+            launch(Dispatchers.Main) {
+                busy = false
+                if (res.isFailure) {
+                    error = res.exceptionOrNull()?.message ?: "Xatolik"
                 }
-            } finally {
-                launch(Dispatchers.Main) { busy = false }
             }
         }
     }
 
-    Text(text = "Hisobingizga kiring", maxLines = 2, style = MaterialTheme.typography.body2)
-
-    Chip(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        onClick = { launchInput("email", "Email") },
-        label = { Text(text = email.ifEmpty { "Email kiriting" }, maxLines = 1) }
-    )
-    Chip(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = { launchInput("password", "Parol") },
-        label = {
-            Text(
-                text = if (password.isEmpty()) "Parol kiriting" else "•".repeat(password.length.coerceAtMost(12)),
-                maxLines = 1
-            )
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Chip(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { launchInput("email", "Email", email) },
+            colors = ChipDefaults.chipColors(backgroundColor = NurseCallTokens.ColorDark.surface),
+            label = { Text(text = if (email.isBlank()) "Email" else email, maxLines = 1) }
+        )
+        Chip(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { launchInput("password", "Parol", "") },
+            colors = ChipDefaults.chipColors(backgroundColor = NurseCallTokens.ColorDark.surface),
+            label = { Text(text = if (password.isBlank()) "Parol" else "••••••••", maxLines = 1) }
+        )
+        Chip(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { submit() },
+            enabled = !busy,
+            colors = ChipDefaults.chipColors(backgroundColor = NurseCallTokens.ColorDark.accent),
+            label = { Text(text = if (busy) "..." else "Kirish", maxLines = 1, color = NurseCallTokens.ColorDark.accentInk) }
+        )
+        error?.let {
+            Text(text = it, color = NurseCallTokens.ColorDark.attn, style = MaterialTheme.typography.caption2)
         }
-    )
-    Chip(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = { submit() },
-        colors = ChipDefaults.chipColors(backgroundColor = Color(0xFF1D5FE0)),
-        label = { Text(text = if (busy) "Kirilmoqda..." else "Kirish", maxLines = 1) }
-    )
-    error?.let {
-        Text(text = it, maxLines = 3, style = MaterialTheme.typography.caption2, color = Color(0xFFF44336))
     }
 }
