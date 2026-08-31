@@ -3,6 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { BillingNotice } from '../api';
 import { useTheme } from '../ThemeContext';
+import { tokens } from '../theme';
 
 interface Props {
   notice: BillingNotice;
@@ -20,8 +21,6 @@ function titleFor(notice: BillingNotice): string {
   return `Obuna ${days} kundan keyin tugaydi`;
 }
 
-// Ikkala holatda ham eng muhim gap bir xil: chaqiruvlar ishlashda davom etadi.
-// Hamshira "ilova o'chdi" deb o'ylab qolmasligi kerak.
 function detailFor(notice: BillingNotice): string {
   return notice.blocked
     ? "Xona/qurilma/xodim qo'shish va hisobotlar vaqtincha yopildi. Chaqiruvlarni qabul qilish va tasdiqlash ishlayapti — rahbariyatga xabar bering."
@@ -30,21 +29,21 @@ function detailFor(notice: BillingNotice): string {
 
 export default function BillingBanner({ notice, onDismiss }: Props) {
   const { colors } = useTheme();
-  const tone = notice.blocked ? colors.danger : colors.warning;
+  const tone = colors.attn;
 
   return (
-    <View style={[styles.banner, { borderColor: tone, backgroundColor: colors.surfaceAlt }]}>
+    <View style={[styles.banner, { borderColor: tone, backgroundColor: colors.attnSoft }]}>
       <Feather name="alert-circle" size={16} color={tone} style={styles.icon} />
       <View style={styles.text}>
         <Text style={[styles.title, { color: tone }]}>{titleFor(notice)}</Text>
-        <Text style={[styles.detail, { color: colors.textMuted }]}>{detailFor(notice)}</Text>
+        <Text style={[styles.detail, { color: colors.text2 }]}>{detailFor(notice)}</Text>
       </View>
       <TouchableOpacity
         onPress={onDismiss}
         style={styles.close}
         accessibilityLabel="Eslatmani yopish"
       >
-        <Feather name="x" size={16} color={colors.textFaint} />
+        <Feather name="x" size={16} color={colors.text3} />
       </TouchableOpacity>
     </View>
   );
@@ -54,16 +53,16 @@ const styles = StyleSheet.create({
   banner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderRadius: 10,
+    marginHorizontal: tokens.gutter.phone,
+    marginBottom: tokens.space[12],
+    borderRadius: tokens.radius[2],
     borderWidth: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingVertical: tokens.space[12],
+    paddingHorizontal: tokens.space[12],
   },
   icon: {
     marginTop: 1,
-    marginRight: 8,
+    marginRight: tokens.space[8],
   },
   text: {
     flex: 1,
@@ -74,11 +73,11 @@ const styles = StyleSheet.create({
   },
   detail: {
     fontSize: 12,
-    marginTop: 2,
+    marginTop: tokens.space[4],
     lineHeight: 16,
   },
   close: {
-    marginLeft: 8,
-    padding: 2,
+    marginLeft: tokens.space[8],
+    padding: tokens.space[4],
   },
 });

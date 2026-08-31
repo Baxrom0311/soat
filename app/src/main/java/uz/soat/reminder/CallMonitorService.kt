@@ -163,7 +163,7 @@ class CallMonitorService : Service() {
             )
         }
         return NotificationCompat.Builder(this, STATUS_CHANNEL)
-            .setSmallIcon(android.R.drawable.stat_notify_sync)
+            .setSmallIcon(R.drawable.ic_notify_system)
             .setContentTitle("NurseCall")
             .setContentText("Kuzatilmoqda...")
             .setOngoing(true)
@@ -186,7 +186,7 @@ class CallMonitorService : Service() {
         )
 
         val notification = NotificationCompat.Builder(this, ALERT_CHANNEL)
-            .setSmallIcon(android.R.drawable.ic_popup_reminder)
+            .setSmallIcon(R.drawable.ic_notify_call)
             .setContentTitle("Xona ${call.roomNumber} chaqirmoqda")
             .setContentText("${call.floor}-qavat")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
