@@ -89,6 +89,7 @@ interface DevicesTabProps {
 export function DevicesTab({ unassignedSignals = [], refreshUnassigned = async () => {}, markLocalMutation = () => {} }: DevicesTabProps) {
   const [viewMode, setViewMode] = useState<'all' | 'unassigned'>('all');
   const [devices, setDevices] = useState<Device[]>([]);
+  const [search, setSearch] = useState('');
   const [deviceId, setDeviceId] = useState('');
   const [floor, setFloor] = useState('');
   const [error, setError] = useState('');
@@ -152,6 +153,12 @@ export function DevicesTab({ unassignedSignals = [], refreshUnassigned = async (
   }
 
   const unassignedCount = unassignedSignals.length;
+
+  const filteredDevices = devices.filter(
+    (d) =>
+      d.device_id.toLowerCase().includes(search.toLowerCase()) ||
+      String(d.floor).includes(search)
+  );
 
   return (
     <section className="tab-panel">
@@ -234,6 +241,16 @@ export function DevicesTab({ unassignedSignals = [], refreshUnassigned = async (
             </div>
           ) : (
             <div className="table-wrap glass">
+              <div className="table-toolbar">
+                <input
+                  type="text"
+                  className="table-search-input"
+                  placeholder="Device ID yoki qavat bo'yicha qidirish…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+                <span className="table-count-meta">{filteredDevices.length} ta qurilma</span>
+              </div>
               <table>
                 <thead>
                   <tr>
@@ -246,7 +263,7 @@ export function DevicesTab({ unassignedSignals = [], refreshUnassigned = async (
                   </tr>
                 </thead>
                 <tbody>
-                  {devices.map((d) =>
+                  {filteredDevices.map((d) =>
                     editingId === d.id ? (
                       <tr key={d.device_id}>
                         <td data-label="Device ID"><code className="mono-sm">{d.device_id}</code></td>

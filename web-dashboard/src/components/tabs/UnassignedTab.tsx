@@ -131,6 +131,7 @@ function EditButtonRoomRow({
 }
 
 export function UnassignedTab({ signals, refreshSignals, markLocalMutation }: UnassignedTabProps) {
+  const [search, setSearch] = useState('');
   const [rooms, setRooms] = useState<Room[]>([]);
   const [buttons, setButtons] = useState<ButtonBinding[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -179,11 +180,14 @@ export function UnassignedTab({ signals, refreshSignals, markLocalMutation }: Un
     }
   }
 
+  const filteredSignals = signals.filter(
+    (s) =>
+      s.ev1527_code.toLowerCase().includes(search.toLowerCase()) ||
+      s.device_id.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <section className="tab-panel">
-      <div className="section-head">
-        <h2>Noma'lum signallar</h2>
-      </div>
       <div className="pairing-hint glass">
         <span className="pairing-dot" />
         <p>
@@ -200,6 +204,16 @@ export function UnassignedTab({ signals, refreshSignals, markLocalMutation }: Un
         </div>
       )}
       <div className="table-wrap glass">
+        <div className="table-toolbar">
+          <input
+            type="text"
+            className="table-search-input"
+            placeholder="Tugma kodi yoki device_id bo'yicha qidirish…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <span className="table-count-meta">{filteredSignals.length} ta yangi signal</span>
+        </div>
         <table>
           <thead>
             <tr>
@@ -212,7 +226,7 @@ export function UnassignedTab({ signals, refreshSignals, markLocalMutation }: Un
             </tr>
           </thead>
           <tbody>
-            {signals.map((s) => (
+            {filteredSignals.map((s) => (
               <SignalRow key={s.ev1527_code} signal={s} rooms={rooms} onBound={handleBound} />
             ))}
           </tbody>

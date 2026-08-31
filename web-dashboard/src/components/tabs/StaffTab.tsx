@@ -23,6 +23,7 @@ export function StaffTab() {
   const isAdmin = session?.role === 'admin';
 
   const [staff, setStaff] = useState<Staff[]>([]);
+  const [search, setSearch] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -115,6 +116,13 @@ export function StaffTab() {
     }
   }
 
+  const filteredStaff = staff.filter(
+    (s) =>
+      s.name.toLowerCase().includes(search.toLowerCase()) ||
+      s.email.toLowerCase().includes(search.toLowerCase()) ||
+      s.role.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <section className="tab-panel">
       <header className="page-header-row">
@@ -174,6 +182,16 @@ export function StaffTab() {
         </div>
       ) : (
         <div className="table-wrap glass">
+          <div className="table-toolbar">
+            <input
+              type="text"
+              className="table-search-input"
+              placeholder="Ism, email yoki rol bo'yicha qidirish…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <span className="table-count-meta">{filteredStaff.length} ta xodim</span>
+          </div>
           <table>
             <thead>
               <tr>
@@ -185,7 +203,7 @@ export function StaffTab() {
               </tr>
             </thead>
             <tbody>
-              {staff.map((s) =>
+              {filteredStaff.map((s) =>
                 editingId === s.id ? (
                   <tr key={s.id}>
                     <td data-label="Ism">

@@ -6,6 +6,7 @@ import { PlusIcon } from '../Icons';
 
 export function RoomsTab() {
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [search, setSearch] = useState('');
   const [roomNumber, setRoomNumber] = useState('');
   const [floor, setFloor] = useState('');
   const [error, setError] = useState('');
@@ -68,6 +69,12 @@ export function RoomsTab() {
     }
   }
 
+  const filteredRooms = rooms.filter(
+    (r) =>
+      r.room_number.toLowerCase().includes(search.toLowerCase()) ||
+      String(r.floor).includes(search)
+  );
+
   return (
     <section className="tab-panel">
       <header className="page-header-row">
@@ -114,6 +121,16 @@ export function RoomsTab() {
         </div>
       ) : (
         <div className="table-wrap glass">
+          <div className="table-toolbar">
+            <input
+              type="text"
+              className="table-search-input"
+              placeholder="Xona raqami yoki qavat bo'yicha qidirish…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <span className="table-count-meta">{filteredRooms.length} ta xona</span>
+          </div>
           <table>
             <thead>
               <tr>
@@ -123,7 +140,7 @@ export function RoomsTab() {
               </tr>
             </thead>
             <tbody>
-              {rooms.map((r) =>
+              {filteredRooms.map((r) =>
                 editingId === r.id ? (
                   <tr key={r.id}>
                     <td data-label="Xona">
