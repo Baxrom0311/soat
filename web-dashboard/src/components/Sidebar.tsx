@@ -8,6 +8,8 @@ export type NavItem = {
   Icon: (props: { className?: string }) => ReactElement;
   onClick: () => void;
   active: boolean;
+  group?: 'primary' | 'settings';
+  count?: number;
 };
 
 export type ConnInfo = {
@@ -28,9 +30,6 @@ interface SidebarProps {
   conn?: ConnInfo;
 }
 
-/** Shared Sneat-style left sidebar shell, used by both the nurse (/app) and
- *  superadmin (/admin) layouts. Desktop: fixed column, collapsible to an
- *  icon-only rail. Mobile (< 960px): slide-in drawer with a scrim overlay. */
 export function Sidebar({
   items,
   collapsed,
@@ -43,6 +42,12 @@ export function Sidebar({
   onLogout,
   conn,
 }: SidebarProps) {
+  const primaryItems = items.filter((item) => item.group === 'primary' || item.key === 'calls' || item.key === 'overview');
+  const settingsItems = items.filter((item) => !primaryItems.includes(item));
+
+  const dotClass =
+    conn?.status === 'live' ? 'dot dot--ok' : conn?.status === 'connecting' ? 'dot dot--attn' : 'dot dot--hollow';
+
   return (
     <>
       {mobileOpen && <div className="drawer-overlay" onClick={onCloseMobile} />}
@@ -60,31 +65,60 @@ export function Sidebar({
         </div>
 
         <nav className="sidebar-nav">
-          {items.map(({ key, label, Icon, onClick, active }) => (
-            <button
-              key={key}
-              className={`sidebar-item ${active ? 'active' : ''}`}
-              onClick={onClick}
-              type="button"
-              title={label}
-            >
-              <Icon />
-              <span className="sidebar-item-label">{label}</span>
-            </button>
-          ))}
+          {primaryItems.length > 0 && (
+            <div className="sidebar-group sidebar-group--primary">
+              {primaryItems.map(({ key, label, Icon, onClick, active, count }) => (
+                <button
+                  key={key}
+                  className={`sidebar-item sidebar-item--primary ${active ? 'active' : ''}`}
+                  onClick={onClick}
+                  type="button"
+                  title={label}
+                >
+                  <Icon className="sidebar-item-icon" />
+                  <span className="sidebar-item-label">{label}</span>
+                  {count !== undefined && count > 0 && (
+                    <span className="sidebar-pill">{count}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {primaryItems.length > 0 && settingsItems.length > 0 && (
+            <div className="sidebar-divider" aria-hidden="true" />
+          )}
+
+          {settingsItems.length > 0 && (
+            <div className="sidebar-group sidebar-group--settings">
+              <div className="sidebar-caption">SOZLAMALAR</div>
+              {settingsItems.map(({ key, label, Icon, onClick, active, count }) => (
+                <button
+                  key={key}
+                  className={`sidebar-item sidebar-item--settings ${active ? 'active' : ''}`}
+                  onClick={onClick}
+                  type="button"
+                  title={label}
+                >
+                  <Icon className="sidebar-item-icon" />
+                  <span className="sidebar-item-label">{label}</span>
+                  {count !== undefined && count > 0 && (
+                    <span className="sidebar-pill sidebar-pill--attn">{count}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
         </nav>
 
         <div className="sidebar-footer">
           {conn && (
-            <div className="conn" title={conn.label}>
-              <span className={`dot ${conn.status === 'live' ? 'live' : ''}`} />
-              <span>{conn.label}</span>
+            <div className="conn-static" title={conn.label}>
+              <span className={dotClass} aria-hidden="true" />
+              <span className="conn-label">{conn.label}</span>
             </div>
           )}
           <div className="sidebar-user">
-            <span className="avatar" aria-hidden="true">
-              {userName.trim().charAt(0).toUpperCase() || '?'}
-            </span>
             <span className="sidebar-user-text">
               <span className="sidebar-user-name">{userName}</span>
               <span className="sidebar-user-role">{userRole}</span>

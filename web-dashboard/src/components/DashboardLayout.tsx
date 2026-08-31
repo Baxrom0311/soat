@@ -10,7 +10,6 @@ import {
   DevicesIcon,
   RoomsIcon,
   StaffIcon,
-  UnassignedIcon,
   WarningIcon,
 } from './Icons';
 import { MobileTopbar, Sidebar } from './Sidebar';
@@ -19,10 +18,9 @@ import { BillingTab } from './tabs/BillingTab';
 import { CallsTab } from './tabs/CallsTab';
 import { DevicesTab } from './tabs/DevicesTab';
 import { RoomsTab } from './tabs/RoomsTab';
-import { UnassignedTab } from './tabs/UnassignedTab';
 import { StaffTab } from './tabs/StaffTab';
 
-type TabKey = 'calls' | 'devices' | 'rooms' | 'unassigned' | 'staff' | 'billing';
+type TabKey = 'calls' | 'devices' | 'rooms' | 'staff' | 'billing';
 
 type NavDef = { key: TabKey; label: string; Icon: typeof CallsIcon; adminOnly?: boolean };
 
@@ -30,7 +28,6 @@ const NAV_ITEMS: NavDef[] = [
   { key: 'calls', label: 'Chaqiruvlar', Icon: CallsIcon },
   { key: 'devices', label: 'Qurilmalar', Icon: DevicesIcon },
   { key: 'rooms', label: 'Xonalar', Icon: RoomsIcon },
-  { key: 'unassigned', label: "Noma'lum signallar", Icon: UnassignedIcon },
   { key: 'staff', label: 'Xodimlar', Icon: StaffIcon },
   // Admin-only: the clinic's prices are not a nurse's business, and /clinic/billing
   // would 403 for her anyway.
@@ -42,7 +39,6 @@ const NAV_ITEMS: NavDef[] = [
 const BLOCKED_TABS: ReadonlySet<TabKey> = new Set<TabKey>([
   'devices',
   'rooms',
-  'unassigned',
   'staff',
 ]);
 
@@ -108,6 +104,8 @@ export function DashboardLayout() {
       label,
       Icon,
       active: tab === key,
+      group: (key === 'calls' ? 'primary' : 'settings') as 'primary' | 'settings',
+      count: key === 'calls' ? feed.activeCalls.size : key === 'devices' ? feed.unassignedSignals.length : undefined,
       onClick: () => {
         setTab(key);
         setMobileOpen(false);
@@ -177,15 +175,14 @@ export function DashboardLayout() {
             <SuspendedNotice onOpenBilling={openBilling} />
           ) : (
             <>
-              {tab === 'devices' && <DevicesTab />}
-              {tab === 'rooms' && <RoomsTab />}
-              {tab === 'unassigned' && (
-                <UnassignedTab
-                  signals={feed.unassignedSignals}
-                  refreshSignals={feed.refreshUnassigned}
+              {tab === 'devices' && (
+                <DevicesTab
+                  unassignedSignals={feed.unassignedSignals}
+                  refreshUnassigned={feed.refreshUnassigned}
                   markLocalMutation={feed.markLocalMutation}
                 />
               )}
+              {tab === 'rooms' && <RoomsTab />}
               {tab === 'staff' && <StaffTab />}
             </>
           )}

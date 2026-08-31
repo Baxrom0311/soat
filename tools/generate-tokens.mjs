@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { emitCss } from './lib/emit-css.mjs';
+import { emitCss, emitLanding } from './lib/emit-css.mjs';
 import { contrastRatio } from './lib/contrast.mjs';
 
 const ALERT_TYPE_SCOPES = ['alert', 'watch'];
@@ -75,13 +75,16 @@ if (isCli) {
     process.exit(1);
   }
 
-  const EMITTERS = { css: { path: tokens.meta.outputs.css, render: emitCss } };
+  const EMITTERS = {
+    css: { path: tokens.meta.outputs.css, render: (t) => emitCss(t) },
+    landing: { path: tokens.meta.outputs.landing, render: (t, prev) => emitLanding(t, prev) },
+  };
 
   let failed = false;
   for (const [target, { path, render }] of Object.entries(EMITTERS)) {
     const url = new URL(path, ROOT);
-    const next = render(tokens);
     const prev = existsSync(url) ? readFileSync(url, 'utf8') : null;
+    const next = render(tokens, prev);
     if (check) {
       if (prev !== next) {
         console.error(`STALE: ${path} does not match tokens.json — run: node tools/generate-tokens.mjs`);

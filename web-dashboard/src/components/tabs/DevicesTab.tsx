@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { api, ApiError } from '../../api/client';
-import type { Device } from '../../api/types';
+import type { Device, UnassignedSignal } from '../../api/types';
 import { CopyIcon, PlusIcon, WarningIcon } from '../Icons';
+import { UnassignedTab } from './UnassignedTab';
 
 function fmtTime(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
@@ -44,9 +45,6 @@ function DeviceKeyModal({
     }
   }
 
-  // Blocking modal (not a banner): the key is shown exactly once, and an inline banner
-  // would be wiped by a tab switch since the tab unmounts. The overlay also blocks the
-  // sidebar, and closing without copying requires explicit confirmation.
   function handleClose() {
     if (
       !copied &&
@@ -82,7 +80,14 @@ function DeviceKeyModal({
   );
 }
 
-export function DevicesTab() {
+interface DevicesTabProps {
+  unassignedSignals?: UnassignedSignal[];
+  refreshUnassigned?: () => Promise<void>;
+  markLocalMutation?: () => void;
+}
+
+export function DevicesTab({ unassignedSignals = [], refreshUnassigned = async () => {}, markLocalMutation = () => {} }: DevicesTabProps) {
+  const [viewMode, setViewMode] = useState<'all' | 'unassigned'>('all');
   const [devices, setDevices] = useState<Device[]>([]);
   const [deviceId, setDeviceId] = useState('');
   const [floor, setFloor] = useState('');
@@ -146,133 +151,167 @@ export function DevicesTab() {
     }
   }
 
+  const unassignedCount = unassignedSignals.length;
+
   return (
     <section className="tab-panel">
-      <div className="section-head">
-        <h2>Qurilmalar (ESP32)</h2>
-      </div>
-
-      <div className="panel-card glass">
-        <h3>
-          <PlusIcon /> Yangi qurilma qo'shish
-        </h3>
-        <form className="inline-form" onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="device_id (masalan floor2-esp32-01)"
-            required
-            value={deviceId}
-            onChange={(e) => setDeviceId(e.target.value)}
-          />
-          <input
-            type="number"
-            placeholder="Qavat"
-            required
-            min={0}
-            step={1}
-            value={floor}
-            onChange={(e) => setFloor(e.target.value)}
-          />
-          <button type="submit" className="btn btn-primary" disabled={submitting}>
-            {submitting ? '...' : "Qo'shish"}
+      <header className="page-header-row">
+        <div>
+          <h1 className="page-header-title">Qurilmalar va tugmalar</h1>
+          <p className="page-header-desc">Klinikadagi ESP32 qurilmalari hamda biriktirilmagan signallar boshqaruvi.</p>
+        </div>
+        <div className="segmented-control">
+          <button
+            type="button"
+            className={`segmented-btn ${viewMode === 'all' ? 'active' : ''}`}
+            onClick={() => setViewMode('all')}
+          >
+            Barchasi
           </button>
-        </form>
-        {error && <p className="form-error">{error}</p>}
-      </div>
+          <button
+            type="button"
+            className={`segmented-btn ${viewMode === 'unassigned' ? 'active' : ''}`}
+            onClick={() => setViewMode('unassigned')}
+          >
+            Biriktirilmagan
+            {unassignedCount > 0 && (
+              <span className="badge badge--attn">{unassignedCount}</span>
+            )}
+          </button>
+        </div>
+      </header>
 
-      {created && (
-        <DeviceKeyModal
-          deviceId={created.deviceId}
-          deviceKey={created.key}
-          onClose={() => setCreated(null)}
+      {viewMode === 'unassigned' ? (
+        <UnassignedTab
+          signals={unassignedSignals}
+          refreshSignals={refreshUnassigned}
+          markLocalMutation={markLocalMutation}
         />
-      )}
-
-      {loadError ? (
-        <div className="form-error">
-          {loadError}{' '}
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => load()}>
-            Qayta urinish
-          </button>
-        </div>
       ) : (
-        <div className="table-wrap glass">
-          <table>
-            <thead>
-              <tr>
-                <th>device_id</th>
-                <th>Qavat</th>
-                <th>Holat</th>
-                <th>Yaratildi</th>
-                <th>Oxirgi ko'rilgan</th>
-                <th>Amal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {devices.map((d) =>
-                editingId === d.id ? (
-                  <tr key={d.device_id}>
-                    <td data-label="device_id">{d.device_id}</td>
-                    <td data-label="Qavat">
-                      <input
-                        type="number"
-                        className="table-input"
-                        min={0}
-                        step={1}
-                        value={editFloor}
-                        onChange={(e) => setEditFloor(e.target.value)}
-                      />
-                    </td>
-                    <td data-label="Holat">
-                      <span className={`online-badge ${d.online ? 'online' : 'offline'}`}>
-                        <span className="dot" />
-                        {d.online ? 'Onlayn' : 'Oflayn'}
-                      </span>
-                    </td>
-                    <td data-label="Yaratildi">{fmtTime(d.created_at)}</td>
-                    <td data-label="Oxirgi ko'rilgan">{d.last_seen_at ? relTime(d.last_seen_at) : '—'}</td>
-                    <td data-label="Amal">
-                      <div className="row-actions">
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={() => saveEdit(d.id)}
-                          disabled={editBusy}
-                          type="button"
-                        >
-                          Saqlash
-                        </button>
-                        <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)} type="button">
-                          Bekor
-                        </button>
-                      </div>
-                      {editError && <p className="form-error">{editError}</p>}
-                    </td>
+        <>
+          <div className="panel-card glass">
+            <h3>
+              <PlusIcon /> Yangi qurilma qo'shish
+            </h3>
+            <form className="inline-form" onSubmit={handleSubmit}>
+              <input
+                type="text"
+                placeholder="device_id (masalan floor2-esp32-01)"
+                required
+                value={deviceId}
+                onChange={(e) => setDeviceId(e.target.value)}
+              />
+              <input
+                type="number"
+                placeholder="Qavat"
+                required
+                min={0}
+                step={1}
+                value={floor}
+                onChange={(e) => setFloor(e.target.value)}
+              />
+              <button type="submit" className="btn btn-primary" disabled={submitting}>
+                {submitting ? '...' : "Qo'shish"}
+              </button>
+            </form>
+            {error && <p className="form-error">{error}</p>}
+          </div>
+
+          {created && (
+            <DeviceKeyModal
+              deviceId={created.deviceId}
+              deviceKey={created.key}
+              onClose={() => setCreated(null)}
+            />
+          )}
+
+          {loadError ? (
+            <div className="form-error">
+              {loadError}{' '}
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => load()}>
+                Qayta urinish
+              </button>
+            </div>
+          ) : (
+            <div className="table-wrap glass">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Device ID</th>
+                    <th>Qavat</th>
+                    <th>Holat</th>
+                    <th>Yaratildi</th>
+                    <th>Oxirgi ko'rilgan</th>
+                    <th>Amal</th>
                   </tr>
-                ) : (
-                  <tr key={d.device_id}>
-                    <td data-label="device_id">{d.device_id}</td>
-                    <td data-label="Qavat">{d.floor}</td>
-                    <td data-label="Holat">
-                      <span className={`online-badge ${d.online ? 'online' : 'offline'}`}>
-                        <span className="dot" />
-                        {d.online ? 'Onlayn' : 'Oflayn'}
-                      </span>
-                    </td>
-                    <td data-label="Yaratildi">{fmtTime(d.created_at)}</td>
-                    <td data-label="Oxirgi ko'rilgan" title={d.last_seen_at ? fmtTime(d.last_seen_at) : undefined}>
-                      {d.last_seen_at ? relTime(d.last_seen_at) : '—'}
-                    </td>
-                    <td data-label="Amal">
-                      <button className="btn btn-ghost btn-sm" onClick={() => startEdit(d)} type="button">
-                        Tahrirlash
-                      </button>
-                    </td>
-                  </tr>
-                )
-              )}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody>
+                  {devices.map((d) =>
+                    editingId === d.id ? (
+                      <tr key={d.device_id}>
+                        <td data-label="Device ID"><code className="mono-sm">{d.device_id}</code></td>
+                        <td data-label="Qavat">
+                          <input
+                            type="number"
+                            className="table-input"
+                            min={0}
+                            step={1}
+                            value={editFloor}
+                            onChange={(e) => setEditFloor(e.target.value)}
+                          />
+                        </td>
+                        <td data-label="Holat">
+                          <span className="status-dot-text">
+                            <span className={d.online ? 'dot dot--ok' : 'dot dot--hollow'} aria-hidden="true" />
+                            {d.online ? 'Onlayn' : 'Oflayn'}
+                          </span>
+                        </td>
+                        <td data-label="Yaratildi">{fmtTime(d.created_at)}</td>
+                        <td data-label="Oxirgi ko'rilgan">{d.last_seen_at ? relTime(d.last_seen_at) : '—'}</td>
+                        <td data-label="Amal">
+                          <div className="row-actions">
+                            <button
+                              className="btn btn-primary btn-sm"
+                              onClick={() => saveEdit(d.id)}
+                              disabled={editBusy}
+                              type="button"
+                            >
+                              Saqlash
+                            </button>
+                            <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)} type="button">
+                              Bekor
+                            </button>
+                          </div>
+                          {editError && <p className="form-error">{editError}</p>}
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr key={d.device_id}>
+                        <td data-label="Device ID"><code className="mono-sm">{d.device_id}</code></td>
+                        <td data-label="Qavat">{d.floor}</td>
+                        <td data-label="Holat">
+                          <span className="status-dot-text">
+                            <span className={d.online ? 'dot dot--ok' : 'dot dot--hollow'} aria-hidden="true" />
+                            {d.online ? 'Onlayn' : 'Oflayn'}
+                          </span>
+                        </td>
+                        <td data-label="Yaratildi">{fmtTime(d.created_at)}</td>
+                        <td data-label="Oxirgi ko'rilgan" title={d.last_seen_at ? fmtTime(d.last_seen_at) : undefined}>
+                          {d.last_seen_at ? relTime(d.last_seen_at) : '—'}
+                        </td>
+                        <td data-label="Amal">
+                          <button className="btn btn-ghost btn-sm" onClick={() => startEdit(d)} type="button">
+                            Tahrirlash
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
     </section>
   );

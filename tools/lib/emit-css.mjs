@@ -75,3 +75,13 @@ export function emitCss(t) {
     `\n:root[data-theme="dark"] {\n${dark.join('\n')}\n}\n`
   );
 }
+
+export function emitLanding(t, prevHtml) {
+  const css = emitCss(t);
+  const block = `/* @tokens:start */\n${css}/* @tokens:end */`;
+  if (!prevHtml) return block;
+  if (prevHtml.includes('/* @tokens:start */') && prevHtml.includes('/* @tokens:end */')) {
+    return prevHtml.replace(/\/\* @tokens:start \*\/[\s\S]*?\/\* @tokens:end \*\//, block);
+  }
+  return prevHtml.replace(/\/\* ================= THEME TOKENS[\s\S]*?:root\[data-theme="dark"\]\s*\{[\s\S]*?color-scheme:\s*dark;\s*\}/, block);
+}
