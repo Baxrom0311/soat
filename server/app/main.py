@@ -80,17 +80,21 @@ app.mount("/dashboard-static", StaticFiles(directory=DASHBOARD_DIR), name="dashb
 
 @app.get("/")
 def landing():
-    return FileResponse(STATIC_DIR / "landing.html")
+    response = FileResponse(STATIC_DIR / "landing.html")
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
 
 
 def _serve_dashboard() -> FileResponse:
-    return FileResponse(DASHBOARD_DIR / "index.html")
+    response = FileResponse(DASHBOARD_DIR / "index.html")
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
 
 
 # Uchta ALOHIDA route: /login (autentifikatsiya), /app (klinika xodimi paneli),
 # /admin (superadmin paneli). Bir xil React bundle serve qilinadi, lekin
 # qaysi panel ko'rsatilishini frontend'dagi react-router hal qiladi — rol
 # tekshiruvi endi shartli render emas, alohida himoyalangan route sifatida.
-for _prefix in ("/login", "/app", "/admin"):
+for _prefix in ("/login", "/app", "/admin", "/calls", "/wall"):
     app.add_api_route(_prefix, _serve_dashboard, methods=["GET"], include_in_schema=False)
     app.add_api_route(f"{_prefix}/{{rest:path}}", _serve_dashboard, methods=["GET"], include_in_schema=False)
