@@ -78,7 +78,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.mount("/dashboard-static", StaticFiles(directory=DASHBOARD_DIR), name="dashboard-assets")
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def landing():
     response = FileResponse(STATIC_DIR / "landing.html")
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
