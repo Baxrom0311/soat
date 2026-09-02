@@ -9,15 +9,15 @@ const tokens = JSON.parse(readFileSync(new URL('../tokens.json', import.meta.url
 
 test('emits light colour tokens on :root', () => {
   const css = emitCss(tokens);
-  assert.match(css, /:root\s*\{[^}]*--color-bg:\s*#F6F7F7/s);
-  assert.match(css, /:root\s*\{[^}]*--color-accent:\s*#0C6A62/s);
+  assert.match(css, /:root\s*\{[^}]*--color-bg:\s*#F8FAFC/s);
+  assert.match(css, /:root\s*\{[^}]*--color-accent:\s*#0284C7/s);
 });
 
 test('redefines only tokens in the dark blocks, guarded both ways', () => {
   const css = emitCss(tokens);
   assert.match(css, /@media \(prefers-color-scheme: dark\)\s*\{\s*:root:not\(\[data-theme="light"\]\)/);
   assert.match(css, /:root\[data-theme="dark"\]/);
-  assert.match(css, /--color-bg:\s*#0E1213/);
+  assert.match(css, /--color-bg:\s*#0F172A/);
 });
 
 test('call fills emit as indexed step tokens', () => {
