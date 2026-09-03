@@ -258,7 +258,7 @@ private fun LoginForm() {
     val scope = rememberCoroutineScope()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var pendingField by remember { mutableStateOf<String?>(null) }
+    val activeField = remember { java.util.concurrent.atomic.AtomicReference<String>("") }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -268,14 +268,15 @@ private fun LoginForm() {
         if (result.resultCode == Activity.RESULT_OK && result.data != null) {
             val results = RemoteInput.getResultsFromIntent(result.data)
             val text = results?.getCharSequence(REMOTE_INPUT_KEY)?.toString().orEmpty()
-            if (pendingField == "email") email = text
-            if (pendingField == "password") password = text
+            when (activeField.get()) {
+                "email" -> email = text
+                "password" -> password = text
+            }
         }
-        pendingField = null
     }
 
-    val launchInput = { fieldName: String, title: String, prefill: String ->
-        pendingField = fieldName
+    fun launchInput(fieldName: String, title: String) {
+        activeField.set(fieldName)
         val intent = RemoteInputIntentHelper.createActionRemoteInputIntent()
         val remoteInput = RemoteInput.Builder(REMOTE_INPUT_KEY)
             .setLabel(title)
@@ -292,11 +293,18 @@ private fun LoginForm() {
         error = null
         busy = true
         scope.launch(Dispatchers.IO) {
-            val res = runCatching { ApiClient.login(context, email.trim(), password) }
-            launch(Dispatchers.Main) {
+            val res = runCatching {
+                val token = ApiClient.login(context, email.trim(), password)
+                AppPrefs.setToken(context, token)
+            }
+            kotlinx.coroutines.withContext(Dispatchers.Main) {
                 busy = false
                 if (res.isFailure) {
-                    error = res.exceptionOrNull()?.message ?: "Xatolik"
+                    val ex = res.exceptionOrNull()
+                    error = when (ex) {
+                        is InvalidCredentialsException -> "Email yoki parol noto'g'ri"
+                        else -> ex?.message ?: "Server bilan aloqa xato"
+                    }
                 }
             }
         }
@@ -309,13 +317,13 @@ private fun LoginForm() {
     ) {
         Chip(
             modifier = Modifier.fillMaxWidth(),
-            onClick = { launchInput("email", "Email", email) },
+            onClick = { launchInput("email", "Email") },
             colors = ChipDefaults.chipColors(backgroundColor = NurseCallTokens.ColorDark.surface),
             label = { Text(text = if (email.isBlank()) "Email" else email, maxLines = 1) }
         )
         Chip(
             modifier = Modifier.fillMaxWidth(),
-            onClick = { launchInput("password", "Parol", "") },
+            onClick = { launchInput("password", "Parol") },
             colors = ChipDefaults.chipColors(backgroundColor = NurseCallTokens.ColorDark.surface),
             label = { Text(text = if (password.isBlank()) "Parol" else "••••••••", maxLines = 1) }
         )
