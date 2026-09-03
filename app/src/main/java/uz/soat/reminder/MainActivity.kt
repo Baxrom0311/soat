@@ -201,47 +201,70 @@ fun CallMonitorScreen() {
                             color = NurseCallTokens.ColorDark.text2
                         )
                         status == ConnectionStatus.UNAUTHORIZED -> LoginForm()
-                        calls.isEmpty() -> {
-                            Text(
-                                text = "Faol chaqiruvlar yo'q",
-                                maxLines = 2,
-                                style = MaterialTheme.typography.body2,
-                                color = NurseCallTokens.ColorDark.text3
-                            )
-                            billing?.let { notice ->
-                                billingText(notice)?.let { msg ->
-                                    Text(
-                                        text = msg,
-                                        maxLines = 3,
-                                        style = MaterialTheme.typography.caption2,
-                                        color = NurseCallTokens.ColorDark.attn
+                        else -> {
+                            if (calls.isEmpty()) {
+                                Text(
+                                    text = "Faol chaqiruvlar yo'q",
+                                    maxLines = 2,
+                                    style = MaterialTheme.typography.body2,
+                                    color = NurseCallTokens.ColorDark.text3
+                                )
+                                billing?.let { notice ->
+                                    billingText(notice)?.let { msg ->
+                                        Text(
+                                            text = msg,
+                                            maxLines = 3,
+                                            style = MaterialTheme.typography.caption2,
+                                            color = NurseCallTokens.ColorDark.attn
+                                        )
+                                    }
+                                }
+                            } else {
+                                calls.forEach { call ->
+                                    val step = getAgeStep(call.createdAt)
+                                    val fill = NurseCallTokens.Call.fillsDark[step - 1]
+                                    Chip(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(NurseCallTokens.Size.watchCallAckHeight),
+                                        onClick = {
+                                            scope.launch(Dispatchers.IO) {
+                                                runCatching {
+                                                    ApiClient.ackCall(context, call.callId, "Palata soati")
+                                                }
+                                            }
+                                        },
+                                        colors = ChipDefaults.chipColors(
+                                            backgroundColor = fill,
+                                            contentColor = Color.White
+                                        ),
+                                        label = {
+                                            Text(text = "Xona ${call.roomNumber}", maxLines = 1, fontWeight = FontWeight.Bold)
+                                        },
+                                        secondaryLabel = {
+                                            Text(text = "${call.floor}-qavat", maxLines = 1)
+                                        }
                                     )
                                 }
                             }
-                        }
-                        else -> calls.forEach { call ->
-                            val step = getAgeStep(call.createdAt)
-                            val fill = NurseCallTokens.Call.fillsDark[step - 1]
+
+                            Spacer(modifier = Modifier.height(6.dp))
                             Chip(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(NurseCallTokens.Size.watchCallAckHeight),
+                                modifier = Modifier.fillMaxWidth(),
                                 onClick = {
-                                    scope.launch(Dispatchers.IO) {
-                                        runCatching {
-                                            ApiClient.ackCall(context, call.callId, "Palata soati")
-                                        }
-                                    }
+                                    AppPrefs.setToken(context, null)
+                                    CallState.status.value = ConnectionStatus.UNAUTHORIZED
+                                    CallState.activeCalls.value = emptyList()
                                 },
                                 colors = ChipDefaults.chipColors(
-                                    backgroundColor = fill,
-                                    contentColor = Color.White
+                                    backgroundColor = NurseCallTokens.ColorDark.surface
                                 ),
                                 label = {
-                                    Text(text = "Xona ${call.roomNumber}", maxLines = 1, fontWeight = FontWeight.Bold)
-                                },
-                                secondaryLabel = {
-                                    Text(text = "${call.floor}-qavat", maxLines = 1)
+                                    Text(
+                                        text = "Chiqish",
+                                        maxLines = 1,
+                                        color = NurseCallTokens.ColorDark.attn
+                                    )
                                 }
                             )
                         }
