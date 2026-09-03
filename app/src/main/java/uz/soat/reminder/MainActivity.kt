@@ -269,24 +269,29 @@ private fun LoginForm() {
             val results = RemoteInput.getResultsFromIntent(result.data)
             val text = results?.getCharSequence(REMOTE_INPUT_KEY)?.toString().orEmpty()
             when (activeField.get()) {
-                "email" -> email = text
-                "password" -> password = text
+                "email" -> email = text.trim().lowercase(java.util.Locale.ROOT)
+                "password" -> password = text.trim()
             }
         }
     }
 
-    fun launchInput(fieldName: String, title: String) {
+    fun launchInput(fieldName: String, title: String, prefill: String) {
         activeField.set(fieldName)
         val intent = RemoteInputIntentHelper.createActionRemoteInputIntent()
         val remoteInput = RemoteInput.Builder(REMOTE_INPUT_KEY)
             .setLabel(title)
             .build()
         RemoteInputIntentHelper.putRemoteInputsExtra(intent, listOf(remoteInput))
+        if (prefill.isNotBlank()) {
+            intent.putExtra(Intent.EXTRA_TEXT, prefill)
+        }
         remoteInputLauncher.launch(intent)
     }
 
     fun submit() {
-        if (email.isBlank() || password.isBlank()) {
+        val cleanEmail = email.trim().lowercase(java.util.Locale.ROOT)
+        val cleanPassword = password.trim()
+        if (cleanEmail.isBlank() || cleanPassword.isBlank()) {
             error = "Email va parol kiriting"
             return
         }
@@ -294,7 +299,7 @@ private fun LoginForm() {
         busy = true
         scope.launch(Dispatchers.IO) {
             val res = runCatching {
-                val token = ApiClient.login(context, email.trim(), password)
+                val token = ApiClient.login(context, cleanEmail, cleanPassword)
                 AppPrefs.setToken(context, token)
             }
             kotlinx.coroutines.withContext(Dispatchers.Main) {
@@ -317,13 +322,13 @@ private fun LoginForm() {
     ) {
         Chip(
             modifier = Modifier.fillMaxWidth(),
-            onClick = { launchInput("email", "Email") },
+            onClick = { launchInput("email", "Email", email) },
             colors = ChipDefaults.chipColors(backgroundColor = NurseCallTokens.ColorDark.surface),
             label = { Text(text = if (email.isBlank()) "Email" else email, maxLines = 1) }
         )
         Chip(
             modifier = Modifier.fillMaxWidth(),
-            onClick = { launchInput("password", "Parol") },
+            onClick = { launchInput("password", "Parol", password) },
             colors = ChipDefaults.chipColors(backgroundColor = NurseCallTokens.ColorDark.surface),
             label = { Text(text = if (password.isBlank()) "Parol" else "••••••••", maxLines = 1) }
         )

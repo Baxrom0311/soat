@@ -13,7 +13,8 @@ from app.models import Staff
 
 
 def get_by_email(db: Session, email: str) -> Staff | None:
-    return db.scalar(select(Staff).where(Staff.email == email))
+    clean_email = email.strip().lower()
+    return db.scalar(select(Staff).where(func.lower(Staff.email) == clean_email))
 
 
 def get_by_id(db: Session, staff_id: int) -> Staff | None:
