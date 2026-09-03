@@ -219,7 +219,7 @@ def update_device(
     )
 
 
-@router.delete("/devices/{device_pk}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/devices/{device_pk}", status_code=204)
 def delete_device(
     device_pk: int, request: Request,
     user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
