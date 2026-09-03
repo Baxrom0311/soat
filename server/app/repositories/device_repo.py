@@ -8,6 +8,7 @@ from the device row itself during authentication. Every other lookup is clinic-s
 from datetime import datetime, timezone
 
 from sqlalchemy import delete as delete_stmt, func, select, update
+from sqlalchemy.orm import Session
 from app.models import Call, Clinic, Device, DiscoveredDevice, UnassignedSignal
 
 

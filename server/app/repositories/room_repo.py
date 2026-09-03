@@ -31,3 +31,11 @@ def create(db: Session, clinic_id: int, *, room_number: str, floor: int) -> Room
     db.add(room)
     db.flush()
     return room
+
+
+def delete(db: Session, room: Room) -> None:
+    from sqlalchemy import delete as delete_stmt
+    from app.models import Button, Call
+    db.execute(delete_stmt(Button).where(Button.room_id == room.id))
+    db.execute(delete_stmt(Call).where(Call.room_id == room.id))
+    db.delete(room)

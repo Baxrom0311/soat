@@ -38,3 +38,11 @@ def update_room(
         raise HTTPException(status_code=409, detail="This room number already exists in this clinic")
     db.refresh(room)
     return room
+
+
+def delete_room(db: Session, clinic_id: int, room_id: int) -> None:
+    room = room_repo.get(db, clinic_id, room_id)
+    if room is None:
+        raise HTTPException(status_code=404, detail="Room not found")
+    room_repo.delete(db, room)
+    db.commit()

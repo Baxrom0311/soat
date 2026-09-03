@@ -32,3 +32,12 @@ def update_room(
     return room_service.update_room(
         db, user.clinic_id, room_id, room_number=body.room_number, floor=body.floor
     )
+
+
+@router.delete("/{room_id}", status_code=204)
+def delete_room(
+    room_id: int,
+    user: CurrentUser = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    room_service.delete_room(db, user.clinic_id, room_id)

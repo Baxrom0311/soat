@@ -173,6 +173,8 @@ export const api = {
     request<Room>('/api/v1/rooms', { method: 'POST', body: JSON.stringify(input) }),
   updateRoom: (roomId: number, input: Partial<{ room_number: string; floor: number }>) =>
     request<Room>(`/api/v1/rooms/${roomId}`, { method: 'PATCH', body: JSON.stringify(input) }),
+  deleteRoom: (roomId: number) =>
+    request<void>(`/api/v1/rooms/${roomId}`, { method: 'DELETE' }),
 
   getDevices: () => request<Device[]>('/api/v1/devices'),
   createDevice: (input: { device_id: string; floor: number }) =>
