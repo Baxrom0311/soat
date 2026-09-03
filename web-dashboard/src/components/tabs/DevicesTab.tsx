@@ -80,6 +80,106 @@ function DeviceKeyModal({
   );
 }
 
+function EditDeviceModal({
+  device,
+  onClose,
+  onUpdated,
+}: {
+  device: Device;
+  onClose: () => void;
+  onUpdated: () => void;
+}) {
+  const [floor, setFloor] = useState(String(device.floor));
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleSave(e: FormEvent) {
+    e.preventDefault();
+    setError('');
+    setBusy(true);
+    try {
+      await api.updateDevice(device.id, { floor: Number(floor) });
+      onUpdated();
+      onClose();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (
+      !window.confirm(
+        `Qurilma "${device.device_id}" tizimdan to'liq o'chirilsinmi?`
+      )
+    ) {
+      return;
+    }
+    setError('');
+    setDeleting(true);
+    try {
+      await api.deleteDevice(device.id);
+      onUpdated();
+      onClose();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "O'chirishda xatolik");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal glass" onClick={(e) => e.stopPropagation()}>
+        <h3>Qurilmani tahrirlash — {device.device_id}</h3>
+        <p className="modal-sub">
+          Qurilma joylashgan qavatni o'zgartirishingiz yoki qurilmani o'chirishingiz mumkin.
+        </p>
+
+        <form onSubmit={handleSave} style={{ marginTop: 16 }}>
+          <div className="form-group" style={{ marginBottom: 18 }}>
+            <label>Qavat</label>
+            <input
+              type="number"
+              className="table-input"
+              style={{ width: '100%', padding: '10px 14px' }}
+              min={0}
+              step={1}
+              value={floor}
+              onChange={(e) => setFloor(e.target.value)}
+              required
+            />
+          </div>
+
+          {error && <p className="form-error" style={{ marginBottom: 14 }}>{error}</p>}
+
+          <div className="modal-actions" style={{ justifyContent: 'space-between' }}>
+            <button
+              className="btn btn-ghost"
+              style={{ color: 'var(--color-attn)' }}
+              onClick={handleDelete}
+              disabled={deleting || busy}
+              type="button"
+            >
+              {deleting ? "O'chirilmoqda..." : "O'chirish"}
+            </button>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn btn-ghost" onClick={onClose} type="button">
+                Bekor qilish
+              </button>
+              <button className="btn btn-primary" type="submit" disabled={busy || deleting}>
+                {busy ? 'Saqlanmoqda...' : 'Saqlash'}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 interface DevicesTabProps {
   unassignedSignals?: UnassignedSignal[];
   refreshUnassigned?: () => Promise<void>;
@@ -97,10 +197,7 @@ export function DevicesTab({ unassignedSignals = [], refreshUnassigned = async (
   const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState<{ deviceId: string; key: string } | null>(null);
 
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editFloor, setEditFloor] = useState('');
-  const [editError, setEditError] = useState('');
-  const [editBusy, setEditBusy] = useState(false);
+  const [editingDevice, setEditingDevice] = useState<Device | null>(null);
 
   async function load() {
     setLoadError('');
@@ -132,26 +229,6 @@ export function DevicesTab({ unassignedSignals = [], refreshUnassigned = async (
     }
   }
 
-  function startEdit(d: Device) {
-    setEditingId(d.id);
-    setEditFloor(String(d.floor));
-    setEditError('');
-  }
-
-  async function saveEdit(devicePk: number) {
-    setEditError('');
-    setEditBusy(true);
-    try {
-      await api.updateDevice(devicePk, { floor: Number(editFloor) });
-      setEditingId(null);
-      await load();
-    } catch (err) {
-      setEditError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
-    } finally {
-      setEditBusy(false);
-    }
-  }
-
   const unassignedCount = unassignedSignals.length;
 
   const filteredDevices = devices.filter(
@@ -162,6 +239,22 @@ export function DevicesTab({ unassignedSignals = [], refreshUnassigned = async (
 
   return (
     <section className="tab-panel">
+      {created && (
+        <DeviceKeyModal
+          deviceId={created.deviceId}
+          deviceKey={created.key}
+          onClose={() => setCreated(null)}
+        />
+      )}
+
+      {editingDevice && (
+        <EditDeviceModal
+          device={editingDevice}
+          onClose={() => setEditingDevice(null)}
+          onUpdated={load}
+        />
+      )}
+
       <header className="page-header-row">
         <div>
           <h1 className="page-header-title">Qurilmalar va tugmalar</h1>
@@ -198,46 +291,58 @@ export function DevicesTab({ unassignedSignals = [], refreshUnassigned = async (
         <>
           <div className="panel-card glass">
             <h3>
-              <PlusIcon /> Yangi qurilma qo'shish
+              <PlusIcon /> Yangi ESP32 qurilmasini ro'yxatdan o'tkazish
             </h3>
-            <form className="inline-form" onSubmit={handleSubmit}>
-              <input
-                type="text"
-                placeholder="device_id (masalan floor2-esp32-01)"
-                required
-                value={deviceId}
-                onChange={(e) => setDeviceId(e.target.value)}
-              />
-              <input
-                type="number"
-                placeholder="Qavat"
-                required
-                min={0}
-                step={1}
-                value={floor}
-                onChange={(e) => setFloor(e.target.value)}
-              />
-              <button type="submit" className="btn btn-primary" disabled={submitting}>
-                {submitting ? '...' : "Qo'shish"}
-              </button>
+            <p className="card-sub">
+              Bu yerda yaratilgan device_id va auto-generated secret key yordamida ESP32
+              firmware'i /calls endpointiga xavfsiz so'rov yuboradi.
+            </p>
+            <form onSubmit={handleSubmit} className="form-row">
+              <div className="form-group" style={{ flex: 2 }}>
+                <label htmlFor="device_id">Device ID</label>
+                <input
+                  type="text"
+                  id="device_id"
+                  placeholder="masalan: floor1-esp32-abc"
+                  value={deviceId}
+                  onChange={(e) => setDeviceId(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label htmlFor="floor">Qavat</label>
+                <input
+                  type="number"
+                  id="floor"
+                  placeholder="1"
+                  min={0}
+                  step={1}
+                  value={floor}
+                  onChange={(e) => setFloor(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group" style={{ alignSelf: 'flex-end' }}>
+                <button type="submit" className="btn btn-primary" disabled={submitting}>
+                  {submitting ? '...' : "Qurilma qo'shish"}
+                </button>
+              </div>
             </form>
             {error && <p className="form-error">{error}</p>}
           </div>
 
-          {created && (
-            <DeviceKeyModal
-              deviceId={created.deviceId}
-              deviceKey={created.key}
-              onClose={() => setCreated(null)}
-            />
-          )}
-
-          {loadError ? (
-            <div className="form-error">
+          {loadError && (
+            <div className="form-error" style={{ marginBottom: 12 }}>
               {loadError}{' '}
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => load()}>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={load}>
                 Qayta urinish
               </button>
+            </div>
+          )}
+
+          {devices.length === 0 ? (
+            <div className="empty-card glass">
+              <p>Hali birorta ham ESP32 qurilmasi ro'yxatdan o'tkazilmagan.</p>
             </div>
           ) : (
             <div className="table-wrap glass">
@@ -263,67 +368,27 @@ export function DevicesTab({ unassignedSignals = [], refreshUnassigned = async (
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredDevices.map((d) =>
-                    editingId === d.id ? (
-                      <tr key={d.device_id}>
-                        <td data-label="Device ID"><code className="mono-sm">{d.device_id}</code></td>
-                        <td data-label="Qavat">
-                          <input
-                            type="number"
-                            className="table-input"
-                            min={0}
-                            step={1}
-                            value={editFloor}
-                            onChange={(e) => setEditFloor(e.target.value)}
-                          />
-                        </td>
-                        <td data-label="Holat">
-                          <span className="status-dot-text">
-                            <span className={d.online ? 'dot dot--ok' : 'dot dot--hollow'} aria-hidden="true" />
-                            {d.online ? 'Onlayn' : 'Oflayn'}
-                          </span>
-                        </td>
-                        <td data-label="Yaratildi">{fmtTime(d.created_at)}</td>
-                        <td data-label="Oxirgi ko'rilgan">{d.last_seen_at ? relTime(d.last_seen_at) : '—'}</td>
-                        <td data-label="Amal">
-                          <div className="row-actions">
-                            <button
-                              className="btn btn-primary btn-sm"
-                              onClick={() => saveEdit(d.id)}
-                              disabled={editBusy}
-                              type="button"
-                            >
-                              Saqlash
-                            </button>
-                            <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)} type="button">
-                              Bekor
-                            </button>
-                          </div>
-                          {editError && <p className="form-error">{editError}</p>}
-                        </td>
-                      </tr>
-                    ) : (
-                      <tr key={d.device_id}>
-                        <td data-label="Device ID"><code className="mono-sm">{d.device_id}</code></td>
-                        <td data-label="Qavat">{d.floor}</td>
-                        <td data-label="Holat">
-                          <span className="status-dot-text">
-                            <span className={d.online ? 'dot dot--ok' : 'dot dot--hollow'} aria-hidden="true" />
-                            {d.online ? 'Onlayn' : 'Oflayn'}
-                          </span>
-                        </td>
-                        <td data-label="Yaratildi">{fmtTime(d.created_at)}</td>
-                        <td data-label="Oxirgi ko'rilgan" title={d.last_seen_at ? fmtTime(d.last_seen_at) : undefined}>
-                          {d.last_seen_at ? relTime(d.last_seen_at) : '—'}
-                        </td>
-                        <td data-label="Amal">
-                          <button className="btn btn-ghost btn-sm" onClick={() => startEdit(d)} type="button">
-                            Tahrirlash
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  )}
+                  {filteredDevices.map((d) => (
+                    <tr key={d.device_id}>
+                      <td data-label="Device ID"><code className="mono-sm">{d.device_id}</code></td>
+                      <td data-label="Qavat">{d.floor}</td>
+                      <td data-label="Holat">
+                        <span className="status-dot-text">
+                          <span className={d.online ? 'dot dot--ok' : 'dot dot--hollow'} aria-hidden="true" />
+                          {d.online ? 'Onlayn' : 'Oflayn'}
+                        </span>
+                      </td>
+                      <td data-label="Yaratildi">{fmtTime(d.created_at)}</td>
+                      <td data-label="Oxirgi ko'rilgan" title={d.last_seen_at ? fmtTime(d.last_seen_at) : undefined}>
+                        {d.last_seen_at ? relTime(d.last_seen_at) : '—'}
+                      </td>
+                      <td data-label="Amal">
+                        <button className="btn btn-ghost btn-sm" onClick={() => setEditingDevice(d)} type="button">
+                          Tahrirlash
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

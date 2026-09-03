@@ -182,6 +182,8 @@ export const api = {
     }),
   updateDevice: (devicePk: number, input: { floor: number }) =>
     request<Device>(`/api/v1/devices/${devicePk}`, { method: 'PATCH', body: JSON.stringify(input) }),
+  deleteDevice: (devicePk: number) =>
+    request<void>(`/api/v1/devices/${devicePk}`, { method: 'DELETE' }),
 
   getButtons: () => request<ButtonBinding[]>('/api/v1/buttons'),
   createButton: (input: { ev1527_code: string; room_id: number }) =>

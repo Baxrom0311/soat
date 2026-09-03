@@ -150,3 +150,11 @@ def heartbeat(db: Session, *, device_id: str, plaintext_key: str | None, client_
     device = authenticate_device(db, device_id=device_id, plaintext_key=plaintext_key)
     device_repo.touch_last_seen(db, device)
     db.commit()
+
+
+def delete_device(db: Session, clinic_id: int, device_pk: int) -> None:
+    device = device_repo.get(db, clinic_id, device_pk)
+    if device is None:
+        raise HTTPException(status_code=404, detail="Device not found")
+    device_repo.delete(db, device)
+    db.commit()

@@ -106,3 +106,7 @@ def clear_pending_key(db: Session, device: Device) -> None:
     """Scrubs the plaintext key once the delivery window has closed, so it doesn't
     linger in the DB indefinitely after it's no longer supposed to be retrievable."""
     device.pending_key_plaintext = None
+
+
+def delete(db: Session, device: Device) -> None:
+    db.delete(device)

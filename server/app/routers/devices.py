@@ -45,6 +45,15 @@ def update_device(
     return device_service.update_device_floor(db, user.clinic_id, device_pk, floor=body.floor)
 
 
+@router.delete("/{device_pk}", status_code=204)
+def delete_device(
+    device_pk: int,
+    user: CurrentUser = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    device_service.delete_device(db, user.clinic_id, device_pk)
+
+
 @router.post("/heartbeat", response_model=HeartbeatOut)
 def heartbeat(
     body: HeartbeatIn,
