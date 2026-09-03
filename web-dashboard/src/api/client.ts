@@ -302,6 +302,8 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(input),
     }),
+  deleteAdminDevice: (devicePk: number) =>
+    request<void>(`/api/v1/admin/devices/${devicePk}`, { method: 'DELETE' }),
 
   // ---- Contact requests (landing sahifadagi so'rovlar) ----
   getContactRequests: () => request<ContactRequest[]>('/api/v1/contact-requests?limit=100'),

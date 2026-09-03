@@ -598,6 +598,21 @@ def update_fleet_device_floor(
     )
 
 
+def delete_fleet_device(
+    db: Session, device_pk: int, *, actor: CurrentUser, ip_address: str | None = None
+) -> None:
+    device = device_repo.get_by_id(db, device_pk)
+    if device is None:
+        raise HTTPException(status_code=404, detail="Device not found")
+    audit_service.record(
+        db, actor, action="device.deleted", target_type="device", target_id=device.id,
+        before={"device_id": device.device_id, "clinic_id": device.clinic_id, "floor": device.floor},
+        ip_address=ip_address,
+    )
+    device_repo.delete(db, device)
+    db.commit()
+
+
 def register_fleet_device(
     db: Session, *, clinic_id: int, device_id: str, floor: int,
     actor: CurrentUser, ip_address: str | None = None,

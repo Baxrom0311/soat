@@ -1,15 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { api, ApiError } from '../../api/client';
-import type {
-  AdminClinic,
-  AdminDevice,
-  AdminDeviceCreateResponse,
-  DiscoveredDevice,
-} from '../../api/types';
+import type { AdminClinic, AdminDevice, DiscoveredDevice } from '../../api/types';
 import { CopyIcon, PlusIcon, WarningIcon } from '../Icons';
-
-const DISCOVERED_POLL_MS = 8000;
 
 function fmtTime(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
@@ -31,20 +24,26 @@ function relTime(iso: string): string {
   return `${Math.floor(h / 24)} kun oldin`;
 }
 
-function DeviceKeyModal({ created, onClose }: { created: AdminDeviceCreateResponse; onClose: () => void }) {
+function DeviceCreatedModal({
+  deviceId,
+  deviceKey,
+  onClose,
+}: {
+  deviceId: string;
+  deviceKey: string;
+  onClose: () => void;
+}) {
   const [copied, setCopied] = useState(false);
 
   async function copyKey() {
     try {
-      await navigator.clipboard.writeText(created.device_api_key);
+      await navigator.clipboard.writeText(deviceKey);
       setCopied(true);
     } catch {
       // clipboard access may be blocked; user can still select the text manually
     }
   }
 
-  // The key is shown exactly once and cannot be retrieved again, so neither a stray
-  // backdrop click nor an un-copied close may silently discard it.
   function handleClose() {
     if (
       !copied &&
@@ -60,13 +59,13 @@ function DeviceKeyModal({ created, onClose }: { created: AdminDeviceCreateRespon
   return (
     <div className="modal-overlay">
       <div className="modal glass" onClick={(e) => e.stopPropagation()}>
-        <h3>Qurilma kaliti — {created.device_id}</h3>
+        <h3>Qurilma kaliti — {deviceId}</h3>
         <p className="modal-sub">
           <WarningIcon className="modal-warn-icon" />
           Bu kalit faqat hozir ko'rsatiladi va keyin qayta olish imkoni yo'q. Nusxalab qurilma
           config.h fayliga qo'ying.
         </p>
-        <code className="key-code">{created.device_api_key}</code>
+        <code className="key-code">{deviceKey}</code>
         <div className="modal-actions">
           <button className="btn btn-ghost" onClick={copyKey} type="button">
             <CopyIcon /> {copied ? 'Nusxalandi' : 'Nusxalash'}
@@ -80,54 +79,157 @@ function DeviceKeyModal({ created, onClose }: { created: AdminDeviceCreateRespon
   );
 }
 
-function ClaimDeviceModal({
+function EditAdminDeviceModal({
   device,
-  clinics,
   onClose,
-  onClaimed,
+  onUpdated,
 }: {
-  device: DiscoveredDevice;
-  clinics: AdminClinic[];
+  device: AdminDevice;
   onClose: () => void;
-  onClaimed: () => void;
+  onUpdated: () => void;
 }) {
-  const [clinicId, setClinicId] = useState('');
-  const [floor, setFloor] = useState('');
-  const [deviceId, setDeviceId] = useState('');
+  const [floor, setFloor] = useState(String(device.floor));
   const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSave(e: FormEvent) {
     e.preventDefault();
     setError('');
-    setSubmitting(true);
+    setBusy(true);
     try {
-      await api.claimDiscoveredDevice(device.chip_id, {
-        clinic_id: Number(clinicId),
-        floor: Number(floor),
-        device_id: deviceId.trim() ? deviceId.trim() : undefined,
-      });
-      onClaimed();
+      await api.updateAdminDevice(device.id, { floor: Number(floor) });
+      onUpdated();
+      onClose();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
     } finally {
-      setSubmitting(false);
+      setBusy(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (
+      !window.confirm(
+        `Qurilma "${device.device_id}" (${device.clinic_name}) tizimdan to'liq o'chirilsinmi?`
+      )
+    ) {
+      return;
+    }
+    setError('');
+    setDeleting(true);
+    try {
+      await api.deleteAdminDevice(device.id);
+      onUpdated();
+      onClose();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "O'chirishda xatolik");
+    } finally {
+      setDeleting(false);
     }
   }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal glass" onClick={(e) => e.stopPropagation()}>
-        <h3>Qurilmani bog'lash — {device.chip_id}</h3>
+        <h3>Qurilmani tahrirlash — {device.device_id}</h3>
         <p className="modal-sub">
-          Klinika va qavatni tanlang. Kalit ESP32'ning o'ziga avtomatik yetkaziladi —
-          uni bu yerda ko'rish yoki nusxalash shart emas.
+          <strong>Klinika:</strong> {device.clinic_name} | <strong>Holat:</strong>{' '}
+          {device.online ? 'Onlayn' : 'Oflayn'}
         </p>
-        <form className="inline-form" onSubmit={handleSubmit}>
-          <select required value={clinicId} onChange={(e) => setClinicId(e.target.value)}>
-            <option value="" disabled>
-              Klinikani tanlang
-            </option>
+
+        <form onSubmit={handleSave} style={{ marginTop: 16 }}>
+          <div className="form-group" style={{ marginBottom: 18 }}>
+            <label>Qavat</label>
+            <input
+              type="number"
+              className="table-input"
+              style={{ width: '100%', padding: '10px 14px' }}
+              min={0}
+              step={1}
+              value={floor}
+              onChange={(e) => setFloor(e.target.value)}
+              required
+            />
+          </div>
+
+          {error && <p className="form-error" style={{ marginBottom: 14 }}>{error}</p>}
+
+          <div className="modal-actions" style={{ justifyContent: 'space-between' }}>
+            <button
+              className="btn btn-ghost"
+              style={{ color: 'var(--color-attn)' }}
+              onClick={handleDelete}
+              disabled={deleting || busy}
+              type="button"
+            >
+              {deleting ? "O'chirilmoqda..." : "O'chirish"}
+            </button>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn btn-ghost" onClick={onClose} type="button">
+                Bekor qilish
+              </button>
+              <button className="btn btn-primary" type="submit" disabled={busy || deleting}>
+                {busy ? 'Saqlanmoqda...' : 'Saqlash'}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function ClaimRow({
+  discovered,
+  clinics,
+  onClaimed,
+}: {
+  discovered: DiscoveredDevice;
+  clinics: AdminClinic[];
+  onClaimed: () => void;
+}) {
+  const [clinicId, setClinicId] = useState<string>(clinics[0] ? String(clinics[0].id) : '');
+  const [deviceId, setDeviceId] = useState('');
+  const [floor, setFloor] = useState('1');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!clinicId && clinics[0]) setClinicId(String(clinics[0].id));
+  }, [clinics, clinicId]);
+
+  useEffect(() => {
+    if (!deviceId) setDeviceId(`esp32-${discovered.chip_id.slice(-6)}`);
+  }, [discovered.chip_id, deviceId]);
+
+  async function claim() {
+    setError('');
+    setBusy(true);
+    try {
+      await api.claimDiscoveredDevice(discovered.chip_id, {
+        clinic_id: Number(clinicId),
+        device_id: deviceId.trim(),
+        floor: Number(floor),
+      });
+      onClaimed();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Biriktirishda xatolik');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <tr>
+      <td data-label="chip_id">
+        <code className="mono-sm">{discovered.chip_id}</code>
+      </td>
+      <td data-label="Birinchi ko'rilgan">{fmtTime(discovered.first_seen_at)}</td>
+      <td data-label="Oxirgi ko'rilgan">{relTime(discovered.last_seen_at)}</td>
+      <td data-label="Amal">
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+          <select className="bind-select" value={clinicId} onChange={(e) => setClinicId(e.target.value)}>
             {clinics.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -135,32 +237,34 @@ function ClaimDeviceModal({
             ))}
           </select>
           <input
+            type="text"
+            className="table-input"
+            style={{ width: 140 }}
+            placeholder="device_id"
+            value={deviceId}
+            onChange={(e) => setDeviceId(e.target.value)}
+          />
+          <input
             type="number"
-            placeholder="Qavat"
-            required
+            className="table-input"
+            style={{ width: 60 }}
             min={0}
             step={1}
             value={floor}
             onChange={(e) => setFloor(e.target.value)}
           />
-          <input
-            type="text"
-            placeholder="Nomi (ixtiyoriy, avtomatik generatsiya qilinadi)"
-            value={deviceId}
-            onChange={(e) => setDeviceId(e.target.value)}
-          />
-          <div className="modal-actions">
-            <button className="btn btn-ghost" type="button" onClick={onClose} disabled={submitting}>
-              Bekor qilish
-            </button>
-            <button className="btn btn-primary" type="submit" disabled={submitting}>
-              Bog'lash
-            </button>
-          </div>
-        </form>
-        <p className="form-error">{error}</p>
-      </div>
-    </div>
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={claim}
+            disabled={busy || !clinicId || !deviceId}
+            type="button"
+          >
+            {busy ? '...' : "Klinikaga biriktirish"}
+          </button>
+        </div>
+        {error && <p className="form-error">{error}</p>}
+      </td>
+    </tr>
   );
 }
 
@@ -172,39 +276,45 @@ function DiscoveredDevicesSection({
   onClaimed: () => void;
 }) {
   const [discovered, setDiscovered] = useState<DiscoveredDevice[]>([]);
-  const [claiming, setClaiming] = useState<DiscoveredDevice | null>(null);
-  const [error, setError] = useState('');
 
-  async function load() {
+  const refresh = useCallback(async () => {
     try {
       setDiscovered(await api.getDiscoveredDevices());
-      setError('');
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
+    } catch {
+      // transient failure: keep previously-loaded list
     }
-  }
-
-  useEffect(() => {
-    load();
-    const id = window.setInterval(load, DISCOVERED_POLL_MS);
-    return () => window.clearInterval(id);
   }, []);
 
-  function handleClaimed() {
-    setClaiming(null);
-    load();
-    onClaimed();
+  useEffect(() => {
+    refresh();
+    const timer = setInterval(refresh, 5000);
+    return () => clearInterval(timer);
+  }, [refresh]);
+
+  if (discovered.length === 0) {
+    return (
+      <div className="pairing-hint glass" style={{ marginBottom: 20 }}>
+        <span className="pairing-dot" />
+        <p>
+          <strong>Onlayn, biriktirilmagan qurilmalar:</strong> Zavoddan yangi flash qilingan ESP32'lar
+          shu yerda apparat chip ID'si bilan avtomatik paydo bo'ladi — klinika va qavatni tanlab
+          bog'lang, kalit ESP32'ga o'zi yuboriladi.
+        </p>
+      </div>
+    );
   }
 
   return (
-    <div className="panel-card glass">
-      <h3>Onlayn, biriktirilmagan qurilmalar</h3>
-      <p className="modal-sub">
-        Zavoddan yangi flash qilingan ESP32'lar shu yerda apparat chip ID'si bilan avtomatik
-        paydo bo'ladi — klinika va qavatni tanlab bog'lang, kalit ESP32'ga o'zi yuboriladi.
+    <div className="panel-card glass" style={{ marginBottom: 20, borderColor: 'var(--color-accent)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+        <span className="pairing-dot" />
+        <h3 style={{ margin: 0 }}>Yangi topilgan ESP32 qurilmalari ({discovered.length} ta)</h3>
+      </div>
+      <p className="card-sub">
+        Bu chip ID'lar hozirgina /announce endpointiga bog'langan. Klinikani tanlab "Klinikaga
+        biriktirish" tugmasini bosing — kalit qurilmaga xavfsiz avto-konfiguratsiya qilinadi.
       </p>
-      {error && <p className="form-error">{error}</p>}
-      <div className="table-wrap glass">
+      <div className="table-wrap">
         <table>
           <thead>
             <tr>
@@ -216,36 +326,19 @@ function DiscoveredDevicesSection({
           </thead>
           <tbody>
             {discovered.map((d) => (
-              <tr key={d.chip_id}>
-                <td data-label="chip_id">
-                  <code>{d.chip_id}</code>
-                </td>
-                <td data-label="Birinchi ko'rilgan" title={fmtTime(d.first_seen_at)}>{relTime(d.first_seen_at)}</td>
-                <td data-label="Oxirgi ko'rilgan" title={fmtTime(d.last_seen_at)}>{relTime(d.last_seen_at)}</td>
-                <td data-label="Amal">
-                  <button className="btn btn-primary btn-sm" type="button" onClick={() => setClaiming(d)}>
-                    Bog'lash
-                  </button>
-                </td>
-              </tr>
+              <ClaimRow
+                key={d.chip_id}
+                discovered={d}
+                clinics={clinics}
+                onClaimed={() => {
+                  refresh();
+                  onClaimed();
+                }}
+              />
             ))}
-            {discovered.length === 0 && (
-              <tr>
-                <td colSpan={4}>Hozircha onlayn, biriktirilmagan qurilma yo'q</td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
-
-      {claiming && (
-        <ClaimDeviceModal
-          device={claiming}
-          clinics={clinics}
-          onClose={() => setClaiming(null)}
-          onClaimed={handleClaimed}
-        />
-      )}
     </div>
   );
 }
@@ -253,49 +346,58 @@ function DiscoveredDevicesSection({
 export function AdminDevicesTab() {
   const [devices, setDevices] = useState<AdminDevice[]>([]);
   const [clinics, setClinics] = useState<AdminClinic[]>([]);
-  const [filterClinic, setFilterClinic] = useState('');
+  const [filterClinic, setFilterClinic] = useState<string>('');
+  const [loadError, setLoadError] = useState('');
 
-  const [formClinic, setFormClinic] = useState('');
+  const [formClinic, setFormClinic] = useState<string>('');
   const [deviceId, setDeviceId] = useState('');
   const [floor, setFloor] = useState('');
   const [error, setError] = useState('');
-  const [loadError, setLoadError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [created, setCreated] = useState<AdminDeviceCreateResponse | null>(null);
 
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editFloor, setEditFloor] = useState('');
-  const [editError, setEditError] = useState('');
-  const [editBusy, setEditBusy] = useState(false);
+  const [created, setCreated] = useState<{ deviceId: string; key: string } | null>(null);
 
-  async function loadDevices(clinicId: string) {
+  const [editingDevice, setEditingDevice] = useState<AdminDevice | null>(null);
+
+  const loadClinics = useCallback(async () => {
     try {
-      setDevices(await api.getAdminDevices(clinicId ? Number(clinicId) : undefined));
-      setLoadError('');
+      const data = await api.getAdminClinics();
+      setClinics(data);
+      if (data.length > 0 && !formClinic) {
+        setFormClinic(String(data[0].id));
+      }
+    } catch {
+      // non-fatal: device creation form will disable clinic selection
+    }
+  }, [formClinic]);
+
+  const loadDevices = useCallback(async (cId?: string) => {
+    setLoadError('');
+    try {
+      const cidNum = cId ? Number(cId) : undefined;
+      setDevices(await api.getAdminDevices(cidNum));
     } catch (err) {
       setLoadError(err instanceof ApiError ? err.message : "Qurilmalarni yuklab bo'lmadi");
     }
-  }
-
-  useEffect(() => {
-    api.getAdminClinics().then(setClinics).catch(() => setLoadError("Klinikalar ro'yxatini yuklab bo'lmadi"));
   }, []);
 
   useEffect(() => {
+    loadClinics();
     loadDevices(filterClinic);
-  }, [filterClinic]);
+  }, [filterClinic, loadClinics, loadDevices]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!formClinic) return;
     setError('');
     setSubmitting(true);
     try {
-      const data = await api.createAdminDevice({
+      const res = await api.createAdminDevice({
         clinic_id: Number(formClinic),
-        device_id: deviceId,
+        device_id: deviceId.trim(),
         floor: Number(floor),
       });
-      setCreated(data);
+      setCreated({ deviceId: res.device_id, key: res.device_api_key });
       setDeviceId('');
       setFloor('');
       await loadDevices(filterClinic);
@@ -306,28 +408,24 @@ export function AdminDevicesTab() {
     }
   }
 
-  function startEdit(d: AdminDevice) {
-    setEditingId(d.id);
-    setEditFloor(String(d.floor));
-    setEditError('');
-  }
-
-  async function saveEdit(devicePk: number) {
-    setEditError('');
-    setEditBusy(true);
-    try {
-      await api.updateAdminDevice(devicePk, { floor: Number(editFloor) });
-      setEditingId(null);
-      await loadDevices(filterClinic);
-    } catch (err) {
-      setEditError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
-    } finally {
-      setEditBusy(false);
-    }
-  }
-
   return (
     <section className="tab-panel">
+      {created && (
+        <DeviceCreatedModal
+          deviceId={created.deviceId}
+          deviceKey={created.key}
+          onClose={() => setCreated(null)}
+        />
+      )}
+
+      {editingDevice && (
+        <EditAdminDeviceModal
+          device={editingDevice}
+          onClose={() => setEditingDevice(null)}
+          onUpdated={() => loadDevices(filterClinic)}
+        />
+      )}
+
       <header className="page-header-row">
         <div>
           <h1 className="page-header-title">Barcha qurilmalar</h1>
@@ -414,75 +512,32 @@ export function AdminDevicesTab() {
               </tr>
             </thead>
             <tbody>
-              {devices.map((d) =>
-                editingId === d.id ? (
-                  <tr key={d.id}>
-                    <td data-label="Klinika">{d.clinic_name}</td>
-                    <td data-label="device_id">{d.device_id}</td>
-                    <td data-label="Qavat">
-                      <input
-                        type="number"
-                        className="table-input"
-                        min={0}
-                        step={1}
-                        value={editFloor}
-                        onChange={(e) => setEditFloor(e.target.value)}
-                      />
-                    </td>
-                    <td data-label="Holat">
-                      <span className={`online-badge ${d.online ? 'online' : 'offline'}`}>
-                        <span className="dot" />
-                        {d.online ? 'Onlayn' : 'Oflayn'}
-                      </span>
-                    </td>
-                    <td data-label="Oxirgi ko'rilgan">{d.last_seen_at ? relTime(d.last_seen_at) : '—'}</td>
-                    <td data-label="Yaratildi">{fmtTime(d.created_at)}</td>
-                    <td data-label="Amal">
-                      <div className="row-actions">
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={() => saveEdit(d.id)}
-                          disabled={editBusy}
-                          type="button"
-                        >
-                          Saqlash
-                        </button>
-                        <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)} type="button">
-                          Bekor
-                        </button>
-                      </div>
-                      {editError && <p className="form-error">{editError}</p>}
-                    </td>
-                  </tr>
-                ) : (
-                  <tr key={d.id}>
-                    <td data-label="Klinika">{d.clinic_name}</td>
-                    <td data-label="device_id">{d.device_id}</td>
-                    <td data-label="Qavat">{d.floor}</td>
-                    <td data-label="Holat">
-                      <span className={`online-badge ${d.online ? 'online' : 'offline'}`}>
-                        <span className="dot" />
-                        {d.online ? 'Onlayn' : 'Oflayn'}
-                      </span>
-                    </td>
-                    <td data-label="Oxirgi ko'rilgan" title={d.last_seen_at ? fmtTime(d.last_seen_at) : undefined}>
-                      {d.last_seen_at ? relTime(d.last_seen_at) : '—'}
-                    </td>
-                    <td data-label="Yaratildi">{fmtTime(d.created_at)}</td>
-                    <td data-label="Amal">
-                      <button className="btn btn-ghost btn-sm" onClick={() => startEdit(d)} type="button">
-                        Tahrirlash
-                      </button>
-                    </td>
-                  </tr>
-                )
-              )}
+              {devices.map((d) => (
+                <tr key={d.id}>
+                  <td data-label="Klinika">{d.clinic_name}</td>
+                  <td data-label="device_id"><code className="mono-sm">{d.device_id}</code></td>
+                  <td data-label="Qavat">{d.floor}</td>
+                  <td data-label="Holat">
+                    <span className={`online-badge ${d.online ? 'online' : 'offline'}`}>
+                      <span className="dot" />
+                      {d.online ? 'Onlayn' : 'Oflayn'}
+                    </span>
+                  </td>
+                  <td data-label="Oxirgi ko'rilgan" title={d.last_seen_at ? fmtTime(d.last_seen_at) : undefined}>
+                    {d.last_seen_at ? relTime(d.last_seen_at) : '—'}
+                  </td>
+                  <td data-label="Yaratildi">{fmtTime(d.created_at)}</td>
+                  <td data-label="Amal">
+                    <button className="btn btn-ghost btn-sm" onClick={() => setEditingDevice(d)} type="button">
+                      Tahrirlash
+                    </button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       )}
-
-      {created && <DeviceKeyModal created={created} onClose={() => setCreated(null)} />}
     </section>
   );
 }

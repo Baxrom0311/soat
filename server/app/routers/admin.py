@@ -219,6 +219,14 @@ def update_device(
     )
 
 
+@router.delete("/devices/{device_pk}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_device(
+    device_pk: int, request: Request,
+    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+):
+    admin_service.delete_fleet_device(db, device_pk, actor=user, ip_address=_ip(request))
+
+
 @router.get("/audit-logs", response_model=list[AuditLogOut])
 def list_audit_logs(
     limit: int = Query(default=100, ge=1, le=500),
