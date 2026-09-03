@@ -128,7 +128,7 @@ export function emitTs(t) {
   control: ${JSON.stringify(t.control, null, 4)},
 } as const;
 
-export type ThemeColors = typeof tokens.color.light;
+export type ThemeColors = Record<keyof typeof tokens.color.light, string>;
 export const lightColors: ThemeColors = tokens.color.light;
 export const darkColors: ThemeColors = tokens.color.dark;
 `;
@@ -181,8 +181,8 @@ ${t.call.fill.dark.map((h) => '            ' + hexToKotlinColor(h)).join(',\n')}
     }
 
     object Size {
-        val watchCallAckHeight = ${t.control['48']}L.dp
-        val watchCallRoomNumberMax = ${t.type.watch.room.size[2]}L.sp
+        val watchCallAckHeight = ${t.control['48']}.dp
+        val watchCallRoomNumberMax = ${t.type.watch.room.size[2]}.sp
     }
 }
 `;

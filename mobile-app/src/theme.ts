@@ -129,6 +129,6 @@ export const tokens = {
 },
 } as const;
 
-export type ThemeColors = typeof tokens.color.light;
+export type ThemeColors = Record<keyof typeof tokens.color.light, string>;
 export const lightColors: ThemeColors = tokens.color.light;
 export const darkColors: ThemeColors = tokens.color.dark;

@@ -71,7 +71,7 @@ object NurseCallTokens {
     }
 
     object Size {
-        val watchCallAckHeight = 48L.dp
-        val watchCallRoomNumberMax = 48L.sp
+        val watchCallAckHeight = 48.dp
+        val watchCallRoomNumberMax = 48.sp
     }
 }

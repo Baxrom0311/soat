@@ -208,7 +208,7 @@ function AppContent() {
 
   if (checkingSession) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.bg }]}>
         <ActivityIndicator color={colors.accent} size="large" />
         <StatusBar style={statusBarStyle} />
       </View>
@@ -217,7 +217,7 @@ function AppContent() {
 
   if (outdated) {
     return (
-      <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <View style={[styles.root, { backgroundColor: colors.bg }]}>
         <UpdateRequiredScreen />
         <StatusBar style={statusBarStyle} />
       </View>
@@ -225,7 +225,7 @@ function AppContent() {
   }
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
+    <View style={[styles.root, { backgroundColor: colors.bg }]}>
       {email === null ? (
         <LoginScreen onLogin={handleLogin} />
       ) : (

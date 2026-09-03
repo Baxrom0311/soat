@@ -1,6 +1,8 @@
 package uz.soat.reminder
 
 import android.Manifest
+import android.app.Activity
+import android.app.RemoteInput
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -263,7 +265,7 @@ private fun LoginForm() {
     val remoteInputLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == ComponentActivity.RESULT_OK && result.data != null) {
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
             val results = RemoteInput.getResultsFromIntent(result.data)
             val text = results?.getCharSequence(REMOTE_INPUT_KEY)?.toString().orEmpty()
             if (pendingField == "email") email = text
