@@ -50,6 +50,14 @@ import androidx.wear.input.RemoteInputIntentHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+
 private const val REMOTE_INPUT_KEY = "nc_login_input"
 
 class MainActivity : ComponentActivity() {
@@ -60,11 +68,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-
         ContextCompat.startForegroundService(this, Intent(this, CallMonitorService::class.java))
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
 
         setContent {
             CallMonitorScreen()
@@ -349,32 +359,8 @@ private fun LoginForm() {
     val savedEmail = remember { AppPrefs.getLastEmail(context).orEmpty() }
     var email by remember { mutableStateOf(savedEmail) }
     var password by remember { mutableStateOf("") }
-    val activeField = remember { java.util.concurrent.atomic.AtomicReference<String>("") }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-
-    val remoteInputLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
-            val results = RemoteInput.getResultsFromIntent(result.data)
-            val text = results?.getCharSequence(REMOTE_INPUT_KEY)?.toString().orEmpty()
-            when (activeField.get()) {
-                "email" -> email = text.trim().lowercase(java.util.Locale.ROOT)
-                "password" -> password = text.trim()
-            }
-        }
-    }
-
-    fun launchInput(fieldName: String, title: String) {
-        activeField.set(fieldName)
-        val intent = RemoteInputIntentHelper.createActionRemoteInputIntent()
-        val remoteInput = RemoteInput.Builder(REMOTE_INPUT_KEY)
-            .setLabel(title)
-            .build()
-        RemoteInputIntentHelper.putRemoteInputsExtra(intent, listOf(remoteInput))
-        remoteInputLauncher.launch(intent)
-    }
 
     fun submit() {
         val cleanEmail = email.trim().lowercase(java.util.Locale.ROOT)
@@ -407,33 +393,76 @@ private fun LoginForm() {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         if (savedEmail.isNotBlank()) {
             Text(
-                text = "Oxirgi akkount:",
+                text = "Oxirgi akkount saqlangan",
                 style = MaterialTheme.typography.caption2,
-                color = NurseCallTokens.ColorDark.text3
+                color = NurseCallTokens.ColorDark.ok
             )
         }
-        Chip(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = { launchInput("email", "Email") },
-            colors = ChipDefaults.chipColors(backgroundColor = NurseCallTokens.ColorDark.surface),
-            label = { Text(text = if (email.isBlank()) "Email" else email, maxLines = 1) }
-        )
-        Chip(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = { launchInput("password", "Parol") },
-            colors = ChipDefaults.chipColors(backgroundColor = NurseCallTokens.ColorDark.surface),
-            label = { Text(text = if (password.isBlank()) "Parol" else "••••••••", maxLines = 1) }
-        )
+
+        // Email Field
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(40.dp)
+                .background(NurseCallTokens.ColorDark.surface, shape = RoundedCornerShape(20.dp))
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            if (email.isEmpty()) {
+                Text("Email", color = NurseCallTokens.ColorDark.text3, fontSize = 13.sp)
+            }
+            BasicTextField(
+                value = email,
+                onValueChange = { email = it },
+                textStyle = TextStyle(color = Color.White, fontSize = 13.sp),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        // Password Field
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(40.dp)
+                .background(NurseCallTokens.ColorDark.surface, shape = RoundedCornerShape(20.dp))
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            if (password.isEmpty()) {
+                Text("Parol", color = NurseCallTokens.ColorDark.text3, fontSize = 13.sp)
+            }
+            BasicTextField(
+                value = password,
+                onValueChange = { password = it },
+                textStyle = TextStyle(color = Color.White, fontSize = 13.sp),
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
         Chip(
             modifier = Modifier.fillMaxWidth(),
             onClick = { submit() },
             enabled = !busy,
             colors = ChipDefaults.chipColors(backgroundColor = NurseCallTokens.ColorDark.accent),
-            label = { Text(text = if (busy) "..." else "Kirish", maxLines = 1, color = NurseCallTokens.ColorDark.accentInk) }
+            label = {
+                Text(
+                    text = if (busy) "..." else "Kirish",
+                    maxLines = 1,
+                    color = NurseCallTokens.ColorDark.accentInk,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+            }
         )
         error?.let {
             Text(text = it, color = NurseCallTokens.ColorDark.attn, style = MaterialTheme.typography.caption2)
