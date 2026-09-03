@@ -88,6 +88,61 @@ def submit(
     )
     db.commit()
 
+    # Telegram bot forwarding (if configured in environment)
+    _send_telegram_notification(
+        name=name,
+        phone=phone,
+        clinic_name=clinic_name,
+        message=message,
+        client_ip=client_ip,
+    )
+
+
+def _send_telegram_notification(
+    *,
+    name: str,
+    phone: str,
+    clinic_name: str | None,
+    message: str | None,
+    client_ip: str,
+) -> None:
+    from app.core.config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+
+    if not (TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID):
+        return
+
+    import json
+    import urllib.request
+
+    text = (
+        f"📩 <b>Yangi Konsultatsiya So'rovi!</b>\n\n"
+        f"👤 <b>Ism/Klinika:</b> {name}\n"
+        f"📞 <b>Tel:</b> {phone}\n"
+        f"🏥 <b>Klinika:</b> {clinic_name or '-'}\n"
+        f"💬 <b>Izoh:</b> {message or '-'}\n"
+        f"🌐 <b>IP:</b> {client_ip}"
+    )
+
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": text,
+        "parse_mode": "HTML",
+    }
+
+    try:
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=5):
+            pass
+    except Exception:
+        # Never fail lead capture DB save if Telegram API call times out
+        pass
+
 
 def list_recent(db: Session, limit: int = DEFAULT_LIST_LIMIT) -> list[ContactRequest]:
     return contact_request_repo.list_recent(db, limit)

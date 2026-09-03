@@ -3,22 +3,19 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>NurseCall — bemor chaqiruvi hamshira bilagiga soniyalarda yetadi</title>
-<meta name="description" content="Xonadagi simsiz SOS tugmadan hamshiraning soatigacha. Har chaqiruv vaqti bilan qayd etiladi. Klinikangiz uchun bepul konsultatsiya va o'rnatish — bog'laning." />
+<title>NurseCall — Klinikangiz uchun simsiz hamshira chaqiruv tizimi</title>
+<meta name="description" content="Bemor tugmani bosadi — hamshira bilagidagi soatida va telefonda tezkor xabar oladi." />
 <link rel="canonical" href="https://nurcecall.boos.uz/" />
-<meta property="og:title" content="NurseCall — bemor chaqiruvi hamshira bilagiga soniyalarda yetadi" />
-<meta property="og:description" content="Xonadagi simsiz SOS tugmadan hamshiraning soatigacha. Har chaqiruv qayd etiladi. Bepul konsultatsiya uchun bog'laning." />
+<meta property="og:title" content="NurseCall — Simsiz hamshira chaqiruv tizimi" />
+<meta property="og:description" content="Bemor tugmani bosadi — hamshira bilagidagi soatida va telefonda tezkor xabar oladi." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://nurcecall.boos.uz/" />
 <meta property="og:site_name" content="NurseCall" />
 <meta property="og:locale" content="uz_UZ" />
-<meta name="twitter:card" content="summary" />
-<meta name="twitter:title" content="NurseCall — hamshira chaqiruv tizimi" />
-<meta name="twitter:description" content="Simsiz SOS tugmadan hamshiraning soatigacha. Har chaqiruv qayd etiladi." />
 <link rel="icon" href="data:," />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <script>
   (function () {
     try {
@@ -326,42 +323,41 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-3);
     box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.05);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
   }
-  .card:hover {
+
+  /* Subtle Animated Glow Borders */
+  @keyframes glowBorderLight {
+    0%, 100% { border-color: rgba(2, 132, 199, 0.25); box-shadow: 0 4px 18px rgba(2, 132, 199, 0.06); }
+    50% { border-color: rgba(2, 132, 199, 0.7); box-shadow: 0 4px 22px rgba(2, 132, 199, 0.2); }
+  }
+  @keyframes glowBorderDark {
+    0%, 100% { border-color: rgba(196, 36, 26, 0.3); box-shadow: 0 4px 18px rgba(196, 36, 26, 0.08); }
+    50% { border-color: rgba(196, 36, 26, 0.8); box-shadow: 0 4px 22px rgba(196, 36, 26, 0.25); }
+  }
+
+  .card:hover, .form-card:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-pop);
-    border-color: var(--color-border-strong);
+    animation: glowBorderLight 3.5s ease-in-out infinite;
+  }
+  :root[data-theme="dark"] .card:hover,
+  :root[data-theme="dark"] .form-card:hover {
+    animation: glowBorderDark 3.5s ease-in-out infinite;
   }
 
-  .eyebrow {
-    display: inline-flex; align-items: center; gap: 8px;
-    font-family: var(--font-mono);
-    font-size: 0.76rem; font-weight: 600;
-    letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--color-accent);
-    background: var(--color-accent-soft);
-    padding: 6px 14px; border-radius: var(--radius-full);
-    border: 1px solid var(--color-accent-soft);
-    margin-bottom: 16px;
-  }
-  .eyebrow-amber {
-    color: var(--color-attn);
-    background: var(--color-attn-soft);
-    border-color: var(--color-attn-soft);
-  }
-  .badge-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; display: inline-block; }
-
-  .section { padding: 92px 0; position: relative; }
+  .section { padding: 88px 0; position: relative; }
   .section-alt { background: var(--color-surface-soft); border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
-  .section h2 { font-size: clamp(1.8rem, 3.6vw, 2.5rem); margin-bottom: 16px; font-weight: 700; color: var(--color-text1); }
+  .section h2 { font-size: clamp(1.8rem, 3.6vw, 2.4rem); margin-bottom: 16px; font-weight: 700; color: var(--color-text1); }
   .section-lede { color: var(--color-text2); max-width: 62ch; font-size: 1.05rem; line-height: 1.6; }
-  .section-head { margin-bottom: 52px; }
+  .section-head { margin-bottom: 48px; }
 
   .gradient-text {
     background: linear-gradient(135deg, #0284C7 0%, #1E40AF 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    display: inline-block;
+    padding-right: 0.15em;
+    padding-bottom: 0.05em;
   }
 
   /* ================= BUTTONS ================= */
@@ -384,16 +380,6 @@
     box-shadow: 0 6px 20px -2px rgba(2, 132, 199, 0.5);
     transform: translateY(-1px);
   }
-  .btn-amber {
-    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-    color: #FFFFFF;
-    box-shadow: 0 4px 14px -2px rgba(245, 158, 11, 0.4);
-  }
-  .btn-amber:hover {
-    background: linear-gradient(135deg, #D97706 0%, #B45309 100%);
-  }
-  .btn-ghost { background: var(--color-accent-soft); color: var(--color-accent); }
-  .btn-ghost:hover { background: var(--color-accent); color: #FFFFFF; }
   .btn-outline { background: var(--color-surface); color: var(--color-text1); border-color: var(--color-border-strong); }
   .btn-outline:hover { border-color: var(--color-accent); color: var(--color-accent); background: var(--color-surface-soft); }
   .btn-sm { height: 2.5rem; padding: 0 1.1rem; font-size: 0.88rem; }
@@ -414,15 +400,20 @@
   :root[data-theme="dark"] .icon-moon { display: none; }
   :root[data-theme="dark"] .icon-sun { display: block; }
 
-  /* ================= NAV ================= */
+  /* ================= NAV (FROSTED GLASSMORPHIC) ================= */
   .nav {
     position: sticky; top: 0; z-index: 60;
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--color-border);
+    background: rgba(255, 255, 255, 0.68);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    transition: background 0.3s ease, border-color 0.3s ease;
   }
   :root[data-theme="dark"] .nav {
-    background: rgba(15, 23, 42, 0.92);
+    background: rgba(15, 23, 42, 0.68);
+    border-bottom: 1px solid rgba(51, 65, 85, 0.8);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
   }
   .nav-inner { display: flex; align-items: center; gap: 18px; height: 72px; }
   .brand { display: flex; align-items: center; gap: 12px; font-family: var(--font-sans); font-weight: 700; font-size: 1.15rem; color: var(--color-text1); }
@@ -447,8 +438,12 @@
   .mobile-menu {
     display: none;
     border-top: 1px solid var(--color-border);
-    background: var(--color-surface);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(16px);
     padding: 12px 0 18px;
+  }
+  :root[data-theme="dark"] .mobile-menu {
+    background: rgba(15, 23, 42, 0.92);
   }
   .mobile-menu.open { display: block; }
   .mobile-menu a {
@@ -457,113 +452,66 @@
   }
   .mobile-menu a:hover { background: var(--color-surface-soft); color: var(--color-accent); }
 
-  /* ================= HERO ================= */
+  /* ================= HERO WITH DYNAMIC SHAPE-OUTSIDE ================= */
   .hero {
-    padding: 84px 0 96px;
-    background: radial-gradient(circle at 10% 20%, rgba(2, 132, 199, 0.06) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(245, 158, 11, 0.05) 0%, transparent 40%);
+    padding: 72px 0 88px;
+    background: radial-gradient(circle at 80% 20%, rgba(2, 132, 199, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 10% 80%, rgba(245, 158, 11, 0.06) 0%, transparent 45%);
   }
-  .hero-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 60px; align-items: center; }
-  .hero h1 { font-size: clamp(2.2rem, 4.4vw, 3.1rem); font-weight: 700; letter-spacing: -0.02em; }
-  .hero-lede { color: var(--color-text2); font-size: 1.12rem; margin-top: 22px; max-width: 52ch; line-height: 1.6; }
-  .hero-cta { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 36px; }
+  .hero-flow-container::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+  .hero-nurse-shape-box {
+    float: left;
+    width: 360px;
+    margin-right: 32px;
+    margin-bottom: 24px;
+    shape-outside: polygon(0 0, 75% 0, 92% 25%, 82% 60%, 65% 100%, 0 100%);
+    shape-margin: 20px;
+  }
+  .hero-nurse-shape-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    filter: drop-shadow(0 18px 36px rgba(2, 132, 199, 0.18));
+  }
+  .hero-flow-text h1 { font-size: clamp(2.3rem, 4.4vw, 3.2rem); font-weight: 700; letter-spacing: -0.02em; line-height: 1.12; }
+  .hero-lede {
+    color: var(--color-text2);
+    font-size: 1.12rem;
+    margin-top: 1.5rem;
+    margin-left: clamp(2rem, 30%, 22rem);
+    padding-left: 1.1rem;
+    border-left: 4px solid var(--color-accent);
+    max-width: 44ch;
+    line-height: 1.6;
+  }
+  .hero-cta { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 32px; }
 
   .trust-strip {
     display: flex; flex-wrap: wrap; gap: 12px 24px;
-    margin-top: 38px; padding-top: 28px;
+    margin-top: 36px; padding-top: 26px;
     border-top: 1px solid var(--color-border);
   }
   .trust-item { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--color-text2); font-weight: 500; }
   .trust-item svg { width: 18px; height: 18px; color: var(--color-ok); flex: 0 0 auto; }
 
-  /* ================= HERO MONITOR MOCK ================= */
-  .mock {
-    background: var(--color-surface);
-    border: 1.5px solid var(--color-border-strong);
-    border-radius: var(--radius-4);
-    box-shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.12);
-    overflow: hidden;
-  }
-  .mock-bar {
-    display: flex; align-items: center; gap: 12px;
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--color-border);
-    background: var(--color-surface-soft);
-    font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600;
-    letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text2);
-  }
-  .mock-bar .live-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--color-ok); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2); }
-  .mock-bar .spacer { margin-left: auto; color: var(--color-accent); font-weight: 700; }
-  .mock-body { padding: 24px 20px; }
-  .room-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  .room-cell {
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-2);
-    background: var(--color-surface-soft);
-    padding: 16px 12px;
-    text-align: center;
-    font-family: var(--font-mono); font-size: 0.95rem; font-weight: 600;
-    color: var(--color-text1);
-  }
-  .room-cell.alert {
-    background: #C4241A;
-    border-color: #6E0A06;
-    color: #FFFFFF;
-    box-shadow: 0 4px 14px rgba(196, 36, 26, 0.35);
-  }
-  .room-cell.attn {
-    background: var(--color-attn-soft);
-    border-color: var(--color-attn);
-    color: var(--color-attn);
-  }
-  .room-cell.handled {
-    background: var(--color-accent-soft);
-    border-color: var(--color-accent);
-    color: var(--color-accent);
-  }
-
-  .mock-note {
-    margin-top: 18px; padding: 12px 14px;
-    border-radius: var(--radius-2);
-    background: var(--color-surface-soft);
-    border: 1px solid var(--color-border);
-    font-size: 0.88rem; color: var(--color-text2);
-    display: flex; align-items: center; gap: 8px;
-  }
-  .mock-note b { color: var(--color-text1); }
-
-  /* ================= PAIN / BENEFIT ================= */
-  .pain-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-  .pain-row { padding: 26px 28px; }
-  .pain-q { display: flex; gap: 14px; align-items: flex-start; }
-  .pain-q svg { width: 22px; height: 22px; color: var(--color-attn); flex: 0 0 auto; margin-top: 2px; }
-  .pain-q p { font-weight: 600; color: var(--color-text1); font-size: 1.02rem; }
-  .pain-a { display: flex; gap: 14px; align-items: flex-start; margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--color-border); }
-  .pain-a svg { width: 22px; height: 22px; color: var(--color-ok); flex: 0 0 auto; margin-top: 2px; }
-  .pain-a p { color: var(--color-text2); font-size: 0.96rem; line-height: 1.55; }
-
-  /* ================= STEPS ================= */
-  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
-  .step { padding: 28px 24px; position: relative; }
-  .step-num { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700; color: var(--color-accent); margin-bottom: 14px; }
-  .icon-chip {
+  /* ================= CORE ADVANTAGES ================= */
+  .benefits-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .benefit-card { padding: 28px 22px; }
+  .benefit-icon {
     width: 48px; height: 48px; border-radius: var(--radius-3);
-    display: grid; place-items: center;
-    margin-bottom: 18px;
+    display: grid; place-items: center; margin-bottom: 18px;
   }
-  .icon-chip.chip-blue { background: rgba(2, 132, 199, 0.12); color: #0284C7; }
-  .icon-chip.chip-indigo { background: rgba(99, 102, 241, 0.12); color: #6366F1; }
-  .icon-chip.chip-emerald { background: rgba(16, 185, 129, 0.12); color: #10B981; }
-  .icon-chip.chip-amber { background: rgba(245, 158, 11, 0.12); color: #D97706; }
-  .icon-chip svg { width: 24px; height: 24px; }
-  .step h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; color: var(--color-text1); }
-  .step p { font-size: 0.92rem; color: var(--color-text2); line-height: 1.5; }
-
-  /* ================= FEATURES ================= */
-  .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
-  .feature { padding: 28px 24px; }
-  .feature h3 { font-size: 1.12rem; font-weight: 700; margin-top: 16px; margin-bottom: 8px; color: var(--color-text1); }
-  .feature p { font-size: 0.94rem; color: var(--color-text2); line-height: 1.55; }
+  .benefit-icon.blue { background: rgba(2, 132, 199, 0.12); color: #0284C7; }
+  .benefit-icon.amber { background: rgba(245, 158, 11, 0.12); color: #D97706; }
+  .benefit-icon.emerald { background: rgba(16, 185, 129, 0.12); color: #10B981; }
+  .benefit-icon.indigo { background: rgba(99, 102, 241, 0.12); color: #6366F1; }
+  .benefit-icon svg { width: 24px; height: 24px; }
+  .benefit-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; color: var(--color-text1); }
+  .benefit-card p { font-size: 0.92rem; color: var(--color-text2); line-height: 1.55; }
 
   /* ================= PRICING TIERS ================= */
   .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; align-items: stretch; margin-top: 36px; }
@@ -594,8 +542,52 @@
   .price-feature-list svg { width: 18px; height: 18px; color: var(--color-ok); flex: 0 0 auto; }
 
   /* ================= CONTACT FORM ================= */
-  .contact-section { padding: 92px 0; background: var(--color-bg); }
+  .contact-section { padding: 88px 0; background: var(--color-bg); }
   .contact-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 52px; align-items: center; }
+
+  .contact-highlights {
+    margin-top: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .contact-highlight-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 20px;
+    border-radius: var(--radius-3);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .contact-highlight-item:hover {
+    transform: translateY(-2px);
+    border-color: var(--color-accent);
+    box-shadow: var(--shadow-pop);
+  }
+  .contact-highlight-item h4 {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--color-text1);
+    margin: 0 0 4px 0;
+  }
+  .contact-highlight-item p {
+    font-size: 0.88rem;
+    color: var(--color-text2);
+    margin: 0;
+    line-height: 1.5;
+  }
+  .highlight-icon {
+    width: 42px; height: 42px;
+    border-radius: var(--radius-2);
+    display: grid; place-items: center;
+    flex: 0 0 auto;
+  }
+  .highlight-icon.blue { background: rgba(2, 132, 199, 0.12); color: #0284C7; }
+  .highlight-icon.emerald { background: rgba(16, 185, 129, 0.12); color: #10B981; }
+  .highlight-icon svg { width: 22px; height: 22px; }
   .form-card { padding: 36px 32px; border: 1.5px solid var(--color-border-strong); }
   .form-group { margin-bottom: 18px; }
   .form-group label { display: block; font-size: 0.88rem; font-weight: 600; color: var(--color-text1); margin-bottom: 6px; }
@@ -605,34 +597,80 @@
     border-radius: var(--radius-2);
     background: var(--color-surface-soft);
     color: var(--color-text1); font-family: inherit; font-size: 0.96rem;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
   }
   .form-group input:focus, .form-group textarea:focus {
     outline: none;
-    border-color: var(--color-accent);
-    box-shadow: 0 0 0 3px var(--color-accent-soft);
     background: var(--color-surface);
+    animation: glowBorderLight 2.5s ease-in-out infinite;
+  }
+  :root[data-theme="dark"] .form-group input:focus,
+  :root[data-theme="dark"] .form-group textarea:focus {
+    animation: glowBorderDark 2.5s ease-in-out infinite;
+  }
+  .form-alert-success {
+    display: none;
+    padding: 12px 16px; margin-bottom: 18px;
+    border-radius: var(--radius-2);
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid var(--color-ok);
+    color: var(--color-ok);
+    font-size: 0.92rem; font-weight: 600;
   }
 
-  /* ================= RESPONSIVE ================= */
+  /* ================= RESPONSIVE DESIGN (TABLET & MOBILE) ================= */
   @media (max-width: 980px) {
-    .hero-grid, .showcase-grid, .contact-grid { grid-template-columns: 1fr; gap: 40px; }
-    .features-grid, .pricing-grid { grid-template-columns: repeat(2, 1fr); }
-    .steps { grid-template-columns: repeat(2, 1fr); }
     .nav-links, .nav-kirish { display: none; }
     .nav-hamburger { display: grid; }
-  }
-  @media (max-width: 640px) {
-    .wrap { padding: 0 18px; }
-    .pain-grid, .features-grid, .pricing-grid, .steps { grid-template-columns: 1fr; }
+    
     .hero { padding: 52px 0 64px; }
-    .section { padding: 64px 0; }
+    .hero-nurse-shape-box {
+      float: none;
+      width: 100%;
+      max-width: 320px;
+      margin: 0 auto 28px auto;
+      shape-outside: none;
+    }
+    .hero-flow-text { text-align: center; }
+    .hero-flow-text h1 { font-size: clamp(1.85rem, 5.5vw, 2.5rem); text-align: center; }
+    .hero-lede {
+      margin-left: 0;
+      max-width: 100%;
+      text-align: left;
+      font-size: 1.02rem;
+      border-left: 3px solid var(--color-accent);
+      padding-left: 14px;
+      margin-top: 18px;
+    }
+    .hero-cta { justify-content: center; margin-top: 24px; }
+    .trust-strip { justify-content: center; margin-top: 28px; padding-top: 20px; }
+
+    .benefits-grid, .pricing-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .contact-grid { grid-template-columns: 1fr; gap: 36px; }
+  }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 0 16px; }
+    .section { padding: 52px 0; }
+    .section-head { margin-bottom: 32px; }
+    .section h2 { font-size: 1.65rem; }
+
+    .hero { padding: 40px 0 52px; }
+    .hero-nurse-shape-box { max-width: 260px; margin-bottom: 20px; }
+    .hero-cta { flex-direction: column; width: 100%; }
+    .hero-cta .btn { width: 100%; height: 3.2rem; }
+    .trust-strip { flex-direction: column; align-items: flex-start; gap: 10px; }
+
+    .benefits-grid, .pricing-grid { grid-template-columns: 1fr; gap: 16px; }
+    .benefit-card, .price-card-tier { padding: 22px 18px; }
+    .form-card { padding: 24px 18px; }
+    .form-group input, .form-group textarea { font-size: 16px; }
   }
 </style>
 </head>
 <body>
 
-<!-- ================= NAV ================= -->
+<!-- ================= NAV (GLASSMORPHIC) ================= -->
 <header class="nav">
   <div class="wrap nav-inner">
     <a href="/" class="brand">
@@ -642,10 +680,9 @@
       <span>NurseCall</span>
     </a>
     <nav class="nav-links">
-      <a href="#qanday">Qanday ishlaydi</a>
-      <a href="#imkoniyatlar">Imkoniyatlar</a>
+      <a href="#qulayliklar">Qulayliklar</a>
       <a href="#narx">Narx</a>
-      <a href="#aloqa">Aloqa</a>
+      <a href="#aloqa">Bog'lanish</a>
     </nav>
     <div class="nav-right">
       <button class="icon-btn" id="themeToggle" type="button" aria-label="Kunduzgi/tungi rejim" aria-pressed="false">
@@ -660,181 +697,85 @@
     </div>
   </div>
   <div class="mobile-menu" id="mobileMenu">
-    <a href="#qanday">Qanday ishlaydi</a>
-    <a href="#imkoniyatlar">Imkoniyatlar</a>
+    <a href="#qulayliklar">Qulayliklar</a>
     <a href="#narx">Narx</a>
-    <a href="#aloqa">Aloqa</a>
+    <a href="#aloqa">Bog'lanish</a>
     <a href="/login">Kirish</a>
   </div>
 </header>
 
 <!-- ================= HERO ================= -->
 <section class="hero">
-  <div class="wrap hero-grid">
-    <div>
-      <div class="eyebrow eyebrow-amber">
-        <span class="badge-dot"></span> NurseCall V2.0 &middot; Simsiz 433MHz
-      </div>
-      <h1>Bemor bir marta bosadi.<br />Hamshira <em class="gradient-text">soniyalarda</em> biladi.</h1>
-      <p class="hero-lede">Xonadagi SOS tugmadan hamshiraning bilagidagi soatigacha — simsiz, kechiktirmasdan. Har chaqiruv vaqti bilan qayd etiladi, hech biri yo'qolib ketmaydi.</p>
+  <div class="wrap hero-flow-container">
+    <!-- Nurse PNG image floating left with CSS shape-outside for organic text wrapping -->
+    <div class="hero-nurse-shape-box">
+      <img src="nurse_pic.png" alt="NurseCall Hamshira" class="hero-nurse-shape-img" />
+    </div>
+
+    <!-- Hero Content wrapping dynamically into the empty transparent space of PNG -->
+    <div class="hero-flow-text">
+      <h1>Klinikangiz uchun <em class="gradient-text">simsiz va aqlli</em> hamshira chaqiruv tizimi</h1>
+      <p class="hero-lede">Bemor tugmani bosadi — hamshira bilagidagi soatida va telefonda darhol xabar oladi.</p>
       <div class="hero-cta">
         <a href="#aloqa" class="btn btn-primary btn-lg">Bepul konsultatsiya</a>
-        <a href="#qanday" class="btn btn-outline btn-lg">Qanday ishlaydi</a>
+        <a href="#qulayliklar" class="btn btn-outline btn-lg">Qulayliklar</a>
       </div>
       <div class="trust-strip">
         <span class="trust-item">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-          Simsiz — devor buzilmaydi
+          Simsiz o'rnatish (1 kunda)
         </span>
         <span class="trust-item">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-          Mavjud binoga o'rnatiladi
+          Soat va telefon integratsiyasi
         </span>
         <span class="trust-item">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-          Har chaqiruv qayd etiladi
+          To'liq vaqt hisoboti
         </span>
-      </div>
-    </div>
-
-    <div class="mock">
-      <div class="mock-bar">
-        <span class="live-dot"></span>
-        <span>2-Qavat &middot; Jonli Kuzatuv</span>
-        <span class="spacer">FAOL TIZIM</span>
-      </div>
-      <div class="mock-body">
-        <div class="room-grid">
-          <div class="room-cell">201</div>
-          <div class="room-cell alert">204 CHAQIRDI</div>
-          <div class="room-cell attn">208 KUTMOQDA</div>
-          <div class="room-cell alert">214 SHOSHILINCH</div>
-          <div class="room-cell handled">219 TASDIQLANDI</div>
-          <div class="room-cell">223</div>
-        </div>
-        <div class="mock-note">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:#0284C7"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-          <span><b>214-xona</b> &middot; Hamshira soatiga signal yuborildi (2s oldin)</span>
-        </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ================= PAIN / BENEFIT ================= -->
-<section class="section section-alt">
+<!-- ================= CORE ADVANTAGES ================= -->
+<section class="section section-alt" id="qulayliklar">
   <div class="wrap">
     <div class="section-head">
-      <div class="eyebrow">Tanish Muammolar</div>
-      <h2>Bemor chaqiradi — lekin kim eshitadi?</h2>
-      <p class="section-lede">Ko'p klinikada chaqiruv tizimi yo'q yoki eskirgan. Natijada hamma narsa odamning eshitishiga va koridorda yugurishga bog'liq bo'lib qoladi.</p>
+      <h2>Asosiy qulayliklar</h2>
+      <p class="section-lede">NurseCall klinikada ish unumdorligini oshirish va bemorlarga tezkor tibbiy yordam ko'rsatish uchun yaratilgan.</p>
     </div>
-    <div class="pain-grid">
-      <div class="card pain-row">
-        <div class="pain-q">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>
-          <p>Bemor qichqiradi yoki qarindoshi koridorda hamshira qidirib yuradi.</p>
+    <div class="benefits-grid">
+      <div class="card benefit-card">
+        <div class="benefit-icon blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg>
         </div>
-        <div class="pain-a">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-          <p>Tugma bosiladi — mas'ul hamshiraning soati darhol tebranadi va xona raqamini ko'rsatadi.</p>
-        </div>
+        <h3>Tezkor bildirishnoma</h3>
+        <p>Bemor tugmani bosishi bilan mas'ul hamshira soatida tebranish va xona raqami ko'rinadi.</p>
       </div>
-      <div class="card pain-row">
-        <div class="pain-q">
+
+      <div class="card benefit-card">
+        <div class="benefit-icon amber">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        </div>
+        <h3>Oson va tez o'rnatish</h3>
+        <p>Devorlarni buzish yoki kabel tortish shart emas. Tizim 1 kunda tayyor o'rnatiladi.</p>
+      </div>
+
+      <div class="card benefit-card">
+        <div class="benefit-icon emerald">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-          <p>Tungi smenada javob vaqti cho'ziladi — hamshira boshqa qavatda bo'lishi mumkin.</p>
         </div>
-        <div class="pain-a">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-          <p>Bildirishnoma qavatga qarab yo'naltiriladi: mas'ul hamshira faqat o'z qavatidan xabar oladi.</p>
-        </div>
+        <h3>Aniq hisobot va nazorat</h3>
+        <p>Qaysi hamshira qachon va qancha vaqtda chaqiruvga borgani tizimda saqlanadi.</p>
       </div>
-    </div>
-  </div>
-</section>
 
-<!-- ================= HOW IT WORKS ================= -->
-<section class="section" id="qanday">
-  <div class="wrap">
-    <div class="section-head">
-      <div class="eyebrow">Qanday Ishlaydi</div>
-      <h2>Tugmadan bilakgacha to'rt qadam.</h2>
-    </div>
-    <div class="steps">
-      <div class="card step">
-        <div class="step-num">01 / TUGMA</div>
-        <div class="icon-chip chip-blue">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg>
-        </div>
-        <h3>Tugma bosiladi</h3>
-        <p>Bemorning yonidagi simsiz SOS tugma. Sim tortish yoki devor buzish kerak emas.</p>
-      </div>
-      <div class="card step">
-        <div class="step-num">02 / QABUL</div>
-        <div class="icon-chip chip-indigo">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12a7 7 0 0 1 14 0"/><path d="M2 12a10 10 0 0 1 20 0"/><circle cx="12" cy="18" r="2"/></svg>
-        </div>
-        <h3>Qavat qabul qiladi</h3>
-        <p>Qavatdagi 433MHz qabul qilgich signalni ushlaydi va markaziy serverga uzatadi.</p>
-      </div>
-      <div class="card step">
-        <div class="step-num">03 / QAYD</div>
-        <div class="icon-chip chip-emerald">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
-        </div>
-        <h3>Server qayd etadi</h3>
-        <p>Chaqiruv vaqti bilan bazaga yoziladi: qaysi xona, qaysi qavat, qaysi soniyada.</p>
-      </div>
-      <div class="card step">
-        <div class="step-num">04 / BILDIRISH</div>
-        <div class="icon-chip chip-amber">
+      <div class="card benefit-card">
+        <div class="benefit-icon indigo">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 3h6M9 21h6"/></svg>
         </div>
-        <h3>Soat bildiradi</h3>
-        <p>Mas'ul hamshiraning bilagidagi soat tebranadi. Tasdiqlash tugmasi bosilishi shart.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ================= FEATURES ================= -->
-<section class="section section-alt" id="imkoniyatlar">
-  <div class="wrap">
-    <div class="section-head">
-      <div class="eyebrow">Imkoniyatlar</div>
-      <h2>Zamonaviy tibbiyot klinikasi uchun imkoniyatlar.</h2>
-    </div>
-    <div class="features-grid">
-      <div class="card feature">
-        <div class="icon-chip chip-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg></div>
-        <h3>Kutish yo'q</h3>
-        <p>Tugma bosilgandan keyin chaqiruv soniyalar ichida hamshiraga yetadi. Panel real vaqtda o'zi yangilanadi.</p>
-      </div>
-      <div class="card feature">
-        <div class="icon-chip chip-indigo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
-        <h3>Har hamshira o'z qavatida</h3>
-        <p>Hamshiralar faqat o'zlariga biriktirilgan qavat chaqiruvlarini oladi. Keraksiz shovqin va adashish bo'lmaydi.</p>
-      </div>
-      <div class="card feature">
-        <div class="icon-chip chip-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 3h6M9 21h6"/></svg></div>
-        <h3>Bilakda tebranish</h3>
-        <p>Chaqiruv hamshiraning Wear OS soatida va telefonida tebranish bilan bir vaqtda aks etadi.</p>
-      </div>
-      <div class="card feature">
-        <div class="icon-chip chip-emerald"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
-        <h3>To'liq hisobot va tarix</h3>
-        <p>Qaysi xona, qachon bosilgan, kim va qancha vaqtda javob bergan. Rahbariyat uchun to'liq tahlil mavjud.</p>
-      </div>
-      <div class="card feature">
-        <div class="icon-chip chip-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-        <h3>Xavfsiz va alohida</h3>
-        <p>Har bir klinika ma'lumoti alohida va shifrlangan kanallar orqali himoyalangan.</p>
-      </div>
-      <div class="card feature">
-        <div class="icon-chip chip-indigo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M21 3v6h-6"/></svg></div>
-        <h3>Uzilishga chidamli</h3>
-        <p>Internet vaqtincha uzilsa ham qurilma signallarni keshlaydi va aloqa tiklangach darhol bazaga yuboradi.</p>
+        <h3>Hamshiralar erkinligi</h3>
+        <p>Postda o'tirish shart emas — soat tebranib ogohlantirgani uchun hamshira xonalarni ko'rib yurishi mumkin.</p>
       </div>
     </div>
   </div>
@@ -844,8 +785,7 @@
 <section class="section" id="narx">
   <div class="wrap">
     <div class="section-head" style="text-align:center">
-      <div class="eyebrow eyebrow-amber"><span class="badge-dot"></span> Shafof Tariflar</div>
-      <h2>Klinikangiz hajmiga mos yechimlar.</h2>
+      <h2>Klinikangiz o'lchamiga mos tariflar</h2>
       <p class="section-lede" style="margin:0 auto">Barcha tariflarga o'rnatish, sozlash, xodimlarni o'qitish va kafolatli texnik yordam kiradi.</p>
     </div>
 
@@ -853,12 +793,12 @@
       <div class="card price-card-tier">
         <div class="price-tier-title">Boshlang'ich</div>
         <div class="price-tier-desc">Kichik klinika va xususiy shifoxonalar uchun</div>
-        <div class="price-amount">Kelishuv bo'yicha</div>
+        <div class="price-amount">Hamyonbop</div>
         <ul class="price-feature-list">
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg> 1-2 qavatgacha</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg> 10 tagacha SOS tugmalar</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg> 2 ta Hamshira soati</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg> Web Dashboard kirish</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg> Hamshira soatlari to'plami</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg> Web Dashboard paneli</li>
         </ul>
         <a href="#aloqa" class="btn btn-outline">Bog'lanish</a>
       </div>
@@ -866,14 +806,14 @@
       <div class="card price-card-tier featured">
         <div class="featured-badge">ENG OMMABOP</div>
         <div class="price-tier-title">Standard</div>
-        <div class="price-tier-desc">O'rta va yirik klinikalar uchun to'liq to'plam</div>
+        <div class="price-tier-desc">O'rta va yirik klinikalar uchun optimal to'plam</div>
         <div class="price-amount" style="color:#0284C7">Optimal <span>/ moslashtiriladi</span></div>
         <ul class="price-feature-list">
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg> 3-5 qavatgacha</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg> 30+ SOS tugmalar</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg> 6+ Hamshira soati</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg> Devor TV Monitoring (/wall)</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg> 24/7 Texnik qo'llab-quvvatlash</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg> Soat va Telefonlar integratsiyasi</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg> Devor TV Monitoring</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg> Texnik qo'llab-quvvatlash</li>
         </ul>
         <a href="#aloqa" class="btn btn-primary">Hisoblatish uchun bog'lanish</a>
       </div>
@@ -885,8 +825,7 @@
         <ul class="price-feature-list">
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg> Cheksiz qavatlar va xonalar</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg> Ko'p binoli tizim</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg> Maxsus API integratsiyalar</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg> Shaxsiy menejer va o'qitish</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg> Shaxsiy o'qitish va sozlash</li>
         </ul>
         <a href="#aloqa" class="btn btn-outline">Bog'lanish</a>
       </div>
@@ -894,16 +833,41 @@
   </div>
 </section>
 
-<!-- ================= CONTACT FORM ================= -->
+<!-- ================= CONTACT FORM WITH TELEGRAM BOT INTEGRATION ================= -->
 <section class="contact-section" id="aloqa">
   <div class="wrap contact-grid">
-    <div>
-      <div class="eyebrow eyebrow-amber"><span class="badge-dot"></span> Bepul Konsultatsiya</div>
-      <h2>Klinikangiz uchun hisoblab beramiz.</h2>
-      <p class="section-lede">Telefon raqamingizni qoldiring. Mutaxassisimiz klinikangiz o'lchamini o'rganib, aniq hisob-kitob va taklif tayyorlab beradi.</p>
+    <div class="contact-info-block">
+      <div class="eyebrow eyebrow-amber">
+        <span class="badge-dot"></span> Bepul Smeta va Loyiha
+      </div>
+      <h2>Klinikangiz uchun 15 daqiqada aniq hisob-kitob</h2>
+      <p class="section-lede">Raqamingizni qoldiring — mutaxassisimiz binongiz tuzilishiga mos barcha SOS tugmalar, soatlar va uskunalarning aniq smetasini tayyorlab beradi.</p>
+
+      <div class="contact-highlights">
+        <div class="contact-highlight-item">
+          <div class="highlight-icon blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <div>
+            <h4>Tezkor aloqa (15 daqiqada)</h4>
+            <p>So'rov qoldirishingiz bilan mutaxassisimiz bog'lanib, smeta va loyihani taqdim etadi.</p>
+          </div>
+        </div>
+
+        <div class="contact-highlight-item">
+          <div class="highlight-icon emerald">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div>
+            <h4>Bepul namoyish (Demo)</h4>
+            <p>Toshkent va viloyatlar bo'yicha uskunalarni klinikangizga olib borib ko'rsatamiz.</p>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="card form-card">
-      <form action="/api/contact" method="POST">
+      <div class="form-alert-success" id="contactSuccess"></div>
+      <form id="contactForm" action="/api/v1/contact-requests" method="POST">
         <div class="form-group">
           <label for="name">Ismingiz yoki Klinika nomi</label>
           <input type="text" id="name" name="name" placeholder="Masalan: Shifo Med Klinikasi" required />
@@ -916,7 +880,7 @@
           <label for="note">Qo'shimcha izoh (xonalar soni va h.k.)</label>
           <textarea id="note" name="note" rows="3" placeholder="Masalan: 3 qavatli bino, 24 ta palata..."></textarea>
         </div>
-        <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Konsultatsiya so'rash</button>
+        <button type="submit" id="submitBtn" class="btn btn-primary btn-lg" style="width:100%">Konsultatsiya so'rash</button>
       </form>
     </div>
   </div>
@@ -933,6 +897,47 @@
   document.getElementById('menuToggle')?.addEventListener('click', function () {
     var menu = document.getElementById('mobileMenu');
     menu?.classList.toggle('open');
+  });
+
+  // Telegram Bot Contact Form AJAX Submission
+  document.getElementById('contactForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    var btn = document.getElementById('submitBtn');
+    var alertBox = document.getElementById('contactSuccess');
+    var name = document.getElementById('name').value;
+    var phone = document.getElementById('phone').value;
+    var note = document.getElementById('note').value;
+    
+    btn.disabled = true;
+    btn.textContent = "Yuborilmoqda...";
+    
+    try {
+      var res = await fetch('/api/v1/contact-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name,
+          phone: phone,
+          clinic_name: name,
+          message: note
+        })
+      });
+      if (res.ok) {
+        if (alertBox) {
+          alertBox.style.display = 'block';
+          alertBox.textContent = "✅ Rahmat! Ariyangiz Telegram bot va tizimga yuborildi. Tez orada bog'lanamiz!";
+        }
+        e.target.reset();
+      } else {
+        var data = await res.json();
+        alert(data.detail || "Xatolik yuz berdi");
+      }
+    } catch (err) {
+      alert("Tarmoqda xatolik yuz berdi. Iltimos qayta urinib ko'ring.");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Konsultatsiya so'rash";
+    }
   });
 </script>
 
