@@ -30,6 +30,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,7 +44,6 @@ import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.SwipeToDismissBox
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.input.RemoteInputIntentHelper
@@ -117,14 +118,12 @@ fun CallMonitorScreen() {
     MaterialTheme {
         Scaffold(timeText = { TimeText() }) {
             if (status == ConnectionStatus.CONNECTED) {
-                SwipeToDismissBox(
-                    onDismissed = {
-                        AppPrefs.setToken(context, null)
-                        CallState.status.value = ConnectionStatus.UNAUTHORIZED
-                        CallState.activeCalls.value = emptyList()
-                    }
-                ) { isBackground ->
-                    if (isBackground) {
+                val pagerState = rememberPagerState(pageCount = { 2 })
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize()
+                ) { page ->
+                    if (page == 1) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -139,7 +138,8 @@ fun CallMonitorScreen() {
                                 Text(
                                     text = "Rostdan ham chiqib ketmoqchimisiz?",
                                     style = MaterialTheme.typography.body2,
-                                    color = NurseCallTokens.ColorDark.text1
+                                    color = NurseCallTokens.ColorDark.text1,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Chip(
@@ -155,7 +155,23 @@ fun CallMonitorScreen() {
                                             text = "Ha, chiqish",
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White,
-                                            modifier = Modifier.fillMaxWidth()
+                                            modifier = Modifier.fillMaxWidth(),
+                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                        )
+                                    }
+                                )
+                                Chip(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onClick = {
+                                        scope.launch { pagerState.animateScrollToPage(0) }
+                                    },
+                                    colors = ChipDefaults.chipColors(backgroundColor = NurseCallTokens.ColorDark.surface),
+                                    label = {
+                                        Text(
+                                            text = "Ortga",
+                                            color = NurseCallTokens.ColorDark.text1,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                         )
                                     }
                                 )
