@@ -40,6 +40,7 @@ function beep() {
 /** WS sends ev1527_code as int; REST historically serialized it as string — normalize to string. */
 function normalizeWsSignal(signal: WsUnassignedSignal): UnassignedSignal {
   return {
+    id: signal.id,
     ev1527_code: String(signal.ev1527_code),
     device_id: signal.device_id,
     first_seen_at: signal.first_seen_at,

@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.repositories import unassigned_repo
@@ -17,3 +18,13 @@ def list_unassigned(db: Session, clinic_id: int) -> list[UnassignedSignalOut]:
         )
         for sig, device in rows
     ]
+
+
+def delete_unassigned(db: Session, clinic_id: int, signal_id: int) -> None:
+    deleted = unassigned_repo.delete_by_id(db, clinic_id, signal_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Signal not found")
+
+
+def clear_all_unassigned(db: Session, clinic_id: int) -> int:
+    return unassigned_repo.delete_all_by_clinic(db, clinic_id)

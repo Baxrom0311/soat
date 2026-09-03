@@ -5,17 +5,43 @@ from datetime import datetime, timezone
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from app.models import Device, UnassignedSignal
+from app.models import Button, Device, UnassignedSignal
 
 
 def list_with_device_by_clinic(db: Session, clinic_id: int) -> list[tuple[UnassignedSignal, Device]]:
+    bound_codes_subquery = (
+        select(Button.ev1527_code)
+        .where(Button.clinic_id == clinic_id)
+        .scalar_subquery()
+    )
+
     rows = db.execute(
         select(UnassignedSignal, Device)
         .join(Device, UnassignedSignal.device_id == Device.id)
-        .where(UnassignedSignal.clinic_id == clinic_id)
+        .where(
+            UnassignedSignal.clinic_id == clinic_id,
+            UnassignedSignal.ev1527_code.not_in(bound_codes_subquery),
+        )
         .order_by(UnassignedSignal.last_seen_at.desc())
     ).all()
     return [(sig, device) for sig, device in rows]
+
+
+def cleanup_bound_signals(db: Session, clinic_id: int) -> int:
+    """Removes any unassigned_signals rows whose ev1527_code is already bound in buttons table."""
+    bound_codes_subquery = (
+        select(Button.ev1527_code)
+        .where(Button.clinic_id == clinic_id)
+        .scalar_subquery()
+    )
+    result = db.execute(
+        delete(UnassignedSignal).where(
+            UnassignedSignal.clinic_id == clinic_id,
+            UnassignedSignal.ev1527_code.in_(bound_codes_subquery),
+        )
+    )
+    db.commit()
+    return result.rowcount
 
 
 def get_by_code(db: Session, clinic_id: int, ev1527_code: int) -> UnassignedSignal | None:
@@ -55,3 +81,21 @@ def delete_by_code(db: Session, clinic_id: int, ev1527_code: int) -> None:
             UnassignedSignal.clinic_id == clinic_id, UnassignedSignal.ev1527_code == ev1527_code
         )
     )
+
+
+def delete_by_id(db: Session, clinic_id: int, signal_id: int) -> bool:
+    result = db.execute(
+        delete(UnassignedSignal).where(
+            UnassignedSignal.clinic_id == clinic_id, UnassignedSignal.id == signal_id
+        )
+    )
+    db.commit()
+    return result.rowcount > 0
+
+
+def delete_all_by_clinic(db: Session, clinic_id: int) -> int:
+    result = db.execute(
+        delete(UnassignedSignal).where(UnassignedSignal.clinic_id == clinic_id)
+    )
+    db.commit()
+    return result.rowcount

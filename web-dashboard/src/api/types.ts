@@ -172,6 +172,7 @@ export interface ButtonBinding {
 }
 
 export interface UnassignedSignal {
+  id: number;
   ev1527_code: string;
   device_id: string;
   first_seen_at: string;

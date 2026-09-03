@@ -191,6 +191,8 @@ export const api = {
   deleteButton: (id: number) => request<void>(`/api/v1/buttons/${id}`, { method: 'DELETE' }),
 
   getUnassignedSignals: () => request<UnassignedSignal[]>('/api/v1/unassigned-signals'),
+  deleteUnassignedSignal: (id: number) => request<void>(`/api/v1/unassigned-signals/${id}`, { method: 'DELETE' }),
+  clearAllUnassignedSignals: () => request<void>('/api/v1/unassigned-signals', { method: 'DELETE' }),
 
   getActiveCalls: () => request<ActiveCall[]>('/api/v1/calls/active'),
   getCallHistory: (limit = 50) => request<HistoryCall[]>(`/api/v1/calls/history?limit=${limit}`),

@@ -31,8 +31,6 @@ function SignalRow({
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Rows can mount while rooms are still loading; once they arrive, pick the first one
-  // so the visible selection and the submitted value can't diverge (room_id 0 bug).
   useEffect(() => {
     if (!roomId && rooms[0]) setRoomId(String(rooms[0].id));
   }, [rooms, roomId]);
@@ -50,6 +48,16 @@ function SignalRow({
     }
   }
 
+  async function remove() {
+    if (!window.confirm(`Kod ${signal.ev1527_code} signal ro'yxatidan o'chirilsinmi?`)) return;
+    try {
+      await api.deleteUnassignedSignal(signal.id);
+      onBound();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Xato');
+    }
+  }
+
   return (
     <tr>
       <td data-label="Kod">{signal.ev1527_code}</td>
@@ -58,16 +66,21 @@ function SignalRow({
       <td data-label="Oxirgi ko'rilgan">{fmtTime(signal.last_seen_at)}</td>
       <td data-label="Necha marta">{signal.seen_count}</td>
       <td data-label="Xonaga bog'lash">
-        <select className="bind-select" value={roomId} onChange={(e) => setRoomId(e.target.value)}>
-          {rooms.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.room_number} ({r.floor}-qavat)
-            </option>
-          ))}
-        </select>
-        <button className="bind-btn" onClick={bind} type="button" disabled={!roomId || submitting}>
-          {submitting ? '...' : "Bog'lash"}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <select className="bind-select" value={roomId} onChange={(e) => setRoomId(e.target.value)}>
+            {rooms.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.room_number} ({r.floor}-qavat)
+              </option>
+            ))}
+          </select>
+          <button className="bind-btn" onClick={bind} type="button" disabled={!roomId || submitting}>
+            {submitting ? '...' : "Bog'lash"}
+          </button>
+          <button className="btn btn-ghost btn-sm" onClick={remove} type="button" title="Signalni o'chirish">
+            O'chirish
+          </button>
+        </div>
         {rooms.length === 0 && <p className="form-error">Avval "Xonalar" bo'limida xona yarating</p>}
         {error && <p className="form-error">{error}</p>}
       </td>
@@ -162,6 +175,17 @@ export function UnassignedTab({ signals, refreshSignals, markLocalMutation }: Un
     loadButtons().catch(() => {});
   }
 
+  async function clearAll() {
+    if (!window.confirm(`Barcha ${filteredSignals.length} ta biriktirilmagan signal ro'yxatdan tozalansinmi?`)) return;
+    try {
+      await api.clearAllUnassignedSignals();
+      markLocalMutation();
+      await refreshSignals();
+    } catch (err) {
+      setUnbindError(err instanceof ApiError ? err.message : "Tozalashda xatolik");
+    }
+  }
+
   async function unbind(binding: ButtonBinding) {
     if (
       !window.confirm(
@@ -180,10 +204,13 @@ export function UnassignedTab({ signals, refreshSignals, markLocalMutation }: Un
     }
   }
 
+  const boundCodesSet = new Set(buttons.map((b) => String(b.ev1527_code)));
+
   const filteredSignals = signals.filter(
     (s) =>
-      s.ev1527_code.toLowerCase().includes(search.toLowerCase()) ||
-      s.device_id.toLowerCase().includes(search.toLowerCase())
+      !boundCodesSet.has(String(s.ev1527_code)) &&
+      (s.ev1527_code.toLowerCase().includes(search.toLowerCase()) ||
+        s.device_id.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -191,8 +218,7 @@ export function UnassignedTab({ signals, refreshSignals, markLocalMutation }: Un
       <div className="pairing-hint glass">
         <span className="pairing-dot" />
         <p>
-          <strong>Juftlash rejimi:</strong> fizik tugmani bosing — kodi shu yerda darhol paydo
-          bo'ladi, keyin uni xonaga bog'lang.
+          <strong>Juftlash rejimi:</strong> ESP32 resiveri (masalan: <code>qwert12</code>) tutgan har bir 433MHz SOS tugma kodi hali xonaga bog'lanmagan bo'lsa, shu yerda chiqadi. Tugmani xonaga bog'lang yoki keraksiz test signallarini o'chiring.
         </p>
       </div>
       {loadError && (
@@ -212,13 +238,20 @@ export function UnassignedTab({ signals, refreshSignals, markLocalMutation }: Un
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <span className="table-count-meta">{filteredSignals.length} ta yangi signal</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span className="table-count-meta">{filteredSignals.length} ta yangi signal</span>
+            {filteredSignals.length > 0 && (
+              <button type="button" className="btn btn-ghost btn-sm" onClick={clearAll}>
+                Barchasini tozalash
+              </button>
+            )}
+          </div>
         </div>
         <table>
           <thead>
             <tr>
               <th>Kod</th>
-              <th>Qurilma</th>
+              <th>Resiver (ESP32)</th>
               <th>Birinchi ko'rilgan</th>
               <th>Oxirgi ko'rilgan</th>
               <th>Necha marta</th>

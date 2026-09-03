@@ -93,6 +93,8 @@ def _ingest_sync(
         return None, device.clinic_id, event, None
 
     button, room = match
+    # Ensure any lingering unassigned signal record for this bound code is purged
+    unassigned_repo.delete_by_code(db, device.clinic_id, ev1527_code)
 
     # RF buttons retransmit and patients mash the button, so concurrent duplicate POSTs
     # are the norm. The advisory lock serializes ingestion per room; it is released when
