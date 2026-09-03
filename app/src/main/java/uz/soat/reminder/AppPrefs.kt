@@ -38,4 +38,11 @@ object AppPrefs {
     fun setScheme(context: Context, scheme: String) {
         prefs(context).edit().putString(KEY_SCHEME, scheme).apply()
     }
+
+    fun getLastEmail(context: Context): String? =
+        prefs(context).getString("last_email", null)
+
+    fun setLastEmail(context: Context, email: String?) {
+        prefs(context).edit().putString("last_email", email).apply()
+    }
 }

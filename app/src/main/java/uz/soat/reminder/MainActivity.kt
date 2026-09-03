@@ -346,7 +346,8 @@ fun CallMonitorScreen() {
 private fun LoginForm() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var email by remember { mutableStateOf("") }
+    val savedEmail = remember { AppPrefs.getLastEmail(context).orEmpty() }
+    var email by remember { mutableStateOf(savedEmail) }
     var password by remember { mutableStateOf("") }
     val activeField = remember { java.util.concurrent.atomic.AtomicReference<String>("") }
     var busy by remember { mutableStateOf(false) }
@@ -387,6 +388,7 @@ private fun LoginForm() {
         scope.launch(Dispatchers.IO) {
             val res = runCatching {
                 val token = ApiClient.login(context, cleanEmail, cleanPassword)
+                AppPrefs.setLastEmail(context, cleanEmail)
                 AppPrefs.setToken(context, token)
             }
             kotlinx.coroutines.withContext(Dispatchers.Main) {
@@ -407,6 +409,13 @@ private fun LoginForm() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
+        if (savedEmail.isNotBlank()) {
+            Text(
+                text = "Oxirgi akkount:",
+                style = MaterialTheme.typography.caption2,
+                color = NurseCallTokens.ColorDark.text3
+            )
+        }
         Chip(
             modifier = Modifier.fillMaxWidth(),
             onClick = { launchInput("email", "Email") },
