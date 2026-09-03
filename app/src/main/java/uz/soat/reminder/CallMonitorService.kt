@@ -148,6 +148,7 @@ class CallMonitorService : Service() {
                 alreadyAlerted.retainAll(activeIds)
             } catch (e: UnauthorizedException) {
                 CallState.status.value = ConnectionStatus.UNAUTHORIZED
+                CallState.activeCalls.value = emptyList()
             } catch (e: Exception) {
                 CallState.status.value = ConnectionStatus.DISCONNECTED
             }
@@ -200,12 +201,14 @@ class CallMonitorService : Service() {
 
     private fun vibrate() {
         val pattern = longArrayOf(0, 500, 200, 500, 200, 500)
-        val vibrator: Vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val vibrator: Vibrator? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val vm = getSystemService(VibratorManager::class.java)
-            vm.defaultVibrator
+            vm?.defaultVibrator
         } else {
-            getSystemService(VIBRATOR_SERVICE) as Vibrator
+            getSystemService(VIBRATOR_SERVICE) as? Vibrator
         }
-        vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1))
+        if (vibrator != null && vibrator.hasVibrator()) {
+            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1))
+        }
     }
 }
