@@ -141,9 +141,9 @@
   --type-landing-lede-size: clamp(17px, 1.6vw, 19px);
   --type-landing-lede-lh: 1.55;
   --type-landing-lede-weight: 400;
-  --type-alert-room-desk-size-1: 72px;
-  --type-alert-room-desk-size-2: 84px;
-  --type-alert-room-desk-size-3: 96px;
+  --type-alert-room-desk-size-1: 36px;
+  --type-alert-room-desk-size-2: 42px;
+  --type-alert-room-desk-size-3: 48px;
   --type-alert-room-desk-lh: 0.95;
   --type-alert-room-desk-weight: 700;
   --type-alert-room-desk-tracking: -0.02em;

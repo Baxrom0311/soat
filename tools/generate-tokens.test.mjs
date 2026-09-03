@@ -28,8 +28,8 @@ test('call fills emit as indexed step tokens', () => {
 
 test('alert type step arrays emit one token per step', () => {
   const css = emitCss(tokens);
-  assert.match(css, /--type-alert-room-desk-size-1:\s*72px/);
-  assert.match(css, /--type-alert-room-desk-size-3:\s*96px/);
+  assert.match(css, /--type-alert-room-desk-size-1:\s*36px/);
+  assert.match(css, /--type-alert-room-desk-size-3:\s*48px/);
 });
 
 test('a css-excluded token is not emitted to css', () => {

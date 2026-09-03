@@ -1069,7 +1069,7 @@ tbody tr:last-child td { border-bottom: none; }
 
 .calls-live__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--size-desk-card-min), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: var(--space-16);
 }
 
