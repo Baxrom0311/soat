@@ -360,16 +360,13 @@ private fun LoginForm() {
         }
     }
 
-    fun launchInput(fieldName: String, title: String, prefill: String) {
+    fun launchInput(fieldName: String, title: String) {
         activeField.set(fieldName)
         val intent = RemoteInputIntentHelper.createActionRemoteInputIntent()
         val remoteInput = RemoteInput.Builder(REMOTE_INPUT_KEY)
             .setLabel(title)
             .build()
         RemoteInputIntentHelper.putRemoteInputsExtra(intent, listOf(remoteInput))
-        if (prefill.isNotBlank()) {
-            intent.putExtra(Intent.EXTRA_TEXT, prefill)
-        }
         remoteInputLauncher.launch(intent)
     }
 
@@ -407,13 +404,13 @@ private fun LoginForm() {
     ) {
         Chip(
             modifier = Modifier.fillMaxWidth(),
-            onClick = { launchInput("email", "Email", email) },
+            onClick = { launchInput("email", "Email") },
             colors = ChipDefaults.chipColors(backgroundColor = NurseCallTokens.ColorDark.surface),
             label = { Text(text = if (email.isBlank()) "Email" else email, maxLines = 1) }
         )
         Chip(
             modifier = Modifier.fillMaxWidth(),
-            onClick = { launchInput("password", "Parol", password) },
+            onClick = { launchInput("password", "Parol") },
             colors = ChipDefaults.chipColors(backgroundColor = NurseCallTokens.ColorDark.surface),
             label = { Text(text = if (password.isBlank()) "Parol" else "••••••••", maxLines = 1) }
         )
