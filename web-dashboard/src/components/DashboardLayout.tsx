@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useCallsFeed } from '../hooks/useCallsFeed';
@@ -87,10 +88,24 @@ function useBillingNotice(token: string | null, setBlocked: (b: boolean) => void
 
 export function DashboardLayout() {
   const { token, session, blocked, setBlocked, logout } = useAuth();
-  const [tab, setTab] = useState<TabKey>('calls');
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  const currentSubPath = pathParts[1] || 'calls';
+  const validTabs: TabKey[] = ['calls', 'devices', 'rooms', 'staff', 'billing'];
+  const tab: TabKey = validTabs.includes(currentSubPath as TabKey)
+    ? (currentSubPath as TabKey)
+    : 'calls';
+
+  function setTab(nextTab: TabKey) {
+    navigate(`/app/${nextTab}`);
+  }
+
   const feed = useCallsFeed(token, blocked);
   const notice = useBillingNotice(token, setBlocked);
 

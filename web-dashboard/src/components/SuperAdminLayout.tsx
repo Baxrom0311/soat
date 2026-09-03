@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { ClinicIcon, DevicesIcon, InboxIcon, OverviewIcon, PlanIcon } from './Icons';
@@ -19,13 +20,26 @@ const NAV_ITEMS: { key: TabKey; label: string; Icon: typeof OverviewIcon }[] = [
   { key: 'requests', label: "So'rovlar", Icon: InboxIcon },
 ];
 
-/** Superadmin shell: no clinic WS feed — all data comes from the /admin REST endpoints. */
+/** Superadmin shell: URL-synced tab navigation so refreshing F5 preserves the current subpage */
 export function SuperAdminLayout() {
   const { session, logout } = useAuth();
-  const [tab, setTab] = useState<TabKey>('overview');
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  const currentSubPath = pathParts[1] || 'overview';
+  const validTabs: TabKey[] = ['overview', 'clinics', 'plans', 'devices', 'requests'];
+  const tab: TabKey = validTabs.includes(currentSubPath as TabKey)
+    ? (currentSubPath as TabKey)
+    : 'overview';
+
+  function setTab(nextTab: TabKey) {
+    navigate(`/admin/${nextTab}`);
+  }
 
   const userName = session?.name ?? '';
   const userRole = session?.role ?? '';
