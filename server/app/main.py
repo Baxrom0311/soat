@@ -85,6 +85,11 @@ def landing():
     return response
 
 
+@app.api_route("/nurse_pic.png", methods=["GET", "HEAD"])
+def serve_nurse_pic():
+    return FileResponse(STATIC_DIR / "nurse_pic.png")
+
+
 def _serve_dashboard() -> FileResponse:
     response = FileResponse(DASHBOARD_DIR / "index.html")
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
