@@ -93,11 +93,15 @@ android {
         applicationId 'uz.boos.nursecall'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 3
+        versionCode 4
         versionName "1.2.0"
 
         ndk {
-            abiFilters 'arm64-v8a'
+            // Universal APK: bitta fayl har qanday Android telefonga o'rnatiladi.
+            // Faqat 'arm64-v8a' qoldirilganda 32-bitli telefonlar va emulyatorlar
+            // (x86_64) uni "Ilova o'rnatilmadi" deb rad etardi -- mijozga bitta
+            // havola berish uchun hammasi bitta faylda bo'lishi kerak.
+            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
         }
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
