@@ -39,6 +39,13 @@ KEY_DELIVERY_WINDOW_MINUTES = int(os.getenv("KEY_DELIVERY_WINDOW_MINUTES", "15")
 # A discovered-but-unclaimed chip counts as "online" for the superadmin list if it
 # announced itself within this window.
 DISCOVERED_DEVICE_ONLINE_WINDOW_SECONDS = int(os.getenv("DISCOVERED_DEVICE_ONLINE_WINDOW_SECONDS", "300"))
+
+# How long a receiver must be silent before the vendor is paged. Deliberately far longer
+# than DEVICE_ONLINE_WINDOW_SECONDS above: that 3-minute window answers "is this device
+# online right now?" for the dashboard, where being twitchy costs nothing. An alert that
+# fires on a 3-minute wifi blip trains the reader to ignore it, so this waits for 20
+# missed heartbeats (the ESP32 sends one a minute) before calling it an outage.
+DEVICE_OFFLINE_ALERT_MINUTES = int(os.getenv("DEVICE_OFFLINE_ALERT_MINUTES", "20"))
 # /announce is unauthenticated (the ESP32 has no key yet), so it's rate-limited per IP
 # the same way login is: a sliding window, not a hard quota.
 ANNOUNCE_RATE_LIMIT_MAX = int(os.getenv("ANNOUNCE_RATE_LIMIT_MAX", "20"))

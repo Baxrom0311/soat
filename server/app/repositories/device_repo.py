@@ -120,3 +120,27 @@ def delete(db: Session, device: Device) -> None:
         delete_stmt(Call).where(Call.device_id == device.id)
     )
     db.delete(device)
+
+
+def list_all_with_clinic_name(db: Session) -> list[tuple[Device, str]]:
+    """Every device in the fleet with its clinic's name, for the offline-alert job.
+
+    One query for the whole fleet rather than a query per clinic: the job has to decide
+    "is this clinic completely without a working receiver?", which needs every device of
+    every clinic in hand at once. The fleet is small (tens of rows), so loading it whole
+    is both cheaper and easier to reason about than assembling per-clinic counts.
+    """
+    rows = db.execute(
+        select(Device, Clinic.name)
+        .join(Clinic, Clinic.id == Device.clinic_id)
+        .order_by(Device.clinic_id, Device.id)
+    ).all()
+    return [(device, name) for device, name in rows]
+
+
+def mark_offline_alerted(db: Session, device: Device, *, now: datetime) -> None:
+    device.offline_alerted_at = now
+
+
+def clear_offline_alerted(db: Session, device: Device) -> None:
+    device.offline_alerted_at = None

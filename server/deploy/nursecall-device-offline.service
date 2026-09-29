@@ -1,0 +1,11 @@
+[Unit]
+Description=NurseCall: ulanmay qolgan qabul qilgichlar haqida ogohlantirish
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/nursecall_backend
+EnvironmentFile=/root/nursecall_backend/.env
+ExecStart=/root/nursecall_backend/.venv/bin/python -m jobs.check_offline_devices
+TimeoutStartSec=300

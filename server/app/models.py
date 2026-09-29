@@ -218,6 +218,13 @@ class Device(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # When the vendor was last told this receiver had gone silent. Set by the
+    # check_offline_devices job when it sends an alert, cleared when the device
+    # heartbeats again. Exists so a receiver that has been down for days is reported
+    # ONCE rather than on every run of the timer -- the alert has to stay worth reading.
+    offline_alerted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
 
 class DiscoveredDevice(Base):

@@ -25,6 +25,43 @@ never warned. Nothing is written to the DB, so the job is safe to run as often a
 like. Network failures on one channel are logged and the other channel still fires; the
 unit only exits non-zero if the DB itself was unreachable.
 
+## nursecall-device-offline.timer
+
+Runs `jobs/check_offline_devices.py` **every 10 minutes** (not daily like the billing
+warning: a dead receiver means the ward it covers is uncovered right now, so the useful
+unit of delay is minutes, not hours).
+
+A receiver that stops heartbeating is otherwise invisible. The clinic sees a dashboard
+with no calls on it, which looks exactly like a quiet ward; nobody finds out until a
+patient presses a button and nothing happens. When this job was written, **Med Star had
+been completely without coverage for three and a half days** and neither the vendor nor
+the clinic knew.
+
+It reports:
+
+- **newly silent receivers** — `last_seen_at` older than `DEVICE_OFFLINE_ALERT_MINUTES`;
+- **whole-clinic outages** — a clinic with no working receiver at all, sent at ntfy
+  priority `urgent` instead of `high`, because that clinic is not covered;
+- **recoveries** — a receiver that was reported down and has started heartbeating again,
+  so an outage that resolves itself does not stay open in the vendor's head.
+
+Devices with `last_seen_at IS NULL` never trigger an alert on their own: they were
+registered but never connected even once, which is a setup mistake visible in the
+dashboard, not an outage. They are listed for context inside a clinic that is already
+being reported, and they do count towards "this clinic has no coverage".
+
+### Why it does not spam
+
+The job writes exactly one column, `devices.offline_alerted_at`: its memory of what it
+has already reported. Set when an alert goes out, cleared when the device comes back
+(which is what produces the recovery line). Without it, a receiver down for three days
+would be announced 144 times a day, and an alert that fires constantly is one nobody
+reads — the same as having no alert at all.
+
+Delivery failure is handled the other way round on purpose: if **no** channel accepted
+the message, nothing is marked as reported and the next run tries again. A duplicate
+alert is much cheaper than an outage the vendor never hears about.
+
 ## Env vars (read from `/root/nursecall_backend/.env`)
 
 | Var | Required | Default | Purpose |
@@ -32,6 +69,7 @@ unit only exits non-zero if the DB itself was unreachable.
 | `NTFY_TOPIC_URL` | optional | `""` | Full ntfy topic URL, e.g. `https://ntfy.sh/<maxfiy-topic>` |
 | `TELEGRAM_BOT_TOKEN` | optional | `""` | Bot token from @BotFather |
 | `TELEGRAM_CHAT_ID` | optional | `""` | Chat id the message is sent to |
+| `DEVICE_OFFLINE_ALERT_MINUTES` | optional | `20` | Silence before a receiver is called offline. Far longer than the dashboard's 3-minute `DEVICE_ONLINE_WINDOW_SECONDS`: an alert that fires on a wifi blip trains you to ignore it |
 | `BILLING_WARN_BEFORE_DAYS` | optional | `5` | How far ahead of `paid_until` warning starts |
 | `BILLING_GRACE_PERIOD_DAYS` | optional | `3` | Grace window after `paid_until` |
 
@@ -47,7 +85,15 @@ cp nursecall-billing-warn.service nursecall-billing-warn.timer /etc/systemd/syst
 systemctl daemon-reload
 systemctl enable --now nursecall-billing-warn.timer
 systemctl list-timers nursecall-billing-warn.timer
+
+cp nursecall-device-offline.service nursecall-device-offline.timer /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now nursecall-device-offline.timer
+systemctl list-timers nursecall-device-offline.timer
 ```
+
+The offline job needs migration `0008_device_offline` applied first (it adds
+`devices.offline_alerted_at`); without it every run exits non-zero on an unknown column.
 
 ## Test
 
@@ -58,6 +104,11 @@ cd /root/nursecall_backend && .venv/bin/python -m jobs.check_expiring_subscripti
 # 2. real run, on demand (sends to whichever channels are configured)
 systemctl start nursecall-billing-warn.service
 journalctl -u nursecall-billing-warn.service -n 50 --no-pager
+
+# same two steps for the offline check
+cd /root/nursecall_backend && .venv/bin/python -m jobs.check_offline_devices --dry-run
+systemctl start nursecall-device-offline.service
+journalctl -u nursecall-device-offline.service -n 50 --no-pager
 ```
 
 ## ⚠️ Still needed from the vendor: a Telegram bot

@@ -1,0 +1,16 @@
+[Unit]
+Description=NurseCall qabul qilgichlari ulanishini muntazam tekshiradi
+
+[Timer]
+# Every ten minutes, not daily like the billing warning: a receiver that stops
+# heartbeating means the ward it covers is uncovered RIGHT NOW, so the useful unit of
+# delay is minutes. With DEVICE_OFFLINE_ALERT_MINUTES=20 the worst-case time from a
+# receiver dying to the vendor's phone buzzing is about half an hour.
+OnBootSec=5min
+OnUnitActiveSec=10min
+Persistent=true
+RandomizedDelaySec=60
+Unit=nursecall-device-offline.service
+
+[Install]
+WantedBy=timers.target
