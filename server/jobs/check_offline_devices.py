@@ -230,7 +230,21 @@ def run(dry_run: bool = False) -> int:
             return 1
 
         if not outages and not recoveries:
-            logger.info("Hamma qabul qilgich ulangan — xabar yuborilmadi")
+            # "Nothing new", not "nothing wrong": receivers already reported stay silent
+            # here, so this line must not claim the fleet is healthy. Someone reading the
+            # log during an outage should not be told everything is fine.
+            still_down = sum(
+                1
+                for device, _ in device_repo.list_all_with_clinic_name(db)
+                if device.offline_alerted_at is not None
+            )
+            if still_down:
+                logger.info(
+                    "Yangi o'zgarish yo'q — %d ta qurilma hali ham uzilgan (avval xabar qilingan)",
+                    still_down,
+                )
+            else:
+                logger.info("Hamma qabul qilgich ulangan — xabar yuborilmadi")
             return 0
 
         message = build_message(outages, recoveries)
