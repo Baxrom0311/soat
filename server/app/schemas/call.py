@@ -33,7 +33,9 @@ class HistoryCallOut(BaseModel):
     room_number: str
     floor: int
     status: CallStatus
-    device_id: str
+    # None when the receiver that relayed this call has since been removed. The call
+    # itself is the record worth keeping; which box carried the signal is not.
+    device_id: str | None
     created_at: datetime
     acknowledged_at: datetime | None
     acknowledged_by: str | None

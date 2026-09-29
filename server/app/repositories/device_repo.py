@@ -7,9 +7,9 @@ from the device row itself during authentication. Every other lookup is clinic-s
 
 from datetime import datetime, timezone
 
-from sqlalchemy import delete as delete_stmt, func, select, update
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
-from app.models import Call, Clinic, Device, DiscoveredDevice, UnassignedSignal
+from app.models import Clinic, Device
 
 
 def list_by_clinic(db: Session, clinic_id: int) -> list[Device]:
@@ -108,17 +108,17 @@ def clear_pending_key(db: Session, device: Device) -> None:
 
 
 def delete(db: Session, device: Device) -> None:
-    db.execute(
-        update(DiscoveredDevice)
-        .where(DiscoveredDevice.claimed_device_id == device.id)
-        .values(claimed_device_id=None)
-    )
-    db.execute(
-        delete_stmt(UnassignedSignal).where(UnassignedSignal.device_id == device.id)
-    )
-    db.execute(
-        delete_stmt(Call).where(Call.device_id == device.id)
-    )
+    """Deletes the row and nothing else -- what happens to everything pointing at it is
+    declared in the schema (migration 0008): calls keep their history and lose the
+    pointer, this device's unassigned-signal observations go with it, and the zero-touch
+    ledger releases the chip for re-adoption.
+
+    Deliberately not done here in Python. The previous version deleted the device's calls
+    itself, so an API delete silently destroyed the ward's record of every call that
+    receiver had ever relayed while a hand-written SQL DELETE was refused by the FK. Two
+    code paths, two behaviours, and the damaging one was the one people actually used.
+    With the rules in the schema there is only one behaviour to know about.
+    """
     db.delete(device)
 
 

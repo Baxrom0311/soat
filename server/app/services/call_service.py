@@ -214,7 +214,7 @@ def call_history(db: Session, clinic_id: int, *, limit: int, staff_id: int, role
             room_number=room.room_number,
             floor=room.floor,
             status=call.status,
-            device_id=device.device_id,
+            device_id=device.device_id if device is not None else None,
             created_at=call.created_at,
             acknowledged_at=call.acknowledged_at,
             acknowledged_by=call.acknowledged_by,

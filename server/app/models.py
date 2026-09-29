@@ -302,7 +302,13 @@ class Call(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     clinic_id: Mapped[int] = mapped_column(ForeignKey("clinics.id"), nullable=False, index=True)
     room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id"), nullable=False, index=True)
-    device_id: Mapped[int] = mapped_column(ForeignKey("devices.id"), nullable=False, index=True)
+    # Nullable because deleting a receiver must not delete the ward's call history:
+    # the FK is ON DELETE SET NULL, so the call record survives its device. Always set
+    # at creation -- a NULL here means "the receiver that relayed this has since been
+    # removed", never "unknown origin".
+    device_id: Mapped[int | None] = mapped_column(
+        ForeignKey("devices.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     status: Mapped[CallStatus] = mapped_column(
         SAEnum(
             CallStatus,

@@ -67,14 +67,17 @@ def list_active_with_room_by_clinic(db: Session, clinic_id: int) -> list[tuple[C
 
 def list_history_with_room_device_by_clinic(
     db: Session, clinic_id: int, *, limit: int, floors: list[int] | None = None
-) -> list[tuple[Call, Room, Device]]:
+) -> list[tuple[Call, Room, Device | None]]:
     # floors filter must apply BEFORE the LIMIT (in SQL, not in Python after fetching):
     # otherwise a floor-restricted nurse's most recent floor calls could sit past the
     # clinic-wide top-`limit` rows and never show up at all.
     query = (
         select(Call, Room, Device)
         .join(Room, Call.room_id == Room.id)
-        .join(Device, Call.device_id == Device.id)
+        # outerjoin, not join: a call whose receiver has since been deleted keeps its
+        # device_id NULL (migration 0008), and an inner join would drop exactly those
+        # rows -- quietly hiding real history from the ward that lived it.
+        .outerjoin(Device, Call.device_id == Device.id)
         .where(Call.clinic_id == clinic_id)
     )
     if floors is not None:
