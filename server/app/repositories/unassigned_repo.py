@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 
 from sqlalchemy import delete, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from app.models import Button, Device, UnassignedSignal
@@ -54,24 +55,44 @@ def get_by_code(db: Session, clinic_id: int, ev1527_code: int) -> UnassignedSign
 
 def record_sighting(db: Session, clinic_id: int, *, device_pk: int, ev1527_code: int) -> UnassignedSignal:
     """Insert a new unassigned-signal row, or bump last_seen_at/seen_count if one already
-    exists. Returns the row so the caller can broadcast it to dashboards after commit."""
-    existing = get_by_code(db, clinic_id, ev1527_code)
+    exists. Returns the row so the caller can broadcast it to dashboards after commit.
+
+    A single atomic INSERT .. ON CONFLICT DO UPDATE, not a SELECT followed by an INSERT.
+    RF buttons retransmit and patients mash the button, so two presses of the SAME unknown
+    code arrive concurrently as a matter of course -- with check-then-insert both requests
+    saw no row, both inserted, and the second died on uq_unassigned_clinic_code. That
+    surfaced as a 500 on POST /api/v1/calls, i.e. on the patient-call path, roughly twice a
+    day in production. The bound-button path below already serialises per room with an
+    advisory lock; this path had no such protection.
+
+    seen_count is incremented from the stored column rather than from a value read earlier,
+    so concurrent presses each count exactly once.
+    """
     now = datetime.now(timezone.utc)
-    if existing:
-        existing.last_seen_at = now
-        existing.seen_count += 1
-        existing.device_id = device_pk
-        return existing
-    signal = UnassignedSignal(
-        clinic_id=clinic_id,
-        device_id=device_pk,
-        ev1527_code=ev1527_code,
-        first_seen_at=now,
-        last_seen_at=now,
-        seen_count=1,
+    stmt = (
+        pg_insert(UnassignedSignal)
+        .values(
+            clinic_id=clinic_id,
+            device_id=device_pk,
+            ev1527_code=ev1527_code,
+            first_seen_at=now,
+            last_seen_at=now,
+            seen_count=1,
+        )
+        .on_conflict_do_update(
+            constraint="uq_unassigned_clinic_code",
+            set_={
+                "last_seen_at": now,
+                "device_id": device_pk,
+                "seen_count": UnassignedSignal.__table__.c.seen_count + 1,
+            },
+        )
+        .returning(UnassignedSignal)
     )
-    db.add(signal)
-    db.flush()  # caller needs signal.id for the broadcast
+    # first_seen_at is deliberately absent from the update set: it records when this code
+    # was FIRST heard, which is what tells an admin whether a stray signal is new or
+    # long-standing.
+    signal = db.execute(stmt).scalar_one()
     return signal
 
 

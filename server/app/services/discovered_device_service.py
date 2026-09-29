@@ -42,10 +42,12 @@ def announce(db: Session, *, chip_id: str, client_ip: str) -> AnnounceOut:
     _check_announce_rate(client_ip)
 
     now = datetime.now(timezone.utc)
-    discovered_device_repo.upsert_seen(db, chip_id=chip_id, last_ip=client_ip, now=now)
-    # Best-effort housekeeping, piggybacked on a request that's already writing --
-    # small-scale deployment, so a dedicated cleanup job isn't worth it yet.
+    # Housekeeping runs BEFORE this device's own sighting is recorded, never after:
+    # otherwise the row we just wrote is a candidate for the very delete that follows it.
+    # Best-effort, piggybacked on a request that's already writing -- small-scale
+    # deployment, so a dedicated cleanup job isn't worth it yet.
     discovered_device_repo.delete_stale_unclaimed(db, cutoff=now - timedelta(hours=24))
+    discovered_device_repo.upsert_seen(db, chip_id=chip_id, last_ip=client_ip, now=now)
     db.commit()
 
     device = device_repo.get_by_chip_id(db, chip_id)
