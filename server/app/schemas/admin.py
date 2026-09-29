@@ -102,6 +102,12 @@ class AdminClinicUpdate(BaseModel):
     discount_percent: int | None = None
     discount_months: int | None = None
     clear_discount: bool = False
+    # When this trial's free period ends. Sending it is what arms trial expiry for this
+    # clinic; clear_trial_end=true disarms it again and the trial reverts to running
+    # until a superadmin ends it by hand. Ignored while the clinic is not on trial --
+    # a paying clinic is gated by paid_until.
+    trial_ends_at: datetime | None = None
+    clear_trial_end: bool = False
     enforcement_enabled: bool | None = None
 
 

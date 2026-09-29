@@ -116,6 +116,8 @@ def update_clinic(
         discount_percent=body.discount_percent,
         discount_months=body.discount_months,
         clear_discount=body.clear_discount,
+        trial_ends_at=body.trial_ends_at,
+        clear_trial_end=body.clear_trial_end,
         enforcement_enabled=body.enforcement_enabled,
         actor=user,
         ip_address=_ip(request),

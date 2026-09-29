@@ -206,6 +206,7 @@ def _clinic_audit_snapshot(clinic: Clinic) -> dict:
         "discount_percent": clinic.discount_percent,
         "discount_months": clinic.discount_months,
         "discount_started_at": clinic.discount_started_at.isoformat() if clinic.discount_started_at else None,
+        "trial_ends_at": clinic.trial_ends_at.isoformat() if clinic.trial_ends_at else None,
         "enforcement_enabled": clinic.enforcement_enabled,
     }
 
@@ -286,6 +287,8 @@ def update_clinic(
     discount_percent: int | None,
     discount_months: int | None,
     clear_discount: bool,
+    trial_ends_at: datetime | None,
+    clear_trial_end: bool,
     enforcement_enabled: bool | None,
     actor: CurrentUser,
     ip_address: str | None = None,
@@ -329,6 +332,19 @@ def update_clinic(
                 detail="To'lov davri faqat 1 (oylik) yoki 12 (yillik) bo'lishi mumkin",
             )
         clinic.billing_period_months = billing_period_months
+
+    if clear_trial_end:
+        clinic.trial_ends_at = None
+    elif trial_ends_at is not None:
+        # Rejected rather than silently stored on a non-trial clinic: a date sitting on a
+        # paying clinic would look armed and do nothing, since access_deadline reads
+        # paid_until once the status is active.
+        if clinic.subscription_status != SubscriptionStatus.TRIAL:
+            raise HTTPException(
+                status_code=422,
+                detail="Sinov muddatini faqat 'trial' holatidagi klinikaga qo'yish mumkin",
+            )
+        clinic.trial_ends_at = trial_ends_at
 
     if clear_discount:
         clinic.discount_percent = None

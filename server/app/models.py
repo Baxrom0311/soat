@@ -74,6 +74,12 @@ class Clinic(Base):
     # Access is auto-gated once this instant passes (unless status is trial). NULL == not
     # payment-gated yet (freshly created clinic before any billing is set up).
     paid_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # When a TRIAL clinic's free period runs out, gated exactly like paid_until is for a
+    # paying one (warning window, grace, then management blocked -- never alerting).
+    # NULL == this trial never lapses on its own; only a superadmin ends it. That is the
+    # default and the state every clinic created before this column existed is in, so
+    # adding the mechanism changed nothing for anybody until a date is deliberately set.
+    trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Time-limited promotional discount ("first 3 months at 50%"). Stored as
     # percent + duration + start rather than an end date so it matches how the deal is

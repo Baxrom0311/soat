@@ -10,9 +10,11 @@ Access rules:
     flag, because it is an explicit human decision rather than an automatic lapse.
   - Overdue but inside grace is NOT blocked -- staff keep working while the lapse is
     surfaced as "grace" so it can be chased before it becomes an outage.
-  - "trial" clinics are never payment-gated (paid_until is ignored) so a brand-new
-    clinic works before any billing is configured. Trial is ended deliberately by a
-    superadmin, never by a timer.
+  - A trial clinic is gated by trial_ends_at instead of paid_until, and ONLY when that
+    date is set. NULL -- the default, and the state every existing clinic is in -- means
+    the trial never lapses on its own and only a superadmin ends it. Setting the date is
+    what arms the timer, per clinic, so the mechanism can exist without being switched on
+    for anybody who was not told about it.
   - BLOCKED only ever gates CLINIC MANAGEMENT (see core.deps). Patient call ingestion,
     push notification, the nurse's active-call list and acknowledgment all keep working
     for a blocked clinic -- an unpaid invoice must never be able to turn into a patient
@@ -40,12 +42,27 @@ def _now(now: datetime | None) -> datetime:
 # --------------------------------------------------------------------------- status
 
 
-def is_overdue(clinic, now: datetime | None = None) -> bool:
+def access_deadline(clinic) -> datetime | None:
+    """The instant this clinic's access runs out, whichever kind of subscription it is:
+    the end of the trial for a trial clinic, the paid-through date for everyone else.
+    None means nothing expires -- a clinic with no billing configured, or a trial with no
+    end date set.
+
+    Having one function answer this is what lets a trial expire without a second copy of
+    the overdue/grace/warning rules. Previously every one of those functions began by
+    special-casing TRIAL, which is exactly why trials could run free forever: the rules
+    were correct and simply never reached.
+    """
     if clinic.subscription_status == SubscriptionStatus.TRIAL:
+        return clinic.trial_ends_at
+    return clinic.paid_until
+
+
+def is_overdue(clinic, now: datetime | None = None) -> bool:
+    deadline = access_deadline(clinic)
+    if deadline is None:
         return False
-    if clinic.paid_until is None:
-        return False
-    return clinic.paid_until < _now(now)
+    return deadline < _now(now)
 
 
 def is_in_grace(clinic, now: datetime | None = None) -> bool:
@@ -53,7 +70,7 @@ def is_in_grace(clinic, now: datetime | None = None) -> bool:
     keep working, but the clinic should be shown/followed up as unpaid."""
     if not is_overdue(clinic, now):
         return False
-    return _now(now) <= clinic.paid_until + timedelta(days=BILLING_GRACE_PERIOD_DAYS)
+    return _now(now) <= access_deadline(clinic) + timedelta(days=BILLING_GRACE_PERIOD_DAYS)
 
 
 def is_blocked(clinic, now: datetime | None = None) -> bool:
@@ -94,11 +111,12 @@ def is_payment_lapse_suspension(clinic) -> bool:
 
 
 def days_until_expiry(clinic, now: datetime | None = None) -> int | None:
-    """Whole days remaining before paid_until, negative once it has passed. None when
-    the clinic has no paid-through date or is on trial (nothing to expire)."""
-    if clinic.paid_until is None or clinic.subscription_status == SubscriptionStatus.TRIAL:
+    """Whole days remaining before access runs out, negative once it has passed. None
+    when nothing expires (no paid-through date, or a trial with no end set)."""
+    deadline = access_deadline(clinic)
+    if deadline is None:
         return None
-    delta = clinic.paid_until - _now(now)
+    delta = deadline - _now(now)
     # Round toward zero on the positive side so "0 days left" means "expires today"
     # rather than appearing while there is still most of a day in hand.
     return delta.days
@@ -106,17 +124,16 @@ def days_until_expiry(clinic, now: datetime | None = None) -> int | None:
 
 def blocked_at(clinic) -> datetime | None:
     """The instant management access actually cuts off: end of the grace window."""
-    if clinic.paid_until is None:
+    deadline = access_deadline(clinic)
+    if deadline is None:
         return None
-    return clinic.paid_until + timedelta(days=BILLING_GRACE_PERIOD_DAYS)
+    return deadline + timedelta(days=BILLING_GRACE_PERIOD_DAYS)
 
 
 def needs_expiry_warning(clinic, now: datetime | None = None) -> bool:
     """True from BILLING_WARN_BEFORE_DAYS ahead of paid_until until the clinic is
     actually blocked -- i.e. across the run-up AND the grace window, which is the whole
     span where a phone call can still prevent an outage."""
-    if clinic.subscription_status == SubscriptionStatus.TRIAL:
-        return False
     if not clinic.enforcement_enabled:
         return False
     remaining = days_until_expiry(clinic, now)
