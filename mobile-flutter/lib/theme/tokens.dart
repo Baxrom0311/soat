@@ -1,67 +1,182 @@
 import 'package:flutter/material.dart';
 
-/// The app's palette, taken from the approved Stitch design.
-///
-/// Dark by default and not switchable. A nurse reads this at 3am in a corridor
-/// with the lights down; a white screen at arm's length is the wrong instrument,
-/// and an option to choose is one more thing to get wrong on a shared phone.
+/// The design, transcribed from the approved Stitch screens rather than
+/// approximated by eye. Every hex, radius and size here has a counterpart in
+/// design-stitch/chaqiruvlar.html; where the design used a Tailwind class name,
+/// the palette value it resolves to is written out below.
 class T {
   const T._();
 
-  // ---- surfaces ----
-  static const Color page = Color(0xFF070B14);
-  static const Color card = Color(0xFF0E1526);
-  static const Color cardSoft = Color(0xFF141C30);
-  static const Color border = Color(0xFF1E2A44);
+  // ------------------------------------------------------------ palette
+  // Tailwind's own values, kept under their original names so a future change
+  // to the design can be matched class-for-class instead of guessed at.
+  static const slate100 = Color(0xFFF1F5F9);
+  static const slate200 = Color(0xFFE2E8F0);
+  static const slate300 = Color(0xFFCBD5E1);
+  static const slate400 = Color(0xFF94A3B8);
+  static const slate500 = Color(0xFF64748B);
+  static const slate800 = Color(0xFF1E293B);
+  static const slate900 = Color(0xFF0F172A);
+  static const slate950 = Color(0xFF020617);
 
-  // ---- ink ----
-  static const Color text1 = Color(0xFFF2F5FA);
-  static const Color text2 = Color(0xFFA9B4C8);
-  static const Color text3 = Color(0xFF6B7890);
+  static const sky200 = Color(0xFFBAE6FD);
+  static const sky300 = Color(0xFF7DD3FC);
+  static const sky400 = Color(0xFF38BDF8);
+  static const sky500 = Color(0xFF0EA5E9);
+  static const sky950 = Color(0xFF082F49);
+  static const cyan400 = Color(0xFF22D3EE);
+  static const cyan500 = Color(0xFF06B6D4);
 
-  // ---- the waiting ramp ----
+  static const amber200 = Color(0xFFFDE68A);
+  static const amber400 = Color(0xFFFBBF24);
+  static const amber500 = Color(0xFFF59E0B);
+  static const amber600 = Color(0xFFD97706);
+  static const amber950 = Color(0xFF451A03);
+
+  static const red200 = Color(0xFFFECACA);
+  static const red400 = Color(0xFFF87171);
+  static const red500 = Color(0xFFEF4444);
+  static const red600 = Color(0xFFDC2626);
+  static const red950 = Color(0xFF450A0A);
+  static const rose600 = Color(0xFFE11D48);
+
+  static const emerald400 = Color(0xFF34D399);
+
+  // ------------------------------------------------------------ surfaces
+  static const page = Color(0xFF060911);
+  static const navBar = Color(0xFF070B14);
+  static const text1 = slate100;
+  static const text2 = slate300;
+  static const text3 = slate400;
+
+  // Semantic aliases used outside a call card. They point into the palette
+  // above rather than repeating hexes, so a palette change reaches everything.
+  static const card = Color(0xFF0E1526);
+  static const cardSoft = slate900;
+  static const border = slate800;
+  static const ok = emerald400;
+  static const warn = amber500;
+  static const danger = red500;
+
+  /// The accent for a waiting step, for places that need only the colour --
+  /// a filter chip or a nav badge, not a whole card.
+  static Color stepAccent(int n) => step(n).accent;
+  static const step1 = sky400;
+  static const step2 = amber400;
+  static const step3 = red400;
+
+  // ------------------------------------------------------------ type
   //
-  // Colour here means ONE thing: how long this patient has been waiting. It does
-  // not mean urgency — every press of an EV1527 button is identical and the
-  // system has no way to know which is serious. Encoding a severity the data
-  // cannot support would be a lie a nurse might act on.
+  // Two families, as the design has them: Jakarta for words, Grotesk for the
+  // numbers. The split is not decoration -- Grotesk's digits are even-width and
+  // tall, which is what lets a room number stay legible across a corridor and
+  // keeps a running timer from shuffling sideways every second.
+  static const sans = 'Jakarta';
+  static const mono = 'Grotesk';
+
+  // ------------------------------------------------------------ the ramp
   //
-  // Blue reads as calm, amber as "look at this", red as "this has gone on too
-  // long", which is the order the ward actually experiences.
-  static const Color step1 = Color(0xFF38BDF8); // < 2 min
-  static const Color step2 = Color(0xFFF59E0B); // 2 – 10 min
-  static const Color step3 = Color(0xFFEF4444); // > 10 min
-
-  static const Color ok = Color(0xFF34D399);
-  static const Color warn = Color(0xFFF59E0B);
-  static const Color danger = Color(0xFFEF4444);
-
-  /// The fill for a call at [step], 1-based.
-  static Color forStep(int step) => switch (step) {
-        1 => step1,
-        2 => step2,
-        _ => step3,
+  // Colour on a call card means one thing: how long somebody has been waiting.
+  // It is not urgency -- every EV1527 press is identical and the system has no
+  // way to know which is serious, so encoding a severity the data cannot support
+  // would be a lie a nurse might act on.
+  static CallStepStyle step(int step) => switch (step) {
+        1 => const CallStepStyle(
+            accent: sky400,
+            card: Color(0xFF09121A),
+            border: sky500,
+            borderOpacity: 0.40,
+            chipBg: sky950,
+            chipInk: sky200,
+            glow: sky400,
+            glowOpacity: 0.20,
+            buttonFrom: sky500,
+            buttonVia: sky400,
+            buttonTo: cyan500,
+            buttonInk: slate950,
+          ),
+        2 => const CallStepStyle(
+            accent: amber400,
+            card: Color(0xFF141008),
+            border: amber500,
+            borderOpacity: 0.55,
+            chipBg: amber950,
+            chipInk: amber200,
+            glow: amber500,
+            glowOpacity: 0.25,
+            buttonFrom: amber600,
+            buttonVia: amber500,
+            buttonTo: amber600,
+            // Dark ink, because amber is a light colour and white on it fails
+            // legibility badly. A call card is the one surface where "mostly
+            // readable" is not good enough.
+            buttonInk: slate950,
+          ),
+        _ => const CallStepStyle(
+            accent: red400,
+            card: Color(0xFF140A0E),
+            border: red500,
+            borderOpacity: 0.70,
+            chipBg: red950,
+            chipInk: red200,
+            glow: red500,
+            glowOpacity: 0.55,
+            buttonFrom: red600,
+            buttonVia: rose600,
+            buttonTo: red600,
+            buttonInk: Colors.white,
+          ),
       };
 
-  /// Ink that stays readable on [forStep].
-  ///
-  /// Amber is a light colour: white text on it fails legibility badly, and a
-  /// call card is the one surface where "mostly readable" is not good enough.
-  /// Dark ink on amber, white on the other two.
-  static Color inkOnStep(int step) =>
-      step == 2 ? const Color(0xFF1A1206) : Colors.white;
+  static ThemeData theme() => ThemeData(
+        useMaterial3: true,
+        fontFamily: sans,
+        colorScheme: const ColorScheme.dark(
+          primary: sky400,
+          surface: page,
+          error: red500,
+        ),
+        scaffoldBackgroundColor: page,
+      );
+}
 
-  static ThemeData theme() {
-    const scheme = ColorScheme.dark(
-      primary: step1,
-      surface: page,
-      error: danger,
-    );
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: scheme,
-      scaffoldBackgroundColor: page,
-      splashFactory: InkRipple.splashFactory,
-    );
-  }
+/// Everything one step of the waiting ramp paints, in one place.
+///
+/// Gathered into a value rather than spread across switch statements so a card
+/// cannot end up half in one step and half in another -- which is exactly the
+/// kind of mismatch nobody notices until a nurse reads the wrong urgency off it.
+class CallStepStyle {
+  const CallStepStyle({
+    required this.accent,
+    required this.card,
+    required this.border,
+    required this.borderOpacity,
+    required this.chipBg,
+    required this.chipInk,
+    required this.glow,
+    required this.glowOpacity,
+    required this.buttonFrom,
+    required this.buttonVia,
+    required this.buttonTo,
+    required this.buttonInk,
+  });
+
+  final Color accent;
+  final Color card;
+  final Color border;
+  final double borderOpacity;
+  final Color chipBg;
+  final Color chipInk;
+  final Color glow;
+  final double glowOpacity;
+  final Color buttonFrom;
+  final Color buttonVia;
+  final Color buttonTo;
+  final Color buttonInk;
+
+  LinearGradient get buttonGradient => LinearGradient(
+        colors: [buttonFrom, buttonVia, buttonTo],
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+      );
 }

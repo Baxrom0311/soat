@@ -4,11 +4,12 @@ import '../api/models.dart';
 import '../core/age.dart';
 import '../theme/tokens.dart';
 
-/// One waiting patient.
+/// One waiting patient, transcribed from the approved design.
 ///
-/// The room number is the largest thing on screen by a wide margin, because it
-/// is the only thing the nurse has to carry with her when she looks up and
-/// starts walking. Everything else on the card is context for that one number.
+/// Sizes are the design's own, converted from its Tailwind classes: card
+/// `rounded-2xl` and `p-4`, room number `text-[56px]`, button `h-[52px]` and
+/// `rounded-xl`. They are written as plain numbers rather than a scale because
+/// there is one screen that matters here and matching it exactly is the point.
 class CallCard extends StatelessWidget {
   const CallCard({
     super.key,
@@ -21,9 +22,9 @@ class CallCard extends StatelessWidget {
   final Call call;
   final DateTime now;
 
-  /// Nullable would be wrong here: a card a nurse cannot answer has no business
-  /// on this screen. The wall display, which genuinely only shows, is a
-  /// different surface with a different widget.
+  /// Nullable would be wrong: a card a nurse cannot answer has no business on
+  /// this screen. The wall display, which genuinely only shows, is a different
+  /// surface with a different widget.
   final Future<void> Function() onAcknowledge;
 
   final bool busy;
@@ -31,18 +32,27 @@ class CallCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final waited = call.waited(now);
-    final step = ageStep(waited);
-    final accent = T.forStep(step);
-    final ink = T.inkOnStep(step);
+    final s = T.step(ageStep(waited));
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: T.card,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: accent.withValues(alpha: 0.55), width: 1.5),
+        color: s.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: s.border.withValues(alpha: s.borderOpacity),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: s.glow.withValues(alpha: s.glowOpacity * 0.45),
+            blurRadius: 22,
+            spreadRadius: -4,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -55,120 +65,165 @@ class CallCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: accent,
-                    fontSize: 46,
+                    fontFamily: T.mono,
+                    fontSize: 56,
                     height: 1.0,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -1,
-                    // Tabular figures so the number does not shuffle sideways as
-                    // digits change on a ward with rooms 9 and 118 in the list.
-                    fontFeatures: const [FontFeature.tabularFigures()],
+                    letterSpacing: -1.4,
+                    fontWeight: FontWeight.w700,
+                    // White, not the accent colour. The step reads from the glow
+                    // behind the number and from everything around it; a white
+                    // numeral stays the highest-contrast thing on the card at
+                    // every step, which is what a nurse is actually reading.
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        color: s.glow.withValues(alpha: s.glowOpacity),
+                        blurRadius: 14,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                 ),
               ),
               const SizedBox(width: 10),
-              _Chip(text: '${call.floor}-qavat', color: accent),
+              _FloorChip(floor: call.floor, style: s),
               const Spacer(),
-              _Elapsed(waited: waited, color: accent),
+              _Elapsed(waited: waited, style: s),
             ],
           ),
-          const SizedBox(height: 14),
-          SizedBox(
-            height: 52,
-            child: FilledButton(
-              onPressed: busy ? null : () => onAcknowledge(),
-              style: FilledButton.styleFrom(
-                backgroundColor: accent,
-                foregroundColor: ink,
-                disabledBackgroundColor: accent.withValues(alpha: 0.4),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: busy
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.4,
-                        valueColor: AlwaysStoppedAnimation(ink),
-                      ),
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.check_circle_outline, size: 20, color: ink),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Qabul qilish',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                            color: ink,
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-          ),
+          const SizedBox(height: 16),
+          _AckButton(style: s, busy: busy, onPressed: onAcknowledge),
         ],
       ),
     );
   }
 }
 
-class _Chip extends StatelessWidget {
-  const _Chip({required this.text, required this.color});
+class _FloorChip extends StatelessWidget {
+  const _FloorChip({required this.floor, required this.style});
 
-  final String text;
-  final Color color;
+  final int floor;
+  final CallStepStyle style;
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.16),
-          borderRadius: BorderRadius.circular(999),
+          color: style.chipBg.withValues(alpha: 0.90),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: style.border.withValues(alpha: 0.40)),
         ),
         child: Text(
-          text,
+          '$floor-qavat',
           style: TextStyle(
-            color: color,
-            fontSize: 12.5,
+            fontSize: 12,
             fontWeight: FontWeight.w700,
+            color: style.chipInk,
           ),
         ),
       );
 }
 
 class _Elapsed extends StatelessWidget {
-  const _Elapsed({required this.waited, required this.color});
+  const _Elapsed({required this.waited, required this.style});
 
   final Duration waited;
-  final Color color;
+  final CallStepStyle style;
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.14),
-          borderRadius: BorderRadius.circular(10),
+          color: style.chipBg.withValues(alpha: 0.80),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: style.border.withValues(alpha: 0.60)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.schedule, size: 15, color: color),
+            Icon(Icons.schedule, size: 17, color: style.accent),
             const SizedBox(width: 6),
             Text(
               elapsedLabel(waited),
               style: TextStyle(
-                color: color,
-                fontSize: 15,
+                fontFamily: T.mono,
+                fontSize: 17,
                 fontWeight: FontWeight.w700,
-                fontFeatures: const [FontFeature.tabularFigures()],
+                letterSpacing: -0.4,
+                color: style.chipInk,
               ),
             ),
           ],
+        ),
+      );
+}
+
+class _AckButton extends StatelessWidget {
+  const _AckButton({
+    required this.style,
+    required this.busy,
+    required this.onPressed,
+  });
+
+  final CallStepStyle style;
+  final bool busy;
+  final Future<void> Function() onPressed;
+
+  @override
+  Widget build(BuildContext context) => Opacity(
+        opacity: busy ? 0.6 : 1,
+        child: Container(
+          height: 52,
+          decoration: BoxDecoration(
+            gradient: style.buttonGradient,
+            borderRadius: BorderRadius.circular(12),
+            // A one-pixel light edge along the top only, as in the design: it
+            // reads as a raised surface without the weight of a full border.
+            border: Border(
+              top: BorderSide(color: Colors.white.withValues(alpha: 0.30)),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: style.buttonFrom.withValues(alpha: 0.5),
+                blurRadius: 22,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: busy ? null : () => onPressed(),
+              child: Center(
+                child: busy
+                    ? SizedBox(
+                        width: 21,
+                        height: 21,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.4,
+                          valueColor: AlwaysStoppedAnimation(style.buttonInk),
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_circle,
+                              size: 22, color: style.buttonInk),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Qabul qilish',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: style.buttonInk,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ),
         ),
       );
 }

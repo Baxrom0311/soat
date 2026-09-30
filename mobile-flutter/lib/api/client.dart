@@ -101,6 +101,19 @@ class ApiClient {
     }
   }
 
+  /// Recent calls on the floors this nurse covers. Billing-gated, so a blocked
+  /// clinic simply loses the statistics strip -- which is management data, and
+  /// exactly the sort of thing that should stop before an alert ever does.
+  Future<List<HistoryCall>> history({int limit = 200}) async {
+    final r = await _http
+        .get(_uri('/api/v1/calls/history?limit=$limit'), headers: _headers())
+        .timeout(_timeout);
+    final list = _decode(r) as List<dynamic>;
+    return list
+        .map((e) => HistoryCall.fromJson(e as Map<String, dynamic>))
+        .toList(growable: false);
+  }
+
   Future<BillingNotice> billingNotice() async {
     final r = await _http
         .get(_uri('/api/v1/clinic/billing-notice'), headers: _headers())

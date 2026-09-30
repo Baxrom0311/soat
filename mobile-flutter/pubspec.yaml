@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # versionName+versionCode. The code must stay above the Expo build's 4, or Android
 # refuses the install as a downgrade and says only "App not installed". 2.0.0 marks the
 # generation change; the server's forced-update check reads the code, not the name.
-version: 2.1.0+6
+version: 2.2.0+7
 
 environment:
   sdk: ^3.10.8
@@ -76,22 +76,17 @@ flutter:
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package
 
-  # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
-  # list giving the asset and other descriptors for the font. For
-  # example:
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
-  #         weight: 700
-  #
+  # Variable fonts from the approved design (Google Fonts, OFL). Bundled rather than
+  # fetched at runtime: the app must render correctly on a ward phone that has just
+  # been handed over and has not been online yet, and a font that arrives late means a
+  # room number in the wrong size at the moment it matters.
+  fonts:
+    - family: Jakarta
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans.ttf
+    - family: Grotesk
+      fonts:
+        - asset: assets/fonts/SpaceGrotesk.ttf
+
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package

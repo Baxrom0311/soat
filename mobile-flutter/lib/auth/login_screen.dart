@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Icon(Icons.notifications_active,
-                    size: 52, color: T.step1),
+                    size: 52, color: T.sky400),
                 const SizedBox(height: 18),
                 const Text(
                   'NurseCall',
@@ -76,7 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Text(
                   'Hamshira uchun',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: T.text3, fontSize: 14),
+                  style: TextStyle(color: T.slate500, fontSize: 14),
                 ),
                 const SizedBox(height: 34),
                 _field(
@@ -98,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () => setState(() => _obscure = !_obscure),
                     icon: Icon(
                       _obscure ? Icons.visibility_off : Icons.visibility,
-                      color: T.text3,
+                      color: T.slate500,
                       size: 20,
                     ),
                   ),
@@ -108,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text(
                     _error!,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: T.danger, fontSize: 13.5),
+                    style: const TextStyle(color: T.red400, fontSize: 13.5),
                   ),
                 ],
                 const SizedBox(height: 22),
@@ -117,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: FilledButton(
                     onPressed: _busy ? null : _submit,
                     style: FilledButton.styleFrom(
-                      backgroundColor: T.step1,
+                      backgroundColor: T.sky400,
                       foregroundColor: const Color(0xFF04121C),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(13),
@@ -171,19 +171,19 @@ class _LoginScreenState extends State<LoginScreen> {
         style: const TextStyle(color: T.text1, fontSize: 16),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(color: T.text3),
-          prefixIcon: Icon(icon, color: T.text3, size: 20),
+          hintStyle: const TextStyle(color: T.slate500),
+          prefixIcon: Icon(icon, color: T.slate500, size: 20),
           suffixIcon: suffix,
           filled: true,
-          fillColor: T.cardSoft,
+          fillColor: T.slate900,
           contentPadding: const EdgeInsets.symmetric(vertical: 16),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(13),
-            borderSide: const BorderSide(color: T.border),
+            borderSide: const BorderSide(color: T.slate800),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(13),
-            borderSide: const BorderSide(color: T.step1, width: 1.6),
+            borderSide: const BorderSide(color: T.sky400, width: 1.6),
           ),
         ),
       );

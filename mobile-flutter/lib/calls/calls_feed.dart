@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../api/client.dart';
 import '../api/models.dart';
+import 'shift_stats.dart';
 
 /// The ward's unanswered calls, kept fresh while the app is on screen.
 ///
@@ -35,17 +36,20 @@ class CallsFeed extends ChangeNotifier {
 
   Timer? _poll;
   Timer? _tick;
+  Timer? _stats2;
 
   List<Call> _calls = const [];
   DateTime _now = DateTime.now();
   bool _loading = true;
   bool _reachable = true;
   BillingNotice? _notice;
+  ShiftStats _stats = ShiftStats.empty;
 
   List<Call> get calls => _calls;
   DateTime get now => _now;
   bool get loading => _loading;
   BillingNotice? get notice => _notice;
+  ShiftStats get stats => _stats;
 
   /// False once a refresh has failed. Surfaced in the UI because a phone that
   /// cannot reach the server shows an empty list, which is indistinguishable
@@ -61,13 +65,20 @@ class CallsFeed extends ChangeNotifier {
     _poll = Timer.periodic(pollInterval, (_) => refresh());
     refresh();
     _refreshNotice();
+    _refreshStats();
+    // Far less often than the call list: the strip is context for the shift, and
+    // history is a heavier query that must never compete with finding out that
+    // somebody is waiting.
+    _stats2 = Timer.periodic(const Duration(minutes: 2), (_) => _refreshStats());
   }
 
   void stop() {
     _poll?.cancel();
     _tick?.cancel();
+    _stats2?.cancel();
     _poll = null;
     _tick = null;
+    _stats2 = null;
   }
 
   Future<void> refresh() async {
@@ -97,6 +108,16 @@ class CallsFeed extends ChangeNotifier {
     }
   }
 
+  Future<void> _refreshStats() async {
+    try {
+      _stats = ShiftStats.from(await _api.history(), DateTime.now());
+      notifyListeners();
+    } catch (_) {
+      // Billing-gated and non-essential. A blocked clinic simply loses the
+      // strip, which is the right thing to lose before an alert ever is.
+    }
+  }
+
   Future<void> _refreshNotice() async {
     try {
       _notice = await _api.billingNotice();
@@ -117,6 +138,7 @@ class CallsFeed extends ChangeNotifier {
     try {
       await _api.acknowledge(callId);
       onAcknowledged?.call(callId);
+      _refreshStats();
     } on ApiException catch (e) {
       if (e.isUnauthorized) {
         stop();

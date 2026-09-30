@@ -5,7 +5,12 @@ import '../auth/session_store.dart';
 import '../theme/tokens.dart';
 import 'call_card.dart';
 import 'calls_feed.dart';
+import 'shift_stats.dart';
 
+/// The nurse's screen, transcribed from the approved design.
+///
+/// Laid out inside a 430px-wide column as the design is, so the proportions
+/// hold on a tablet at the nurses' station as well as on a phone.
 class CallsScreen extends StatefulWidget {
   const CallsScreen({super.key, required this.feed, required this.sessions});
 
@@ -19,6 +24,7 @@ class CallsScreen extends StatefulWidget {
 class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
   int? _floorFilter;
   int? _busyCallId;
+  int _tab = 0;
 
   @override
   void initState() {
@@ -43,8 +49,7 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Polling stops when the screen does. A phone in a pocket should be woken by
-    // a push, not by a request every five seconds all shift — and a stale list
-    // is corrected the moment the nurse looks at it again.
+    // a push, not by a request every five seconds all shift.
     if (state == AppLifecycleState.resumed) {
       widget.feed.start();
     } else if (state == AppLifecycleState.paused) {
@@ -67,7 +72,7 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Qabul qilinmadi — qayta urinib ko‘ring'),
-            backgroundColor: T.danger,
+            backgroundColor: T.red600,
           ),
         );
       }
@@ -79,165 +84,256 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final feed = widget.feed;
-    final name = widget.sessions.session?.name ?? '';
-    final floors = {for (final c in feed.calls) c.floor}.toList()..sort();
+    final session = widget.sessions.session;
 
     return Scaffold(
       backgroundColor: T.page,
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _Header(name: name, onSignOut: widget.sessions.signOut),
-            if (!feed.reachable) const _OfflineBar(),
-            if (feed.notice case final n? when n.warn || n.blocked)
-              _BillingBar(notice: n),
-            if (floors.length > 1)
-              _FloorFilter(
-                floors: floors,
-                selected: _floorFilter,
-                counts: {
-                  for (final f in floors)
-                    f: feed.calls.where((c) => c.floor == f).length,
-                },
-                total: feed.calls.length,
-                onSelect: (f) => setState(() => _floorFilter = f),
-              ),
-            Expanded(
-              child: feed.loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _visible.isEmpty
-                      ? const _Empty()
-                      : RefreshIndicator(
-                          onRefresh: feed.refresh,
-                          child: ListView.builder(
-                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            itemCount: _visible.length,
-                            itemBuilder: (_, i) {
-                              final c = _visible[i];
-                              return CallCard(
-                                call: c,
-                                now: feed.now,
-                                busy: _busyCallId == c.callId,
-                                onAcknowledge: () => _ack(c),
-                              );
-                            },
-                          ),
-                        ),
-            ),
-          ],
+        bottom: false,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 430),
+            child: _tab == 0
+                ? _callsTab(feed, session)
+                : _ProfileTab(
+                    session: session,
+                    stats: feed.stats,
+                    onSignOut: widget.sessions.signOut,
+                  ),
+          ),
         ),
       ),
+      bottomNavigationBar: _BottomNav(
+        index: _tab,
+        badge: feed.calls.length,
+        onSelect: (i) => setState(() => _tab = i),
+      ),
+    );
+  }
+
+  Widget _callsTab(CallsFeed feed, Session? session) {
+    final floors = {for (final c in feed.calls) c.floor}.toList()..sort();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _Header(name: session?.name ?? ''),
+              if (!feed.reachable) ...[
+                const SizedBox(height: 12),
+                const _Banner(
+                  icon: Icons.cloud_off,
+                  tint: T.red500,
+                  bg: T.red950,
+                  text: 'Serverga ulanib bo‘lmadi — ro‘yxat eskirgan bo‘lishi mumkin',
+                ),
+              ],
+              if (feed.notice case final n? when n.warn || n.blocked) ...[
+                const SizedBox(height: 12),
+                _Banner(
+                  icon: Icons.warning_amber_rounded,
+                  tint: T.amber400,
+                  bg: T.amber950,
+                  text: n.blocked
+                      ? 'Obuna to‘lanmagan. Chaqiruvlar ishlashda davom etadi.'
+                      : n.daysLeft != null
+                          ? 'Obuna: ${n.daysLeft} kun qoldi'
+                          : 'Obuna muddati tugayapti',
+                ),
+              ],
+              if (floors.length > 1) ...[
+                const SizedBox(height: 12),
+                _FloorFilter(
+                  floors: floors,
+                  selected: _floorFilter,
+                  counts: {
+                    for (final f in floors)
+                      f: feed.calls.where((c) => c.floor == f).length,
+                  },
+                  total: feed.calls.length,
+                  onSelect: (f) => setState(() => _floorFilter = f),
+                ),
+              ],
+            ],
+          ),
+        ),
+        Expanded(
+          child: feed.loading
+              ? const Center(child: CircularProgressIndicator())
+              : _visible.isEmpty
+                  ? const _Empty()
+                  : RefreshIndicator(
+                      onRefresh: feed.refresh,
+                      backgroundColor: T.slate900,
+                      color: T.sky400,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: _visible.length,
+                        itemBuilder: (_, i) {
+                          final c = _visible[i];
+                          return CallCard(
+                            call: c,
+                            now: feed.now,
+                            busy: _busyCallId == c.callId,
+                            onAcknowledge: () => _ack(c),
+                          );
+                        },
+                      ),
+                    ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: _StatsStrip(stats: feed.stats),
+        ),
+      ],
     );
   }
 }
 
+// --------------------------------------------------------------------- header
+
 class _Header extends StatelessWidget {
-  const _Header({required this.name, required this.onSignOut});
+  const _Header({required this.name});
 
   final String name;
-  final Future<void> Function() onSignOut;
+
+  /// Two letters from the nurse's name, as the design's avatar chip shows.
+  String get _initials {
+    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+    if (parts.isEmpty) return '—';
+    if (parts.length == 1) return parts.first.characters.take(2).toString().toUpperCase();
+    return (parts.first.characters.first + parts.last.characters.first).toUpperCase();
+  }
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(18, 14, 10, 10),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Faol chaqiruvlar',
-                    style: TextStyle(
-                      color: T.text1,
-                      fontSize: 21,
-                      fontWeight: FontWeight.w800,
+  Widget build(BuildContext context) => Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: T.sky500.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: T.sky400.withValues(alpha: 0.30)),
+            ),
+            child: const Icon(Icons.notifications_active,
+                size: 19, color: T.sky400),
+          ),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Faol chaqiruvlar',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: T.text1,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                Text(
+                  'Navbatchilik rejimi',
+                  style: TextStyle(fontSize: 11, color: T.slate500),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.fromLTRB(6, 4, 12, 4),
+            decoration: BoxDecoration(
+              color: T.slate900.withValues(alpha: 0.90),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: T.slate800),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 24,
+                  height: 24,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: T.sky500.withValues(alpha: 0.20),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: T.sky400.withValues(alpha: 0.30)),
+                  ),
+                  child: Text(
+                    _initials,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: T.sky300,
                     ),
                   ),
-                  if (name.isNotEmpty)
-                    Text(
-                      name,
-                      style: const TextStyle(color: T.text3, fontSize: 13),
+                ),
+                const SizedBox(width: 8),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 108),
+                  child: Text(
+                    name.isEmpty ? 'Hamshira' : name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: T.slate200,
+                      letterSpacing: -0.2,
                     ),
-                ],
-              ),
-            ),
-            IconButton(
-              onPressed: onSignOut,
-              icon: const Icon(Icons.logout, color: T.text3),
-              tooltip: 'Chiqish',
-            ),
-          ],
-        ),
-      );
-}
-
-class _OfflineBar extends StatelessWidget {
-  const _OfflineBar();
-
-  @override
-  Widget build(BuildContext context) => Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: T.danger.withValues(alpha: 0.14),
-          border: Border.all(color: T.danger.withValues(alpha: 0.5)),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        // Said out loud because an unreachable server and a quiet ward look
-        // identical on this screen: both are an empty list.
-        child: const Row(
-          children: [
-            Icon(Icons.cloud_off, size: 18, color: T.danger),
-            SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Serverga ulanib bo‘lmadi — ro‘yxat eskirgan bo‘lishi mumkin',
-                style: TextStyle(color: T.text1, fontSize: 13),
-              ),
-            ),
-          ],
-        ),
-      );
-}
-
-class _BillingBar extends StatelessWidget {
-  const _BillingBar({required this.notice});
-
-  final BillingNotice notice;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = notice.blocked
-        ? 'Obuna to‘lanmagan. Chaqiruvlar ishlashda davom etadi.'
-        : notice.daysLeft != null
-            ? 'Obuna muddati tugayapti: ${notice.daysLeft} kun qoldi'
-            : 'Obuna muddati tugayapti';
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: T.warn.withValues(alpha: 0.13),
-        border: Border.all(color: T.warn.withValues(alpha: 0.45)),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.info_outline, size: 18, color: T.warn),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(color: T.text1, fontSize: 13),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
-      ),
-    );
-  }
+      );
 }
+
+// -------------------------------------------------------------------- banners
+
+class _Banner extends StatelessWidget {
+  const _Banner({
+    required this.icon,
+    required this.tint,
+    required this.bg,
+    required this.text,
+  });
+
+  final IconData icon;
+  final Color tint;
+  final Color bg;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: bg.withValues(alpha: 0.30),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: tint.withValues(alpha: 0.35)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: tint),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                text,
+                style: const TextStyle(fontSize: 12.5, color: T.slate200),
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+// --------------------------------------------------------------------- filter
 
 class _FloorFilter extends StatelessWidget {
   const _FloorFilter({
@@ -256,23 +352,18 @@ class _FloorFilter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        height: 42,
+        height: 30,
         child: ListView(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
           children: [
-            _pill('Barchasi ($total)', selected == null, () => onSelect(null)),
+            _pill('Barchasi', total, selected == null, () => onSelect(null)),
             for (final f in floors)
-              _pill(
-                '$f-qavat (${counts[f]})',
-                selected == f,
-                () => onSelect(f),
-              ),
+              _pill('$f-qavat', counts[f] ?? 0, selected == f, () => onSelect(f)),
           ],
         ),
       );
 
-  Widget _pill(String label, bool on, VoidCallback tap) => Padding(
+  Widget _pill(String label, int count, bool on, VoidCallback tap) => Padding(
         padding: const EdgeInsets.only(right: 8),
         child: GestureDetector(
           onTap: tap,
@@ -280,24 +371,143 @@ class _FloorFilter extends StatelessWidget {
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: 14),
             decoration: BoxDecoration(
-              color: on ? T.step1.withValues(alpha: 0.18) : T.cardSoft,
-              border: Border.all(
-                color: on ? T.step1 : T.border,
-              ),
+              color: on ? T.sky500 : T.slate900,
               borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: on ? T.sky500 : T.slate800),
+              boxShadow: on
+                  ? [
+                      BoxShadow(
+                        color: T.sky400.withValues(alpha: 0.35),
+                        blurRadius: 14,
+                      ),
+                    ]
+                  : null,
             ),
-            child: Text(
-              label,
-              style: TextStyle(
-                color: on ? T.step1 : T.text2,
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: on ? T.slate950 : T.slate400,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: on
+                        ? T.slate950.withValues(alpha: 0.20)
+                        : T.slate800.withValues(alpha: 0.80),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '$count',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: on ? T.slate950 : T.slate400,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       );
 }
+
+// ---------------------------------------------------------------------- stats
+
+class _StatsStrip extends StatelessWidget {
+  const _StatsStrip({required this.stats});
+
+  final ShiftStats stats;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        children: [
+          Expanded(
+            child: _StatCard(
+              icon: Icons.speed,
+              label: 'O‘rtacha javob',
+              value: answerLabel(stats.typicalAnswer),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _StatCard(
+              icon: Icons.task_alt,
+              label: 'Bugun qabul qilindi',
+              value: '${stats.answeredToday}',
+              valueTint: T.emerald400,
+            ),
+          ),
+        ],
+      );
+}
+
+class _StatCard extends StatelessWidget {
+  const _StatCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.valueTint,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color? valueTint;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: T.slate900.withValues(alpha: 0.80),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: T.slate800.withValues(alpha: 0.80)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: T.slate400,
+                    ),
+                  ),
+                ),
+                Icon(icon, size: 15, color: valueTint ?? T.slate400),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: TextStyle(
+                fontFamily: T.mono,
+                fontSize: 19,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.5,
+                color: valueTint ?? T.text1,
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+// ----------------------------------------------------------------------- misc
 
 class _Empty extends StatelessWidget {
   const _Empty();
@@ -307,22 +517,185 @@ class _Empty extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.check_circle_outline, size: 46, color: T.ok),
+            Icon(Icons.check_circle_outline, size: 46, color: T.emerald400),
             SizedBox(height: 14),
             Text(
               'Faol chaqiruv yo‘q',
               style: TextStyle(
-                color: T.text1,
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
+                color: T.text1,
               ),
             ),
             SizedBox(height: 6),
             Text(
               'Yangi chaqiruv kelsa shu yerda chiqadi',
-              style: TextStyle(color: T.text3, fontSize: 13),
+              style: TextStyle(fontSize: 13, color: T.slate500),
             ),
           ],
         ),
+      );
+}
+
+class _BottomNav extends StatelessWidget {
+  const _BottomNav({
+    required this.index,
+    required this.badge,
+    required this.onSelect,
+  });
+
+  final int index;
+  final int badge;
+  final ValueChanged<int> onSelect;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        decoration: const BoxDecoration(
+          color: T.navBar,
+          border: Border(top: BorderSide(color: T.slate800)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _item(0, Icons.notifications_active, 'Chaqiruvlar', badge),
+                _item(1, Icons.person, 'Profil', 0),
+              ],
+            ),
+          ),
+        ),
+      );
+
+  Widget _item(int i, IconData icon, String label, int count) {
+    final on = index == i;
+    final tint = on ? T.sky400 : T.slate500;
+    return GestureDetector(
+      onTap: () => onSelect(i),
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(icon, size: 26, color: tint),
+              if (count > 0)
+                Positioned(
+                  right: -6,
+                  top: -4,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: T.red500,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      '$count',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: on ? FontWeight.w700 : FontWeight.w500,
+              color: tint,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// -------------------------------------------------------------------- profile
+
+class _ProfileTab extends StatelessWidget {
+  const _ProfileTab({
+    required this.session,
+    required this.stats,
+    required this.onSignOut,
+  });
+
+  final Session? session;
+  final ShiftStats stats;
+  final Future<void> Function() onSignOut;
+
+  @override
+  Widget build(BuildContext context) => ListView(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+        children: [
+          Center(
+            child: Container(
+              width: 76,
+              height: 76,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: T.sky500.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+                border: Border.all(color: T.sky400.withValues(alpha: 0.35)),
+              ),
+              child: const Icon(Icons.person, size: 38, color: T.sky300),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            session?.name.isNotEmpty == true ? session!.name : 'Hamshira',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: T.text1,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            switch (session?.role) {
+              'nurse' => 'Hamshira',
+              'admin' => 'Klinika administratori',
+              _ => '',
+            },
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 13, color: T.slate500),
+          ),
+          const SizedBox(height: 24),
+          _StatsStrip(stats: stats),
+          const SizedBox(height: 24),
+          SizedBox(
+            height: 52,
+            child: OutlinedButton.icon(
+              onPressed: onSignOut,
+              icon: const Icon(Icons.logout, size: 19),
+              label: const Text(
+                'Chiqish',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: T.red400,
+                side: BorderSide(color: T.red500.withValues(alpha: 0.5)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Chiqsangiz bu telefon chaqiruv bildirishnomalarini olmay qoladi.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 11.5, color: T.slate500),
+          ),
+        ],
       );
 }

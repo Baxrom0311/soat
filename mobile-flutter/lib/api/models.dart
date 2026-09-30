@@ -62,6 +62,28 @@ class Call {
       );
 }
 
+/// A past call, as the history endpoint returns it. Only the two timestamps are
+/// used here, to work out how long the ward took to answer.
+class HistoryCall {
+  const HistoryCall({
+    required this.createdAt,
+    this.acknowledgedAt,
+  });
+
+  final DateTime createdAt;
+  final DateTime? acknowledgedAt;
+
+  Duration? get answeredIn =>
+      acknowledgedAt?.toUtc().difference(createdAt.toUtc());
+
+  factory HistoryCall.fromJson(Map<String, dynamic> j) => HistoryCall(
+        createdAt: DateTime.parse(j['created_at'] as String),
+        acknowledgedAt: j['acknowledged_at'] == null
+            ? null
+            : DateTime.parse(j['acknowledged_at'] as String),
+      );
+}
+
 /// What the clinic's subscription banner says. Readable by every clinic member,
 /// including nurses, and never gated — a clinic that has stopped paying still
 /// has patients in it.

@@ -42,10 +42,15 @@ Future<void> _pump(
       ),
     );
 
-/// The colour the card is actually painting for this call.
-Color _accent(WidgetTester tester) {
-  final button = tester.widget<FilledButton>(find.byType(FilledButton));
-  return button.style!.backgroundColor!.resolve({})!;
+/// The card's own background — the value that differs per waiting step.
+Color _cardColour(WidgetTester tester) {
+  final box = tester.widget<Container>(
+    find.descendant(
+      of: find.byType(CallCard),
+      matching: find.byType(Container),
+    ).first,
+  );
+  return ((box.decoration! as BoxDecoration).color)!;
 }
 
 void main() {
@@ -81,17 +86,17 @@ void main() {
   group('colour means waiting time', () {
     testWidgets('a fresh call is the calm colour', (t) async {
       await _pump(t, _call(waited: const Duration(seconds: 30)));
-      expect(_accent(t), T.step1);
+      expect(_cardColour(t), T.step(1).card);
     });
 
     testWidgets('past two minutes it escalates', (t) async {
       await _pump(t, _call(waited: const Duration(minutes: 3)));
-      expect(_accent(t), T.step2);
+      expect(_cardColour(t), T.step(2).card);
     });
 
     testWidgets('past ten minutes it is at the top of the scale', (t) async {
       await _pump(t, _call(waited: const Duration(minutes: 11)));
-      expect(_accent(t), T.step3);
+      expect(_cardColour(t), T.step(3).card);
     });
 
     testWidgets('the middle step uses dark ink, because amber is a light colour',
@@ -99,8 +104,8 @@ void main() {
       // White on amber fails legibility badly, and the call card is the one
       // surface where "mostly readable" is not good enough.
       await _pump(t, _call(waited: const Duration(minutes: 3)));
-      final button = t.widget<FilledButton>(find.byType(FilledButton));
-      expect(button.style!.foregroundColor!.resolve({}), isNot(Colors.white));
+      expect(T.step(2).buttonInk, isNot(Colors.white));
+      expect(find.text('Qabul qilish'), findsOneWidget);
     });
   });
 
@@ -108,7 +113,7 @@ void main() {
     testWidgets('tapping the button calls back exactly once', (t) async {
       var calls = 0;
       await _pump(t, _call(), onAck: () async => calls++);
-      await t.tap(find.byType(FilledButton));
+      await t.tap(find.text('Qabul qilish'));
       await t.pump();
       expect(calls, 1);
     });
@@ -119,7 +124,9 @@ void main() {
       // believing they are the one who answered.
       var calls = 0;
       await _pump(t, _call(), busy: true, onAck: () async => calls++);
-      await t.tap(find.byType(FilledButton));
+      // The label is replaced by a spinner while busy, so the tap goes at the
+      // button's position rather than its text.
+      await t.tap(find.byType(InkWell));
       await t.pump();
       expect(calls, 0);
     });
