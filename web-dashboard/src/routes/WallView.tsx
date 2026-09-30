@@ -55,7 +55,7 @@ export function WallView() {
   const targetFloor = floorParam ? parseInt(floorParam, 10) : null;
 
   const { token } = useAuth();
-  const { activeCalls, connStatus } = useCallsFeed(token);
+  const { activeCalls, connStatus, audioBlocked, unlockAudio } = useCallsFeed(token);
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -103,6 +103,16 @@ export function WallView() {
           </span>
         </div>
       </header>
+
+      {/* This board's whole job is to be noticed from across a room, and a browser
+          that has never been clicked will not make a sound. Shown as a full-width bar
+          rather than a discreet icon: a muted wall display is indistinguishable from a
+          quiet ward, which is the one thing it must never be mistaken for. */}
+      {audioBlocked && (
+        <button className="wall__sound-off" type="button" onClick={() => void unlockAudio()}>
+          Ovoz o'chiq — yoqish uchun bosing
+        </button>
+      )}
 
       {filteredCalls.length === 0 ? (
         <div className="wall__empty">

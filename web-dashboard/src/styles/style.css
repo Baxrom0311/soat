@@ -836,6 +836,22 @@ tbody tr:last-child td { border-bottom: none; }
 .billing-banner__text { margin: 0; flex: 1 1 240px; font-size: 0.88rem; color: var(--text-1); }
 .billing-banner__hint { font-size: 0.8rem; color: var(--text-2); }
 
+/* Louder than .billing-banner and above it in the flow: this one says the ward cannot
+   hear its calls, which outranks anything about money. Uses --warn rather than
+   --caution for the same reason. */
+.sound-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--warn);
+  background: var(--warn-soft);
+}
+.sound-banner__text { margin: 0; flex: 1 1 240px; font-size: 0.88rem; color: var(--text-1); }
+
 /* ================= BLOCKED-TAB NOTICE ================= */
 .blocked-notice { text-align: center; padding: 32px 24px; }
 .blocked-notice__icon { width: 34px; height: 34px; color: var(--warn); margin: 0 auto 12px; }

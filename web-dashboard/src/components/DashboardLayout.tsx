@@ -157,6 +157,26 @@ export function DashboardLayout() {
         </MobileTopbar>
 
         <main className="content-area">
+          {/* Above the billing banner on purpose: an unpaid invoice is a business
+              problem, a muted board is a patient one. Browsers refuse audio until the
+              page has been interacted with, and on a screen nobody clicks that means
+              every call arrives in silence -- with nothing on screen saying so. */}
+          {feed.audioBlocked && (
+            <div className="sound-banner">
+              <p className="sound-banner__text">
+                Ovoz o'chiq — brauzer sahifa bosilmaguncha ovoz chiqarmaydi. Chaqiruv
+                kelganda eshitilishi uchun yoqing.
+              </p>
+              <button
+                className="btn btn-primary btn-sm"
+                type="button"
+                onClick={() => void feed.unlockAudio()}
+              >
+                Ovozni yoqish
+              </button>
+            </div>
+          )}
+
           {(blocked || warnOnly) && (
             <div className={`billing-banner ${blocked ? 'billing-banner--blocked' : ''}`}>
               <WarningIcon className="billing-banner__icon" />

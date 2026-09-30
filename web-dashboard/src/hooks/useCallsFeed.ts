@@ -1,41 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, triggerBlocked, triggerUnauthorized, wsProtocols, wsUrl } from '../api/client';
 import type { ActiveCall, HistoryCall, UnassignedSignal, WsMessage, WsUnassignedSignal } from '../api/types';
+import { isAudioBlocked, playAlert, subscribe as subscribeAudio, unlockAudio } from '../lib/alarm';
 
 export type ConnStatus = 'connecting' | 'live' | 'disconnected';
 
 const POLL_MS = 5000;
+/** How often an unacknowledged call re-announces itself. Long enough not to become
+ *  background noise somebody tunes out, short enough that a call cannot sit unnoticed
+ *  through a conversation. A single beep at arrival was the previous behaviour, and a
+ *  call that arrived while the room was empty stayed silent forever after. */
+const REPEAT_MS = 20000;
 const WS_CLOSE_UNAUTHORIZED = 4401;
 const WS_CLOSE_SUSPENDED = 4402;
-
-/** One shared AudioContext for the whole session: browsers cap concurrent contexts,
- * so creating one per call would eventually silence the alarm on a long-lived kiosk. */
-let sharedAudioCtx: AudioContext | null = null;
-
-function beep() {
-  try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!sharedAudioCtx || sharedAudioCtx.state === 'closed') sharedAudioCtx = new AudioCtx();
-    const ctx = sharedAudioCtx;
-    if (ctx.state === 'suspended') void ctx.resume();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'square';
-    osc.frequency.value = 880;
-    gain.gain.value = 0.15;
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-    osc.stop(ctx.currentTime + 0.4);
-    osc.onended = () => {
-      osc.disconnect();
-      gain.disconnect();
-    };
-  } catch {
-    // autoplay policies may block sound until the user interacts with the page
-  }
-}
 
 /** WS sends ev1527_code as int; REST historically serialized it as string — normalize to string. */
 function normalizeWsSignal(signal: WsUnassignedSignal): UnassignedSignal {
@@ -63,6 +40,7 @@ export function useCallsFeed(token: string | null, blocked = false) {
   const [history, setHistory] = useState<HistoryCall[]>([]);
   const [unassignedSignals, setUnassignedSignals] = useState<UnassignedSignal[]>([]);
   const [connStatus, setConnStatus] = useState<ConnStatus>('connecting');
+  const [audioBlocked, setAudioBlocked] = useState<boolean>(() => isAudioBlocked());
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<number | null>(null);
   // Poll snapshots race WS deltas: a fetch started before a WS event must not
@@ -84,7 +62,7 @@ export function useCallsFeed(token: string | null, blocked = false) {
       if (initialLoadDone.current) {
         for (const id of next.keys()) {
           if (!prev.has(id)) {
-            beep();
+            playAlert();
             break;
           }
         }
@@ -171,7 +149,7 @@ export function useCallsFeed(token: string | null, blocked = false) {
             // The 5s poll fallback can independently observe and beep for the same
             // call right before this WS push lands (e.g. around a WS reconnect) --
             // only alert here if this call id is genuinely new to us.
-            if (!prev.has(msg.call.call_id)) beep();
+            if (!prev.has(msg.call.call_id)) playAlert();
             return new Map(prev).set(msg.call.call_id, msg.call);
           });
           refreshHistory().catch(() => {});
@@ -213,6 +191,28 @@ export function useCallsFeed(token: string | null, blocked = false) {
     };
   }, [token, refreshActive, refreshHistory, refreshUnassigned]);
 
+  // The browser decides when audio is allowed, and it can start allowing it without us
+  // asking (any click anywhere on the page counts). Following the context's own state
+  // keeps the prompt from lingering after it has stopped being true.
+  useEffect(() => {
+    const sync = () => setAudioBlocked(isAudioBlocked());
+    sync();
+    return subscribeAudio(sync);
+  }, []);
+
+  // Re-announce while anything is still waiting. Driven by the set of unacknowledged
+  // calls rather than by the arrival event, so it also covers the cases arrival alone
+  // missed: a call that came in while audio was still blocked, a page reloaded onto a
+  // ward that already has calls open, and a call nobody happened to be in the room for.
+  const hasWaiting = activeCalls.size > 0;
+  useEffect(() => {
+    if (!hasWaiting) return;
+    const id = window.setInterval(() => {
+      playAlert();
+    }, REPEAT_MS);
+    return () => window.clearInterval(id);
+  }, [hasWaiting]);
+
   return {
     activeCalls,
     history,
@@ -223,5 +223,7 @@ export function useCallsFeed(token: string | null, blocked = false) {
     refreshHistory,
     refreshUnassigned,
     markLocalMutation,
+    audioBlocked,
+    unlockAudio,
   };
 }

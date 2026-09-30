@@ -86,3 +86,22 @@
 @keyframes wall-colon { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
 .wall__clock-colon { animation: wall-colon 1s steps(1, end) infinite; }
 @media (prefers-reduced-motion: reduce) { .wall__clock-colon { animation: none; } }
+
+/* Full width and hard to ignore: the board is read from across a room, so a muted-audio
+   warning that needs walking up to the screen to notice has already failed. Tapping
+   anywhere on it is the gesture the browser needs to allow sound. */
+.wall__sound-off {
+  display: block;
+  width: 100%;
+  border: none;
+  border-radius: 0;
+  padding: 14px 24px;
+  font: inherit;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #1A1A1A;
+  background: #F5C518;
+  cursor: pointer;
+}
+.wall__sound-off:hover { filter: brightness(1.06); }
