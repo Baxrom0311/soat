@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models import PushToken
 from app.repositories import push_token_repo
+from app.services import fcm_service
 
 logger = logging.getLogger(__name__)
 
@@ -25,24 +26,45 @@ EXPO_PUSH_CHUNK_SIZE = 100
 
 
 def send_new_call_notifications(clinic_id: int, *, call_id: int, room_number: str, floor: int) -> None:
-    """Fetch every registered push token for this clinic and push an Expo notification
-    to each. Opens its own DB session -- by the time a BackgroundTask runs, the
-    request-scoped session may be running on a different worker thread, so sharing it
-    isn't worth the risk for a non-critical side effect.
+    """Alert every nurse responsible for this floor, over whichever push service her
+    app generation uses. Opens its own DB session -- by the time a BackgroundTask runs,
+    the request-scoped session may be running on a different worker thread, so sharing
+    it isn't worth the risk for a non-critical side effect.
     """
     db: Session = SessionLocal()
     try:
-        tokens = push_token_repo.list_by_clinic_for_floor(db, clinic_id, floor)
-        if not tokens:
+        all_tokens = push_token_repo.list_by_clinic_for_floor(db, clinic_id, floor)
+        if not all_tokens:
             logger.info("No push tokens registered for clinic_id=%s, skipping push", clinic_id)
+            return
+
+        title = f"Xona {room_number} chaqirdi!"
+        body = f"{floor}-qavat"
+        payload = {"call_id": call_id, "room_number": room_number, "floor": floor}
+
+        # Two app generations are in the field at once while clinics migrate off the
+        # Expo build, and the token itself says which is which: Expo's are always
+        # `ExponentPushToken[...]`, FCM registration tokens never are. Routing on the
+        # shape means no migration flag, no per-clinic switch, and no moment where a
+        # nurse who has not updated yet stops receiving calls.
+        expo_tokens = [t for t in all_tokens if t.expo_push_token.startswith("ExponentPushToken[")]
+        fcm_tokens = [t for t in all_tokens if not t.expo_push_token.startswith("ExponentPushToken[")]
+
+        if fcm_tokens:
+            _send_fcm(db, fcm_tokens, title=title, body=body, data=payload,
+                      clinic_id=clinic_id, call_id=call_id)
+
+        tokens = expo_tokens
+        if not tokens:
+            db.commit()
             return
 
         messages = [
             {
                 "to": token.expo_push_token,
-                "title": f"Xona {room_number} chaqirdi!",
-                "body": f"{floor}-qavat",
-                "data": {"call_id": call_id, "room_number": room_number, "floor": floor},
+                "title": title,
+                "body": body,
+                "data": payload,
                 "priority": "high",
                 "sound": "default",
             }
@@ -116,3 +138,43 @@ def _cleanup_invalid_tokens(db: Session, payload: dict, tokens: list[PushToken])
         if error_type == "DeviceNotRegistered":
             push_token_repo.delete_by_token(db, token.expo_push_token)
             logger.info("Removed dead push token=%s", token.expo_push_token)
+
+
+def _send_fcm(
+    db: Session,
+    tokens: list[PushToken],
+    *,
+    title: str,
+    body: str,
+    data: dict,
+    clinic_id: int,
+    call_id: int,
+) -> None:
+    """One request per token: FCM HTTP v1 has no multicast. A clinic has a handful of
+    nurses, so the loop is cheap -- and a failure on one nurse's phone must not stop the
+    message reaching the others, which a batch would risk.
+    """
+    if not fcm_service.is_configured():
+        logger.warning(
+            "FCM tokens registered for clinic_id=%s but FCM is not configured -- %d nurse(s) "
+            "will not be alerted", clinic_id, len(tokens),
+        )
+        return
+
+    sent = 0
+    for token in tokens:
+        error = fcm_service.send(token.expo_push_token, title=title, body=body, data=data)
+        if error is None:
+            sent += 1
+            continue
+        # Only these two mean the registration is permanently gone. Everything else --
+        # quota, server error, network -- is transient, and deleting a token over a
+        # transient failure silently unsubscribes a nurse until she reinstalls.
+        if error in ("UNREGISTERED", "INVALID_ARGUMENT"):
+            push_token_repo.delete_by_token(db, token.expo_push_token)
+            logger.info("Removed dead FCM token (%s)", error)
+
+    logger.info(
+        "FCM push -> delivered=%d/%d clinic_id=%s call_id=%s",
+        sent, len(tokens), clinic_id, call_id,
+    )

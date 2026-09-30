@@ -1,0 +1,31 @@
+Bu ekranni haqiqiy tizim ma'lumotiga moslashtir. Quyidagilarni BUTUNLAY OLIB TASHLA, chunki ular texnik jihatdan mavjud emas:
+
+- Batareya foizi (EV1527 tugmalari bir tomonlama radio uzatgich — ular hech qanday ma'lumot qaytarmaydi, batareyasini bilish imkonsiz)
+- Signal kuchi foizi
+- Gateway / GW-CENTRAL kartochkasi
+- Firmware versiyasi va yangilash
+- QR skanerlash tugmasi
+- "Datchiklar diagnostikasi" tugmasi
+
+MUHIM TUSHUNCHA: bu tizimda "qurilma" degani — qavatga o'rnatilgan ESP32 radio qabul qilgich, xonadagi tugma emas. Bitta qabul qilgich butun qavatni eshitadi.
+
+Ekran uch bo'limdan iborat bo'lsin:
+
+1) Yuqorida qisqa xulosa: jami nechta qabul qilgich, nechtasi onlayn, nechtasi uzilgan.
+
+2) "Qabul qilgichlar" ro'yxati. Har bir kartochkada faqat shular:
+   - Nomi (haqiqiy misollar: esp32-0ff0a45, floor3-esp32-077000, esp32-da4567)
+   - Nechanchi qavat
+   - Holati: yashil "Onlayn" yoki qizil "Uzilgan"
+   - Uzilgan bo'lsa qizil matn bilan qancha vaqt jim ekani: "13.2 kun jim", "11.7 kun jim"
+   - Onlayn bo'lsa: "1 daqiqa oldin ko'rildi"
+   Uzilganlar ro'yxat boshida tursin.
+
+3) "Noma'lum tugmalar" bo'limi. Bular hali xonaga biriktirilmagan tugma bosilishlari — yangi tugmani tizimga qo'shish shu yerdan bo'ladi. Har birida:
+   - Tugma kodi (masalan: 7082385)
+   - Qaysi qabul qilgich eshitgani
+   - Necha marta bosilgani ("4 marta")
+   - Oxirgi marta qachon
+   - "Xonaga biriktirish" tugmasi
+
+Pastdagi navigatsiya va umumiy uslub o'zgarmasin. Matnlar o'zbek tilida qolsin.

@@ -100,6 +100,11 @@ VENDOR_PHONE = os.getenv("VENDOR_PHONE", "+998935580311")
 # (jobs/check_expiring_subscriptions.py). Both are individually optional: whichever is
 # configured gets the message, and an unconfigured channel is simply skipped -- so the
 # job can ship and start warning over ntfy before a Telegram bot exists.
+# Firebase service-account JSON for FCM HTTP v1. Empty == FCM disabled, and the push
+# service then serves only Expo tokens. Kept as a path rather than inline JSON so the
+# private key never sits in an env var that shows up in `systemctl show` or a crash dump.
+FCM_SERVICE_ACCOUNT_FILE = os.getenv("FCM_SERVICE_ACCOUNT_FILE", "")
+
 NTFY_TOPIC_URL = os.getenv("NTFY_TOPIC_URL", "")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")

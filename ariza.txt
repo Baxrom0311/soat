@@ -1,0 +1,183 @@
+===============================================================================
+NURSECALL — ARIZA UCHUN MATNLAR
+Tayyorlangan: 2026-09-30
+Raqamlar shu sanadagi haqiqiy bazadan olingan, taxmin emas.
+===============================================================================
+
+
+-------------------------------------------------------------------------------
+[1] MAHSULOT NOMI
+-------------------------------------------------------------------------------
+
+NurseCall — shifoxonalar uchun simsiz bemor chaqiruv tizimi
+
+
+-------------------------------------------------------------------------------
+[2] TAVSIF
+-------------------------------------------------------------------------------
+
+NurseCall — bemor palatadan hamshirani chaqirishi uchun mo'ljallangan simsiz
+dasturiy-apparat majmuasi.
+
+Bemor karavot yonidagi tugmani bosadi. Signal 433 MHz radio orqali qavatga
+o'rnatilgan qabul qilgichga boradi, u internet orqali serverga yetkazadi va
+hamshira bir necha soniya ichida qo'lidagi soatda, telefonida hamda post
+monitorida xona raqamini ko'radi. Hamshira "qabul qildim" tugmasini bosgach,
+chaqiruv barcha qurilmalarda bir vaqtda yopiladi.
+
+Tizim to'rt qismdan iborat: simsiz tugmalar va ESP32 qabul qilgich, veb-panel
+(xona, xodim va qurilmalarni boshqarish hamda post monitori), Android telefon
+ilovasi va Wear OS soat ilovasi.
+
+Asosiy texnik yechimlar:
+
+— Simli tortish talab qilinmaydi. Ishlab turgan binoga ta'mirsiz o'rnatiladi.
+
+— Internet uzilganda qabul qilgich chaqiruvlarni o'z xotirasida saqlaydi va
+  aloqa tiklangach yuboradi — bosilgan tugma yo'qolmaydi.
+
+— Hamshira o'zi mas'ul qavat chaqiruvlarini oladi, begona qavatniki bezovta
+  qilmaydi.
+
+— Bir nechta klinika bitta serverda, ma'lumotlari to'liq ajratilgan holda
+  ishlaydi (ko'p ijarachili arxitektura).
+
+— Chaqiruv kutish vaqti bo'yicha rangi o'zgaradi va javob berilmaguncha ovozli
+  signal takrorlanadi.
+
+Tizim 2026-yil avgustidan beri haqiqiy shifoxonalarda ishlab turibdi: 4 ta
+klinika, 71 palata, 102 chaqiruv tugmasi, 12 qabul qilgich, 16 hamshira.
+Shu davrda 1357 ta haqiqiy bemor chaqiruvi qayta ishlangan. Telefon ilovasi
+ishlatiladigan klinikalarda javob berishning mediana vaqti 0–2 daqiqa.
+
+
+-------------------------------------------------------------------------------
+[3] TEGISHLI SOHA VA TARMOQLARNING QAYSI MUAMMOLARIGA YECHIM BO'LISHI
+-------------------------------------------------------------------------------
+
+1. Bemor yordam chaqira olmasligi. Ko'p shifoxonalarda chaqiruv tizimi umuman
+   yo'q — bemor qichqiradi yoki qarindoshi koridorga yuguradi. Og'ir yotgan
+   bemor uchun bu real xavf.
+
+2. Eski tizimlarning simga bog'liqligi. Mavjud chaqiruv tizimlari har bir
+   palataga sim tortishni talab qiladi, ya'ni ta'mir va binoni to'xtatish.
+   Ishlab turgan shifoxona buni ko'tara olmaydi. Simsiz yechim ta'mirsiz
+   o'rnatiladi.
+
+3. Signal postgacha boradi, hamshiragacha emas. An'anaviy tizimda koridorda
+   chiroq yonadi — hamshira post yonida bo'lsa ko'radi, palatada bo'lsa yo'q.
+   NurseCall chaqiruvni hamshiraning qo'lidagi soatga va telefoniga yuboradi.
+
+4. Nazorat yo'qligi. Qaysi chaqiruvga qancha vaqtda javob berilgani hech
+   qayerda qayd etilmaydi. Tizim har bir chaqiruvni vaqti bilan saqlaydi,
+   shifoxona rahbariyati javob tezligini o'lchay oladi.
+
+5. Uzilishni hech kim sezmasligi. Qurilma ishdan chiqsa, palata ekrani
+   "chaqiruv yo'q" deb turaveradi — buzuqlik va tinchlik bir xil ko'rinadi.
+   Tizim qabul qilgich jim qolganini aniqlab, mas'ul shaxsga xabar yuboradi.
+
+
+-------------------------------------------------------------------------------
+[4] XUSUSIYATLAR
+-------------------------------------------------------------------------------
+
+Simsiz o'rnatish (433 MHz)
+Ta'mirsiz montaj
+Internet uzilganda chaqiruv yo'qolmaydi
+Wear OS soat ilovasi
+Android telefon ilovasi
+Veb-panel
+Post monitori uchun devor ekrani
+Qavat bo'yicha yo'naltirish
+Ovozli signalizatsiya
+Chaqiruvlar tarixi va javob vaqti statistikasi
+Qurilma uzilganda avtomatik ogohlantirish
+Ko'p klinikali arxitektura
+
+
+-------------------------------------------------------------------------------
+[5] TEGLAR
+-------------------------------------------------------------------------------
+
+bemor chaqiruv tizimi
+nurse call
+shifoxona
+simsiz
+IoT
+ESP32
+Wear OS
+tibbiy texnika
+raqamli shifoxona
+SaaS
+
+
+-------------------------------------------------------------------------------
+[6] TANLASH KERAK BO'LGAN MAYDONLAR — TAVSIYA
+-------------------------------------------------------------------------------
+
+KATEGORIYA
+  "Tibbiyot / Sog'liqni saqlash" varianti bo'lsa — o'sha.
+  Bo'lmasa: "Axborot-kommunikatsiya texnologiyalari".
+
+MAHSULOT TURI
+  "Dasturiy-apparat majmuasi" — u ham qurilma, ham dastur.
+
+LOYIHA TURI
+  "Tijoratlashtirilgan" yoki "Bozorga chiqarilgan".
+  Sizda 4 ta ishlayotgan klinika bor — bu prototip emas.
+  Ko'p arizachilarda faqat g'oya bo'ladi, sizda ishlayotgan mahsulot bor.
+  Bu eng kuchli ustunligingiz, shuni ko'rsating.
+
+MOLIYALASHTIRISH MANBAI
+  "O'z mablag'i"
+
+
+-------------------------------------------------------------------------------
+[7] FAQAT SIZ BILADIGAN MAYDONLAR — DIQQAT
+-------------------------------------------------------------------------------
+
+PATENTLANGANMI?
+  Menimcha YO'Q — sizda patent borligini ko'rmadim.
+  Agar bo'lsa "Ha" qiling va hujjatni yuklang.
+
+INTELLEKTUAL MULK OBYEKTI MUHOFAZASI HUJJATLARI
+  Patent yo'q bo'lsa — bu maydon bo'sh qoladi.
+  Yo'q hujjatni yozmang.
+
+ISHLANMA MUALLIFI FAOLIYAT YURITAYOTGAN TASHKILOT NOMI
+  Siz "hozircha shaxsiy tartibda ishlayapman, keyin MChJ ochaman" degandingiz.
+  MChJ hali ochilmagan bo'lsa — o'z ismingizni yozing yoki bo'sh qoldiring.
+  Mavjud bo'lmagan tashkilot nomini yozmang: rasmiy arizada bu keyin
+  muammoga aylanadi.
+
+NARX VA CHEGIRMA NARXI
+  Siz narxni har mijoz bilan alohida kelishasiz.
+  Ikki yo'l:
+    a) qurilma soniga qarab o'rtacha yillik narxni yozish;
+    b) bo'sh qoldirib "so'rov bo'yicha" deyish.
+  Reklama sahifasida (b) ni tanlagandik — sotuv uslubingizga mosroq.
+
+RIVOJLANTIRISH UCHUN INVESTITSIYA KERAKMI?
+  Bu sizning qaroringiz.
+  "Ha" desangiz investorlar ko'radi, lekin keyin savollar va hisobot keladi.
+
+
+-------------------------------------------------------------------------------
+[8] RASMLAR UCHUN TAVSIYA
+-------------------------------------------------------------------------------
+
+Eng yaxshi ishlaydigan to'rtta surat:
+
+1. Post monitori (devor ekrani) — faol chaqiruvlar ko'rinib turgan holatda
+2. Hamshira qo'lidagi soat — chaqiruv ekrani bilan
+3. Telefon ilovasi — chaqiruvlar ro'yxati
+4. Palataga o'rnatilgan tugma va qabul qilgich — haqiqiy o'rnatilgan holatda
+
+To'rtinchisi eng muhimi: u mahsulot haqiqatan mavjudligini ko'rsatadi.
+
+
+===============================================================================
+ESLATMA: [2] va [3] bo'limlaridagi raqamlar 2026-09-30 holatiga to'g'ri.
+Ariza keyinroq topshirilsa, raqamlar o'zgargan bo'lishi mumkin — aytsangiz
+yangilab beraman.
+===============================================================================

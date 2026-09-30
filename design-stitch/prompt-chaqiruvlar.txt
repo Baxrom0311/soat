@@ -1,0 +1,29 @@
+Shifoxona hamshirasi uchun "Faol chaqiruvlar" ekrani. Qorong'i (dark) tema.
+
+MUHIM: bu ekran faqat quyidagi ma'lumotlarni ko'rsatadi, boshqa hech narsani.
+Bemor ismi, bo'lim nomi, shoshilinchlik darajasi, xona sinfi (VIP/Lyuks) va
+shifokor ma'lumoti YO'Q — ular tizimda mavjud emas.
+
+Tepada:
+- Klinika nomi va hamshira ismi
+- Obuna ogohlantirishi banneri: "Obuna: 5 kun qoldi"
+- Qavat bo'yicha filtr tugmalari: "Barchasi (3)", "1-qavat (2)", "2-qavat (1)"
+
+O'rtada — faol chaqiruvlar ro'yxati. Har bir kartochkada faqat:
+- XONA RAQAMI — eng katta element, uzoqdan ko'rinadigan yirik shrift (204, 118, 307)
+- Nechanchi qavat — kichik matn
+- Kutish vaqti — yurib turadigan hisoblagich: "0:42", "4:15", "23:08"
+- Keng "Qabul qilish" tugmasi
+
+Kartochka rangi KUTISH VAQTINI bildiradi (shoshilinchlikni emas):
+- 2 daqiqagacha kutgan — eng tinch rang
+- 2-10 daqiqa — o'rta, sezilarli
+- 10 daqiqadan ortiq — eng keskin, diqqatni tortadi
+Eng uzoq kutgani ro'yxatning eng tepasida.
+
+Pastda ikkita statistika: "O'rtacha javob 1m 15s" va "Bugun qabul qilindi: 28"
+
+Eng pastda navigatsiya: "Chaqiruvlar" va "Profil".
+
+Uslub: zamonaviy, toza, katta shriftlar. Hamshira telefonni cho'ntagidan olib,
+bir qarashda qaysi xona ekanini tushunishi kerak. Matnlar o'zbek tilida.

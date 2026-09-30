@@ -1,0 +1,561 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "NurseCall — hamshira ilovasi (mobil API)",
+    "version": "0.1.0",
+    "description": "Hamshira ilovasi ishlatadigan endpointlar. To'liq API: docs/openapi.json"
+  },
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Refresh",
+        "operationId": "refresh_api_v1_auth_refresh_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/meta/version": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Version Info",
+        "description": "Public, unauthenticated: clients call this at startup to self-check whether\nthey're old enough to need blocking (see MOBILE_APP_MIN_VERSION/WATCH_APP_MIN_VERSION).",
+        "operationId": "version_info_api_v1_meta_version_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/calls/active": {
+      "get": {
+        "tags": [
+          "calls"
+        ],
+        "summary": "List Active Calls",
+        "operationId": "list_active_calls_api_v1_calls_active_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ActiveCallOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Active Calls Api V1 Calls Active Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/calls/{call_id}/ack": {
+      "post": {
+        "tags": [
+          "calls"
+        ],
+        "summary": "Acknowledge Call",
+        "operationId": "acknowledge_call_api_v1_calls__call_id__ack_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "call_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Call Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AckIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AckOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clinic/billing-notice": {
+      "get": {
+        "tags": [
+          "clinic"
+        ],
+        "summary": "Get Billing Notice",
+        "operationId": "get_billing_notice_api_v1_clinic_billing_notice_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClinicBillingNotice"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/push-tokens": {
+      "post": {
+        "tags": [
+          "push-tokens"
+        ],
+        "summary": "Register Push Token",
+        "operationId": "register_push_token_api_v1_push_tokens_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushTokenIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushTokenOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "push-tokens"
+        ],
+        "summary": "Unregister Push Token",
+        "operationId": "unregister_push_token_api_v1_push_tokens_delete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushTokenIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushTokenOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ActiveCallOut": {
+        "properties": {
+          "call_id": {
+            "type": "integer",
+            "title": "Call Id"
+          },
+          "room_number": {
+            "type": "string",
+            "title": "Room Number"
+          },
+          "floor": {
+            "type": "integer",
+            "title": "Floor"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CallStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "call_id",
+          "room_number",
+          "floor",
+          "created_at",
+          "status"
+        ],
+        "title": "ActiveCallOut"
+      },
+      "CallStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "acknowledged"
+        ],
+        "title": "CallStatus"
+      },
+      "LoginOut": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "role": {
+            "$ref": "#/components/schemas/StaffRole"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "clinic_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clinic Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "role",
+          "name",
+          "clinic_id"
+        ],
+        "title": "LoginOut"
+      },
+      "ClinicBillingNotice": {
+        "properties": {
+          "warn": {
+            "type": "boolean",
+            "title": "Warn"
+          },
+          "days_left": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days Left"
+          },
+          "blocked": {
+            "type": "boolean",
+            "title": "Blocked"
+          }
+        },
+        "type": "object",
+        "required": [
+          "warn",
+          "days_left",
+          "blocked"
+        ],
+        "title": "ClinicBillingNotice",
+        "description": "Warning-banner payload for the nurse-facing clients (phone + watch), which poll\nit. A nurse must be able to see that the subscription is expiring so they can tell\nmanagement, but has no business seeing the clinic's prices -- so this carries no\nfinancial data at all, and is the only billing route open to non-admins."
+      },
+      "LoginIn": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginIn"
+      },
+      "PushTokenIn": {
+        "properties": {
+          "expo_push_token": {
+            "type": "string",
+            "title": "Expo Push Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expo_push_token"
+        ],
+        "title": "PushTokenIn"
+      },
+      "AckIn": {
+        "properties": {
+          "acknowledged_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acknowledged By"
+          }
+        },
+        "type": "object",
+        "title": "AckIn"
+      },
+      "PushTokenOut": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "PushTokenOut"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "StaffRole": {
+        "type": "string",
+        "enum": [
+          "superadmin",
+          "admin",
+          "nurse"
+        ],
+        "title": "StaffRole"
+      },
+      "AckOut": {
+        "properties": {
+          "call_id": {
+            "type": "integer",
+            "title": "Call Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CallStatus"
+          },
+          "acknowledged_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Acknowledged At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "call_id",
+          "status",
+          "acknowledged_at"
+        ],
+        "title": "AckOut"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

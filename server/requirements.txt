@@ -10,3 +10,5 @@ bcrypt>=4.2
 pyjwt>=2.9
 pydantic[email]>=2.9
 alembic>=1.13,<2
+# FCM HTTP v1 uchun service-account OAuth2 (Flutter ilovasi push i)
+google-auth>=2.35
