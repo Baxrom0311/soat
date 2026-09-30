@@ -28,28 +28,37 @@ function notify() {
   for (const fn of listeners) fn();
 }
 
-function context(): AudioContext | null {
+/** Returns the session's context, creating it only when `create` is set.
+ *
+ *  Creation is deliberately confined to the click handler. An AudioContext built during
+ *  render -- before the page has been interacted with -- is merely suspended in Chrome,
+ *  but Safari can hand back one that never produces sound no matter how often it is
+ *  resumed, and a context that is silently dead is the worst possible state for this
+ *  particular button. Built inside the gesture, every browser treats it as permitted.
+ */
+function context(create = false): AudioContext | null {
   try {
+    if (ctx && ctx.state !== 'closed') return ctx;
+    if (!create) return null;
     const Ctor =
       window.AudioContext ||
       (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Ctor) return null;
-    if (!ctx || ctx.state === 'closed') {
-      ctx = new Ctor();
-      // Chrome flips this to "running" on the first gesture even without an explicit
-      // resume(), so the indicator has to follow the context rather than our own flag.
-      ctx.onstatechange = notify;
-    }
+    ctx = new Ctor();
+    // Chrome can flip this to "running" on any gesture anywhere on the page without an
+    // explicit resume(), so the indicator follows the context rather than our own flag.
+    ctx.onstatechange = notify;
     return ctx;
   } catch {
     return null;
   }
 }
 
-/** True when the browser will not make sound yet. Drives the "turn sound on" prompt. */
+/** True when the browser will not make sound yet. Drives the "turn sound on" prompt.
+ *  Never creates a context: before the first click there is nothing to ask, and the
+ *  honest answer is "blocked". */
 export function isAudioBlocked(): boolean {
-  const c = context();
-  return c === null || c.state !== 'running';
+  return ctx === null || ctx.state !== 'running';
 }
 
 /** Must be called from inside a real user gesture (click/keydown) or it has no effect.
@@ -60,7 +69,7 @@ export function isAudioBlocked(): boolean {
  *  a failed one look exactly alike -- the button appears to do nothing, which is how this
  *  was first reported. Hearing the chirp IS the proof. */
 export async function unlockAudio(): Promise<boolean> {
-  const c = context();
+  const c = context(true); // created here, inside the gesture -- see context()
   if (!c) return false;
   try {
     await c.resume();
@@ -74,55 +83,84 @@ export async function unlockAudio(): Promise<boolean> {
   return ok;
 }
 
-/** Two quick rising notes: deliberately unlike the three-pulse alert, so confirming the
- *  speakers work is never mistaken across a ward for a patient calling. Bypasses the
- *  repeat guard, since it answers a click rather than an event. */
-export function playConfirmation(): boolean {
-  const c = context();
-  if (!c || c.state !== 'running') return false;
-  const t = c.currentTime;
-  pulse(c, t, 660);
-  pulse(c, t + 0.16, 990);
-  return true;
-}
-
 export function subscribe(fn: Listener): () => void {
   listeners.add(fn);
   return () => listeners.delete(fn);
 }
 
-function pulse(c: AudioContext, startAt: number, freq: number) {
+type Wave = OscillatorType;
+
+/** One note. Ramped in and out rather than switched: an abrupt edge produces an audible
+ *  click on most speakers, which over hundreds of repeats a day is worse than the tone. */
+function tone(
+  c: AudioContext,
+  startAt: number,
+  freq: number,
+  dur: number,
+  peak: number,
+  wave: Wave,
+) {
   const osc = c.createOscillator();
   const gain = c.createGain();
-  osc.type = 'square';
+  osc.type = wave;
   osc.frequency.value = freq;
   osc.connect(gain);
   gain.connect(c.destination);
-  // Ramp instead of a hard stop: an abrupt cut produces an audible click on most
-  // speakers, which over hundreds of repeats a day is worse than the tone itself.
   gain.gain.setValueAtTime(0.0001, startAt);
-  gain.gain.exponentialRampToValueAtTime(0.2, startAt + 0.01);
-  gain.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.18);
+  gain.gain.exponentialRampToValueAtTime(peak, startAt + 0.015);
+  gain.gain.setValueAtTime(peak, startAt + dur - 0.04);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startAt + dur);
   osc.start(startAt);
-  osc.stop(startAt + 0.2);
+  osc.stop(startAt + dur + 0.01);
   osc.onended = () => {
     osc.disconnect();
     gain.disconnect();
   };
 }
 
-/** Three rising pulses. Returns false when the browser refused to make sound, so the
- *  caller can surface it rather than assume the ward was alerted. */
+/** Scheduled a beat ahead of `currentTime`, never at it: a context resumed a moment ago
+ *  can have its audio thread already past "now", and a note scheduled in the past is not
+ *  reliably heard. */
+function startTime(c: AudioContext): number {
+  return c.currentTime + 0.05;
+}
+
+/** A patient is waiting.
+ *
+ *  Four alternating tones over about 1.2 seconds, not a blip: this has to carry across a
+ *  ward with people talking in it. The alternation is what makes it read as an alarm
+ *  rather than a notification -- a steady tone blends into room noise, a two-pitch
+ *  see-saw does not. Square wave for the same reason: its harmonics cut through speech
+ *  where a sine disappears under it. */
 export function playAlert(): boolean {
   const c = context();
   if (!c || c.state !== 'running') return false;
   const now = Date.now();
   if (now - lastPlayedAt < MIN_GAP_MS) return true;
   lastPlayedAt = now;
-  const t = c.currentTime;
-  pulse(c, t, 880);
-  pulse(c, t + 0.25, 880);
-  pulse(c, t + 0.5, 1175);
+  const t = startTime(c);
+  const step = 0.3;
+  const dur = 0.22;
+  tone(c, t, 880, dur, 0.42, 'square');
+  tone(c, t + step, 1175, dur, 0.42, 'square');
+  tone(c, t + step * 2, 880, dur, 0.42, 'square');
+  tone(c, t + step * 3, 1175, dur, 0.42, 'square');
+  return true;
+}
+
+/** The speakers work.
+ *
+ *  A rising major triad on a triangle wave: long enough to be unmistakable, and
+ *  deliberately pleasant and nothing like the alert's see-saw, so confirming the sound
+ *  is never mistaken across a ward for a patient calling. */
+export function playConfirmation(): boolean {
+  const c = context();
+  if (!c || c.state !== 'running') return false;
+  const t = startTime(c);
+  tone(c, t, 523, 0.18, 0.4, 'triangle');
+  tone(c, t + 0.17, 659, 0.18, 0.4, 'triangle');
+  tone(c, t + 0.34, 784, 0.18, 0.4, 'triangle');
+  tone(c, t + 0.51, 1047, 0.4, 0.4, 'triangle');
   return true;
 }
 
