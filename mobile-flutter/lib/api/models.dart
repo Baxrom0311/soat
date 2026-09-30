@@ -62,6 +62,16 @@ class Call {
       );
 }
 
+/// The clinic this phone belongs to. Fetched so the header can name it, the
+/// way the design does — a nurse who works across two sites should be able to
+/// tell at a glance which one this handset is signed in to.
+class Clinic {
+  const Clinic({required this.name});
+  final String name;
+  factory Clinic.fromJson(Map<String, dynamic> j) =>
+      Clinic(name: (j['name'] as String?) ?? '');
+}
+
 /// A past call, as the history endpoint returns it. Only the two timestamps are
 /// used here, to work out how long the ward took to answer.
 class HistoryCall {

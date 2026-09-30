@@ -117,12 +117,19 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+        // Sticky, with its own ground and a hairline under it, as the design
+        // has it: the nurse's name, the floor filter and the subscription state
+        // stay put while the calls scroll past them.
+        Container(
+          decoration: const BoxDecoration(
+            color: T.navBar,
+            border: Border(bottom: BorderSide(color: T.slate800)),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _Header(name: session?.name ?? ''),
+              _Header(name: session?.name ?? '', clinic: feed.clinicName),
               if (!feed.reachable) ...[
                 const SizedBox(height: 12),
                 const _Banner(
@@ -135,9 +142,10 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
               if (feed.notice case final n? when n.warn || n.blocked) ...[
                 const SizedBox(height: 12),
                 _Banner(
-                  icon: Icons.warning_amber_rounded,
+                  icon: Icons.timelapse,
                   tint: T.amber400,
                   bg: T.amber950,
+                  badge: n.blocked ? 'TO‘XTATILGAN' : 'OGOHLANTIRISH',
                   text: n.blocked
                       ? 'Obuna to‘lanmagan. Chaqiruvlar ishlashda davom etadi.'
                       : n.daysLeft != null
@@ -170,25 +178,27 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
                       onRefresh: feed.refresh,
                       backgroundColor: T.slate900,
                       color: T.sky400,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
                         physics: const AlwaysScrollableScrollPhysics(),
-                        itemCount: _visible.length,
-                        itemBuilder: (_, i) {
-                          final c = _visible[i];
-                          return CallCard(
-                            call: c,
-                            now: feed.now,
-                            busy: _busyCallId == c.callId,
-                            onAcknowledge: () => _ack(c),
-                          );
-                        },
+                        children: [
+                          for (final c in _visible)
+                            CallCard(
+                              call: c,
+                              now: feed.now,
+                              busy: _busyCallId == c.callId,
+                              onAcknowledge: () => _ack(c),
+                            ),
+                          // Flows after the cards rather than being pinned to
+                          // the bottom, as the design has it. Pinned, the strip
+                          // competes with the call list for the eye; here it is
+                          // what you reach after the calls, which is when it
+                          // means anything.
+                          const SizedBox(height: 2),
+                          _StatsStrip(stats: feed.stats),
+                        ],
                       ),
                     ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: _StatsStrip(stats: feed.stats),
         ),
       ],
     );
@@ -198,9 +208,10 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
 // --------------------------------------------------------------------- header
 
 class _Header extends StatelessWidget {
-  const _Header({required this.name});
+  const _Header({required this.name, this.clinic});
 
   final String name;
+  final String? clinic;
 
   /// Two letters from the nurse's name, as the design's avatar chip shows.
   String get _initials {
@@ -221,26 +232,34 @@ class _Header extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: T.sky400.withValues(alpha: 0.30)),
             ),
-            child: const Icon(Icons.notifications_active,
-                size: 19, color: T.sky400),
+            child: const Icon(Icons.local_hospital, size: 19, color: T.sky400),
           ),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Faol chaqiruvlar',
-                  style: TextStyle(
+                  clinic?.isNotEmpty == true ? clinic! : 'NurseCall',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: T.text1,
                     letterSpacing: -0.2,
                   ),
                 ),
-                Text(
-                  'Navbatchilik rejimi',
-                  style: TextStyle(fontSize: 11, color: T.slate500),
+                const Row(
+                  children: [
+                    // The live dot, as the design has it. It says the phone is
+                    // in duty mode, which is the one thing a nurse glancing at
+                    // the top of the screen needs to be sure of.
+                    _Dot(),
+                    SizedBox(width: 5),
+                    Text('Navbatchilik rejimi',
+                        style: TextStyle(fontSize: 11, color: T.slate500)),
+                  ],
                 ),
               ],
             ),
@@ -297,18 +316,34 @@ class _Header extends StatelessWidget {
 
 // -------------------------------------------------------------------- banners
 
+class _Dot extends StatelessWidget {
+  const _Dot();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 6,
+        height: 6,
+        decoration: const BoxDecoration(
+          color: T.emerald400,
+          shape: BoxShape.circle,
+        ),
+      );
+}
+
 class _Banner extends StatelessWidget {
   const _Banner({
     required this.icon,
     required this.tint,
     required this.bg,
     required this.text,
+    this.badge,
   });
 
   final IconData icon;
   final Color tint;
   final Color bg;
   final String text;
+  final String? badge;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -328,6 +363,26 @@ class _Banner extends StatelessWidget {
                 style: const TextStyle(fontSize: 12.5, color: T.slate200),
               ),
             ),
+            if (badge case final b?) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  border: Border.all(color: tint.withValues(alpha: 0.55)),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  b,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.4,
+                    color: tint,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       );
@@ -432,6 +487,7 @@ class _StatsStrip extends StatelessWidget {
           Expanded(
             child: _StatCard(
               icon: Icons.speed,
+              iconTint: T.sky400,
               label: 'O‘rtacha javob',
               value: answerLabel(stats.typicalAnswer),
             ),
@@ -440,9 +496,9 @@ class _StatsStrip extends StatelessWidget {
           Expanded(
             child: _StatCard(
               icon: Icons.task_alt,
+              iconTint: T.emerald400,
               label: 'Bugun qabul qilindi',
               value: '${stats.answeredToday}',
-              valueTint: T.emerald400,
             ),
           ),
         ],
@@ -452,15 +508,18 @@ class _StatsStrip extends StatelessWidget {
 class _StatCard extends StatelessWidget {
   const _StatCard({
     required this.icon,
+    required this.iconTint,
     required this.label,
     required this.value,
-    this.valueTint,
   });
 
   final IconData icon;
+
+  /// Only the glyph is tinted. Both figures stay white, as the design has them:
+  /// a green number reads as a verdict on the shift, and these are counts.
+  final Color iconTint;
   final String label;
   final String value;
-  final Color? valueTint;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -488,18 +547,19 @@ class _StatCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                Icon(icon, size: 15, color: valueTint ?? T.slate400),
+                Icon(icon, size: 18, color: iconTint),
               ],
             ),
             const SizedBox(height: 4),
             Text(
               value,
-              style: TextStyle(
+              style: const TextStyle(
                 fontFamily: T.mono,
-                fontSize: 19,
+                fontSize: 22,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.5,
-                color: valueTint ?? T.text1,
+                height: 1.1,
+                color: Colors.white,
               ),
             ),
           ],
@@ -562,7 +622,7 @@ class _BottomNav extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _item(0, Icons.notifications_active, 'Chaqiruvlar', badge),
-                _item(1, Icons.person, 'Profil', 0),
+                _item(1, Icons.account_circle, 'Profil', 0),
               ],
             ),
           ),
@@ -589,8 +649,11 @@ class _BottomNav extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                     decoration: BoxDecoration(
-                      color: T.red500,
+                      color: T.red600,
                       borderRadius: BorderRadius.circular(999),
+                      // Ringed in the bar's own colour so the badge reads as a
+                      // separate object rather than smudging into the icon.
+                      border: Border.all(color: T.navBar, width: 2),
                     ),
                     child: Text(
                       '$count',
@@ -610,7 +673,23 @@ class _BottomNav extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               fontWeight: on ? FontWeight.w700 : FontWeight.w500,
-              color: tint,
+              letterSpacing: -0.2,
+              // The active label is white while its icon is blue: two channels
+              // for the same fact, which is what keeps the tab readable on a
+              // screen being glanced at from an angle.
+              color: on ? Colors.white : T.slate500,
+            ),
+          ),
+          const SizedBox(height: 3),
+          // A dot under the active tab, as the design has it: the colour change
+          // alone is a single channel, and this one survives a screen someone is
+          // looking at from an angle.
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: on ? T.sky400 : Colors.transparent,
+              shape: BoxShape.circle,
             ),
           ),
         ],

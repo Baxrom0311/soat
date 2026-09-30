@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nursecall/api/models.dart';
 import 'package:nursecall/calls/call_card.dart';
 import 'package:nursecall/theme/tokens.dart';
+
+import 'font_loader.dart';
 
 Call _call({
   int id = 1,
@@ -54,6 +57,8 @@ Color _cardColour(WidgetTester tester) {
 }
 
 void main() {
+  setUpAll(loadAppFonts);
+
   group('what the card says', () {
     testWidgets('the room number is on screen', (t) async {
       await _pump(t, _call(room: '307'));
@@ -69,6 +74,25 @@ void main() {
     testWidgets('the waiting time is a running clock', (t) async {
       await _pump(t, _call(waited: const Duration(minutes: 23, seconds: 8)));
       expect(find.text('23:08'), findsOneWidget);
+    });
+
+    testWidgets('an ordinary room number is shown in full, never abbreviated',
+        (t) async {
+      // The gap that let "204" render as "2...": the overflow case was tested
+      // and the ordinary one was not. A truncated room number is worse than an
+      // overflowing one -- it looks deliberate, and a nurse can act on it.
+      await t.binding.setSurfaceSize(const Size(430, 800));
+      addTearDown(() => t.binding.setSurfaceSize(null));
+      for (final room in ['204', '118', '307', '6', '1012']) {
+        await _pump(t, _call(room: room, waited: const Duration(minutes: 23, seconds: 8)));
+        // find.text() is not enough: with `overflow: ellipsis` the widget still
+        // holds the whole string and only the painting is clipped, so the naive
+        // assertion passes on a card showing "2...". The laid-out paragraph is
+        // where the truth is.
+        final para = t.renderObject<RenderParagraph>(find.text(room));
+        expect(para.didExceedMaxLines, isFalse,
+            reason: 'xona $room qisqartirildi');
+      }
     });
 
     testWidgets('a room number too long to fit is truncated, not overflowed',

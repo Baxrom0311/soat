@@ -114,6 +114,15 @@ class ApiClient {
         .toList(growable: false);
   }
 
+  /// Ungated, like the billing notice: a blocked clinic still has a name and
+  /// still has patients in it.
+  Future<Clinic> clinic() async {
+    final r = await _http
+        .get(_uri('/api/v1/clinic/me'), headers: _headers())
+        .timeout(_timeout);
+    return Clinic.fromJson(_decode(r) as Map<String, dynamic>);
+  }
+
   Future<BillingNotice> billingNotice() async {
     final r = await _http
         .get(_uri('/api/v1/clinic/billing-notice'), headers: _headers())

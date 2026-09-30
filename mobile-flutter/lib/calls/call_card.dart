@@ -52,47 +52,98 @@ class CallCard extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Flexible(
-                child: Text(
-                  call.roomNumber,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: T.mono,
-                    fontSize: 56,
-                    height: 1.0,
-                    letterSpacing: -1.4,
-                    fontWeight: FontWeight.w700,
-                    // White, not the accent colour. The step reads from the glow
-                    // behind the number and from everything around it; a white
-                    // numeral stays the highest-contrast thing on the card at
-                    // every step, which is what a nurse is actually reading.
-                    color: Colors.white,
-                    shadows: [
-                      Shadow(
-                        color: s.glow.withValues(alpha: s.glowOpacity),
-                        blurRadius: 14,
-                        offset: const Offset(0, 2),
-                      ),
+          // Bleeds in from a corner and is clipped by the card, so it reads as
+          // light inside the card rather than a halo around it.
+          Positioned(
+            right: -32,
+            top: s.ambientAtTop ? -32 : null,
+            bottom: s.ambientAtTop ? null : -32,
+            child: IgnorePointer(
+              child: Container(
+                width: s.ambientSize,
+                height: s.ambientSize,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      s.ambient.withValues(alpha: s.ambientOpacity),
+                      s.ambient.withValues(alpha: 0),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
-              _FloorChip(floor: call.floor, style: s),
-              const Spacer(),
-              _Elapsed(waited: waited, style: s),
-            ],
+            ),
           ),
-          const SizedBox(height: 16),
-          _AckButton(style: s, busy: busy, onPressed: onAcknowledge),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Room number and floor share whatever the timer does not need,
+                    // and the number takes priority within that. An earlier version
+                    // put the number in a Flexible next to a Spacer -- both default to
+                    // flex 1, so they split the free space evenly and "204" rendered
+                    // as "2...". Unit tests missed it because they checked the
+                    // overflow case and never the ordinary one.
+                    Expanded(
+                      child: Row(
+                        // Baseline-ish, as the design has it: the chip sits against
+                        // the foot of the numeral rather than floating at its middle,
+                        // which is what keeps the number reading as the headline and
+                        // the floor as a footnote to it.
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              call.roomNumber,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: T.mono,
+                                fontSize: 56,
+                                height: 1.0,
+                                letterSpacing: -1.4,
+                                fontWeight: FontWeight.w700,
+                                // White, not the accent colour. The step reads from the glow
+                                // behind the number and from everything around it; a white
+                                // numeral stays the highest-contrast thing on the card at
+                                // every step, which is what a nurse is actually reading.
+                                color: Colors.white,
+                                shadows: [
+                                  Shadow(
+                                    color: s.glow.withValues(
+                                      alpha: s.glowOpacity,
+                                    ),
+                                    blurRadius: 14,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _FloorChip(floor: call.floor, style: s),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    _Elapsed(waited: waited, style: s),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _AckButton(style: s, busy: busy, onPressed: onAcknowledge),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -107,21 +158,21 @@ class _FloorChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-        decoration: BoxDecoration(
-          color: style.chipBg.withValues(alpha: 0.90),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: style.border.withValues(alpha: 0.40)),
-        ),
-        child: Text(
-          '$floor-qavat',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: style.chipInk,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+    decoration: BoxDecoration(
+      color: style.chipBg.withValues(alpha: 0.90),
+      borderRadius: BorderRadius.circular(6),
+      border: Border.all(color: style.border.withValues(alpha: 0.40)),
+    ),
+    child: Text(
+      '$floor-qavat',
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        color: style.chipInk,
+      ),
+    ),
+  );
 }
 
 class _Elapsed extends StatelessWidget {
@@ -132,30 +183,30 @@ class _Elapsed extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: style.chipBg.withValues(alpha: 0.80),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: style.border.withValues(alpha: 0.60)),
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    decoration: BoxDecoration(
+      color: style.chipBg.withValues(alpha: 0.80),
+      borderRadius: BorderRadius.circular(999),
+      border: Border.all(color: style.border.withValues(alpha: 0.60)),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(style.timerIcon, size: 17, color: style.accent),
+        const SizedBox(width: 6),
+        Text(
+          elapsedLabel(waited),
+          style: TextStyle(
+            fontFamily: T.mono,
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.4,
+            color: style.chipInk,
+          ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.schedule, size: 17, color: style.accent),
-            const SizedBox(width: 6),
-            Text(
-              elapsedLabel(waited),
-              style: TextStyle(
-                fontFamily: T.mono,
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.4,
-                color: style.chipInk,
-              ),
-            ),
-          ],
-        ),
-      );
+      ],
+    ),
+  );
 }
 
 class _AckButton extends StatelessWidget {
@@ -171,59 +222,62 @@ class _AckButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Opacity(
-        opacity: busy ? 0.6 : 1,
-        child: Container(
-          height: 52,
-          decoration: BoxDecoration(
-            gradient: style.buttonGradient,
-            borderRadius: BorderRadius.circular(12),
-            // A one-pixel light edge along the top only, as in the design: it
-            // reads as a raised surface without the weight of a full border.
-            border: Border(
-              top: BorderSide(color: Colors.white.withValues(alpha: 0.30)),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: style.buttonFrom.withValues(alpha: 0.5),
-                blurRadius: 22,
-                offset: const Offset(0, 4),
-              ),
-            ],
+    opacity: busy ? 0.6 : 1,
+    child: Container(
+      height: 52,
+      decoration: BoxDecoration(
+        gradient: style.buttonGradient,
+        borderRadius: BorderRadius.circular(12),
+        // A one-pixel light edge along the top only, as in the design: it
+        // reads as a raised surface without the weight of a full border.
+        border: Border(
+          top: BorderSide(color: Colors.white.withValues(alpha: 0.30)),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: style.buttonFrom.withValues(alpha: 0.5),
+            blurRadius: 22,
+            offset: const Offset(0, 4),
           ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: busy ? null : () => onPressed(),
-              child: Center(
-                child: busy
-                    ? SizedBox(
-                        width: 21,
-                        height: 21,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.4,
-                          valueColor: AlwaysStoppedAnimation(style.buttonInk),
-                        ),
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.check_circle,
-                              size: 22, color: style.buttonInk),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Qabul qilish',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: style.buttonInk,
-                            ),
-                          ),
-                        ],
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: busy ? null : () => onPressed(),
+          child: Center(
+            child: busy
+                ? SizedBox(
+                    width: 21,
+                    height: 21,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.4,
+                      valueColor: AlwaysStoppedAnimation(style.buttonInk),
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        size: 22,
+                        color: style.buttonInk,
                       ),
-              ),
-            ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Qabul qilish',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: style.buttonInk,
+                        ),
+                      ),
+                    ],
+                  ),
           ),
         ),
-      );
+      ),
+    ),
+  );
 }

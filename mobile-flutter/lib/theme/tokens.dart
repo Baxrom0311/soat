@@ -94,6 +94,10 @@ class T {
             buttonVia: sky400,
             buttonTo: cyan500,
             buttonInk: slate950,
+            timerIcon: Icons.hourglass_top,
+            ambient: sky500,
+            ambientSize: 112,
+            ambientAtTop: true,
           ),
         2 => const CallStepStyle(
             accent: amber400,
@@ -111,6 +115,10 @@ class T {
             // legibility badly. A call card is the one surface where "mostly
             // readable" is not good enough.
             buttonInk: slate950,
+            timerIcon: Icons.timer_outlined,
+            ambient: amber500,
+            ambientSize: 112,
+            ambientAtTop: false,
           ),
         _ => const CallStepStyle(
             accent: red400,
@@ -125,6 +133,10 @@ class T {
             buttonVia: rose600,
             buttonTo: red600,
             buttonInk: Colors.white,
+            timerIcon: Icons.schedule,
+            ambient: red600,
+            ambientSize: 128,
+            ambientAtTop: true,
           ),
       };
 
@@ -159,6 +171,10 @@ class CallStepStyle {
     required this.buttonVia,
     required this.buttonTo,
     required this.buttonInk,
+    required this.timerIcon,
+    required this.ambient,
+    required this.ambientSize,
+    required this.ambientAtTop,
   });
 
   final Color accent;
@@ -173,6 +189,21 @@ class CallStepStyle {
   final Color buttonVia;
   final Color buttonTo;
   final Color buttonInk;
+
+  /// Changes with the step, as the design does. A second, non-colour channel
+  /// for the same fact: someone who cannot separate amber from red still sees
+  /// the glyph escalate.
+  final IconData timerIcon;
+
+  /// A soft disc bleeding in from one corner, as the design has on every card.
+  /// It is what makes the step readable from across a room before any text is:
+  /// the eye catches the wash of colour well before it resolves a numeral.
+  final Color ambient;
+  final double ambientSize;
+  final bool ambientAtTop;
+
+  /// Matches the design's per-step opacity: red 20%, amber 15%, sky 10%.
+  double get ambientOpacity => ambientSize == 128 ? 0.20 : (ambientAtTop ? 0.10 : 0.15);
 
   LinearGradient get buttonGradient => LinearGradient(
         colors: [buttonFrom, buttonVia, buttonTo],

@@ -48,3 +48,6 @@ app.*.map.json
 android/keystore.properties
 android/keystores/
 android/app/google-services.json
+
+# Veb build faqat dizayn tekshiruvi uchun — chiqariladigan artefakt emas
+/build/web/

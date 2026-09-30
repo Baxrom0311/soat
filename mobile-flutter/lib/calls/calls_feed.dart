@@ -44,12 +44,14 @@ class CallsFeed extends ChangeNotifier {
   bool _reachable = true;
   BillingNotice? _notice;
   ShiftStats _stats = ShiftStats.empty;
+  String? _clinicName;
 
   List<Call> get calls => _calls;
   DateTime get now => _now;
   bool get loading => _loading;
   BillingNotice? get notice => _notice;
   ShiftStats get stats => _stats;
+  String? get clinicName => _clinicName;
 
   /// False once a refresh has failed. Surfaced in the UI because a phone that
   /// cannot reach the server shows an empty list, which is indistinguishable
@@ -66,6 +68,7 @@ class CallsFeed extends ChangeNotifier {
     refresh();
     _refreshNotice();
     _refreshStats();
+    if (_clinicName == null) _refreshClinic();
     // Far less often than the call list: the strip is context for the shift, and
     // history is a heavier query that must never compete with finding out that
     // somebody is waiting.
@@ -106,6 +109,13 @@ class CallsFeed extends ChangeNotifier {
       _loading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> _refreshClinic() async {
+    try {
+      _clinicName = (await _api.clinic()).name;
+      notifyListeners();
+    } catch (_) {}
   }
 
   Future<void> _refreshStats() async {
