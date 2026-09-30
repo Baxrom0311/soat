@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { isAudioBlocked, playAlert, resetForTests, subscribe, unlockAudio } from './alarm';
+import { isAudioBlocked, playAlert, playConfirmation, resetForTests, subscribe, unlockAudio } from './alarm';
 
 /** Minimal stand-in for the parts of AudioContext this module touches. jsdom has no
  *  Web Audio, and the behaviour worth pinning here is the blocked/allowed decision,
@@ -107,6 +107,40 @@ describe('alarm', () => {
     ctx.onstatechange?.();
 
     expect(seen).toContain(false);
+  });
+
+  test('unlocking makes a sound, so a working click is distinguishable from a dead one', async () => {
+    // Switching sound on is the one action whose purpose is otherwise inaudible: with no
+    // confirmation the button looks broken even when it worked, which is how this was
+    // first reported from the ward.
+    const { nodes } = installAudioContext('suspended');
+    const ok = await unlockAudio();
+    expect(ok).toBe(true);
+    expect(nodes.started).toBeGreaterThan(0);
+  });
+
+  test('the confirmation is a different pattern from the alert', () => {
+    // Two notes, not the alert's three: confirming the speakers must never be mistaken
+    // across a ward for a patient calling.
+    const { nodes } = installAudioContext('running');
+    expect(playConfirmation()).toBe(true);
+    expect(nodes.started).toBe(2);
+  });
+
+  test('the confirmation ignores the repeat guard, since it answers a click', () => {
+    const { nodes } = installAudioContext('running');
+    playConfirmation();
+    playConfirmation();
+    expect(nodes.started).toBe(4);
+  });
+
+  test('a failed unlock reports false and stays silent', async () => {
+    const { ctx, nodes } = installAudioContext('suspended');
+    ctx.resume = vi.fn(async () => {
+      throw new Error('not allowed');
+    });
+    expect(await unlockAudio()).toBe(false);
+    expect(nodes.started).toBe(0);
   });
 
   test('unlockAudio on a browser that refuses to resume leaves it reported as blocked', async () => {

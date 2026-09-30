@@ -55,7 +55,7 @@ export function WallView() {
   const targetFloor = floorParam ? parseInt(floorParam, 10) : null;
 
   const { token } = useAuth();
-  const { activeCalls, connStatus, audioBlocked, unlockAudio } = useCallsFeed(token);
+  const { activeCalls, connStatus, audioBlocked, unlockAudio, testSound } = useCallsFeed(token);
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -108,9 +108,15 @@ export function WallView() {
           that has never been clicked will not make a sound. Shown as a full-width bar
           rather than a discreet icon: a muted wall display is indistinguishable from a
           quiet ward, which is the one thing it must never be mistaken for. */}
-      {audioBlocked && (
+      {audioBlocked ? (
         <button className="wall__sound-off" type="button" onClick={() => void unlockAudio()}>
           Ovoz o'chiq — yoqish uchun bosing
+        </button>
+      ) : (
+        // Kept on screen once sound works, as a way to check the speakers before a shift
+        // rather than discovering they are muted when a patient is already waiting.
+        <button className="wall__sound-test" type="button" onClick={() => testSound()}>
+          Ovoz yoqilgan · sinash
         </button>
       )}
 

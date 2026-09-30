@@ -106,7 +106,7 @@ export function DashboardLayout() {
     navigate(`/app/${nextTab}`);
   }
 
-  const feed = useCallsFeed(token, blocked);
+  const feed = useCallsFeed(token, blocked, session?.role ?? '');
   const notice = useBillingNotice(token, setBlocked);
 
   const isAdmin = session?.role === 'admin';

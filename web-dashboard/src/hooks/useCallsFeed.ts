@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, triggerBlocked, triggerUnauthorized, wsProtocols, wsUrl } from '../api/client';
 import type { ActiveCall, HistoryCall, UnassignedSignal, WsMessage, WsUnassignedSignal } from '../api/types';
-import { isAudioBlocked, playAlert, subscribe as subscribeAudio, unlockAudio } from '../lib/alarm';
+import { isAudioBlocked, playAlert, playConfirmation, subscribe as subscribeAudio, unlockAudio } from '../lib/alarm';
 
 export type ConnStatus = 'connecting' | 'live' | 'disconnected';
 
@@ -35,7 +35,7 @@ function normalizeWsSignal(signal: WsUnassignedSignal): UnassignedSignal {
  * management routes that answer 402, so once we know the clinic is blocked we stop
  * asking for them rather than generating a guaranteed 402 every 5 seconds.
  */
-export function useCallsFeed(token: string | null, blocked = false) {
+export function useCallsFeed(token: string | null, blocked = false, role = '') {
   const [activeCalls, setActiveCalls] = useState<Map<number, ActiveCall>>(new Map());
   const [history, setHistory] = useState<HistoryCall[]>([]);
   const [unassignedSignals, setUnassignedSignals] = useState<UnassignedSignal[]>([]);
@@ -50,7 +50,9 @@ export function useCallsFeed(token: string | null, blocked = false) {
   // Read through a ref so flipping to blocked doesn't tear down the WebSocket: the
   // socket and the active-call poll must survive it untouched.
   const blockedRef = useRef(blocked);
+  const roleRef = useRef(role);
   blockedRef.current = blocked;
+  roleRef.current = role;
 
   const refreshActive = useCallback(async () => {
     const startedAt = Date.now();
@@ -79,6 +81,12 @@ export function useCallsFeed(token: string | null, blocked = false) {
   }, []);
 
   const refreshUnassigned = useCallback(async () => {
+    // Admin-only route (deps.require_admin). Nurses and the superadmin are both refused,
+    // and the poll runs for every signed-in user every few seconds -- so without this the
+    // server answered 403 to the same caller around 100 times an hour, forever, while the
+    // dashboard swallowed each one and showed an empty list. Asking for something we know
+    // will be refused is not a fallback, it is noise that buries real 403s in the log.
+    if (roleRef.current !== 'admin') return;
     if (blockedRef.current) return; // management route: a 402 is certain, don't ask
     const startedAt = Date.now();
     const data = await api.getUnassignedSignals();
@@ -225,5 +233,6 @@ export function useCallsFeed(token: string | null, blocked = false) {
     markLocalMutation,
     audioBlocked,
     unlockAudio,
+    testSound: playConfirmation,
   };
 }

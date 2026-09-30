@@ -105,3 +105,19 @@
   cursor: pointer;
 }
 .wall__sound-off:hover { filter: brightness(1.06); }
+
+/* Quiet on purpose: this one is a reassurance and a check, not a warning, so it must not
+   compete with a waiting call for attention. */
+.wall__sound-test {
+  display: block;
+  margin: 0 auto 8px;
+  border: 1px solid var(--border-field, #3A3F44);
+  border-radius: 999px;
+  padding: 4px 14px;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--text-3, #8A9099);
+  background: transparent;
+  cursor: pointer;
+}
+.wall__sound-test:hover { color: var(--text-1, #E8EAED); }

@@ -52,10 +52,16 @@ export function isAudioBlocked(): boolean {
   return c === null || c.state !== 'running';
 }
 
-/** Must be called from inside a real user gesture (click/keydown) or it has no effect. */
-export async function unlockAudio(): Promise<void> {
+/** Must be called from inside a real user gesture (click/keydown) or it has no effect.
+ *  Returns whether sound is now allowed.
+ *
+ *  Plays a short confirmation on success, and that is not decoration: switching sound on
+ *  is the one action whose whole purpose is inaudible, so without it a working click and
+ *  a failed one look exactly alike -- the button appears to do nothing, which is how this
+ *  was first reported. Hearing the chirp IS the proof. */
+export async function unlockAudio(): Promise<boolean> {
   const c = context();
-  if (!c) return;
+  if (!c) return false;
   try {
     await c.resume();
   } catch {
@@ -63,6 +69,21 @@ export async function unlockAudio(): Promise<void> {
     // honest answer rather than a silent failure.
   }
   notify();
+  const ok = c.state === 'running';
+  if (ok) playConfirmation();
+  return ok;
+}
+
+/** Two quick rising notes: deliberately unlike the three-pulse alert, so confirming the
+ *  speakers work is never mistaken across a ward for a patient calling. Bypasses the
+ *  repeat guard, since it answers a click rather than an event. */
+export function playConfirmation(): boolean {
+  const c = context();
+  if (!c || c.state !== 'running') return false;
+  const t = c.currentTime;
+  pulse(c, t, 660);
+  pulse(c, t + 0.16, 990);
+  return true;
 }
 
 export function subscribe(fn: Listener): () => void {
