@@ -16,7 +16,7 @@ import '../api/models.dart';
 /// Folding them together would mean either counters that jump in five-second
 /// steps, or a network request every second on a phone in somebody's pocket.
 class CallsFeed extends ChangeNotifier {
-  CallsFeed(this._api, {required this.onUnauthorized});
+  CallsFeed(this._api, {required this.onUnauthorized, this.onAcknowledged});
 
   final ApiClient _api;
 
@@ -25,6 +25,11 @@ class CallsFeed extends ChangeNotifier {
   /// quietly stopped updating. A stale board is worse than an empty one: it
   /// looks like a quiet ward.
   final VoidCallback onUnauthorized;
+
+  /// Called once a call is no longer waiting, so its notification can be taken
+  /// off the lock screen. An `ongoing` alert for a call somebody has already
+  /// been to is worse than none: the next one is easy to mistake for it.
+  final void Function(int callId)? onAcknowledged;
 
   static const Duration pollInterval = Duration(seconds: 5);
 
@@ -111,6 +116,7 @@ class CallsFeed extends ChangeNotifier {
     notifyListeners();
     try {
       await _api.acknowledge(callId);
+      onAcknowledged?.call(callId);
     } on ApiException catch (e) {
       if (e.isUnauthorized) {
         stop();

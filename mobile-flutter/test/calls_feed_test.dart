@@ -10,11 +10,17 @@ import 'package:nursecall/calls/calls_feed.dart';
 ///
 /// `handler` sees every request, so a test can assert on what was sent as well
 /// as control what comes back.
-({CallsFeed feed, List<http.Request> sent, List<String> events}) _feed({
+({
+  CallsFeed feed,
+  List<http.Request> sent,
+  List<String> events,
+  List<int> cleared,
+}) _feed({
   required Future<http.Response> Function(http.Request) handler,
 }) {
   final sent = <http.Request>[];
   final events = <String>[];
+  final cleared = <int>[];
   final api = ApiClient(
     httpClient: MockClient((req) {
       sent.add(req);
@@ -22,8 +28,12 @@ import 'package:nursecall/calls/calls_feed.dart';
     }),
   );
   api.setToken('test-token');
-  final feed = CallsFeed(api, onUnauthorized: () => events.add('signed-out'));
-  return (feed: feed, sent: sent, events: events);
+  final feed = CallsFeed(
+    api,
+    onUnauthorized: () => events.add('signed-out'),
+    onAcknowledged: cleared.add,
+  );
+  return (feed: feed, sent: sent, events: events, cleared: cleared);
 }
 
 String _calls(List<({int id, String room, int floor, String at})> rows) =>
@@ -153,6 +163,33 @@ void main() {
       await h.feed.refresh();
       await expectLater(h.feed.acknowledge(1), throwsA(anything));
       expect(h.feed.calls.map((c) => c.callId), [1]);
+    });
+
+    test('answering clears the lock-screen alert for that call', () async {
+      // The alert is posted `ongoing` so a pocket cannot swipe it away, which
+      // means something has to take it down deliberately. Left up, it sits there
+      // for a room somebody has already been to and the next call is easy to
+      // mistake for it.
+      final h = _feed(
+        handler: (req) async => req.method == 'POST'
+            ? http.Response('{"call_id":7,"status":"acknowledged","acknowledged_at":"2026-10-01T12:00:00Z"}', 200)
+            : http.Response(_calls([(id: 7, room: '101', floor: 1, at: '2026-10-01T12:00:00Z')]), 200),
+      );
+      await h.feed.refresh();
+      await h.feed.acknowledge(7);
+      expect(h.cleared, [7]);
+    });
+
+    test('a failed answer leaves the alert up, because the call is still waiting',
+        () async {
+      final h = _feed(
+        handler: (req) async => req.method == 'POST'
+            ? http.Response('{"detail":"boom"}', 500)
+            : http.Response(_calls([(id: 7, room: '101', floor: 1, at: '2026-10-01T12:00:00Z')]), 200),
+      );
+      await h.feed.refresh();
+      await expectLater(h.feed.acknowledge(7), throwsA(anything));
+      expect(h.cleared, isEmpty);
     });
 
     test('a rejected session during ack signs out and does not restore the card',

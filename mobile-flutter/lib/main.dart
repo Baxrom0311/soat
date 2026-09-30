@@ -45,8 +45,12 @@ class _NurseCallAppState extends State<NurseCallApp> {
     // Signing out on a 401 lives here rather than in the feed so there is one
     // owner of "who is signed in". The feed reports the fact; it does not decide
     // what to do about it.
-    _feed = CallsFeed(_api, onUnauthorized: _sessions.signOut);
     _push = PushService(_api);
+    _feed = CallsFeed(
+      _api,
+      onUnauthorized: _sessions.signOut,
+      onAcknowledged: _push.clearCall,
+    );
     _push.onCallTapped = (_) => _feed.refresh();
     _sessions.addListener(_onSession);
     _sessions.restore();

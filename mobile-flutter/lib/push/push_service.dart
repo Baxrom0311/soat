@@ -16,9 +16,16 @@ import '../api/client.dart';
 /// (server/app/services/fcm_service.py).
 const String callsChannelId = 'nursecall_calls';
 
-/// Android channel importance is fixed at creation. Changing it later has no
-/// effect on phones where the channel already exists — the only way to raise it
-/// is a new channel id. Starting at max leaves nowhere to have to go.
+/// Android channel settings are fixed at creation. Changing them later has no
+/// effect on phones where the channel already exists — the only way to raise
+/// anything is a new channel id. So this starts where it needs to end up.
+///
+/// `audioAttributesUsage: alarm` is the important line. It routes the sound
+/// through the alarm stream, which is the one stream Android still plays when
+/// the phone is on silent or vibrate. A ward phone spends its shift in a pocket
+/// on silent, and the nurse with the worst response times in production is the
+/// one whose only channel was a device nobody was holding. A notification she
+/// cannot hear is the same as no notification.
 const AndroidNotificationChannel _callsChannel = AndroidNotificationChannel(
   callsChannelId,
   'Bemor chaqiruvlari',
@@ -26,7 +33,66 @@ const AndroidNotificationChannel _callsChannel = AndroidNotificationChannel(
   importance: Importance.max,
   playSound: true,
   enableVibration: true,
+  audioAttributesUsage: AudioAttributesUsage.alarm,
 );
+
+/// Shared by the foreground and background paths so an alert looks and sounds
+/// the same however it arrived.
+///
+/// `fullScreenIntent` is what turns a notification into something that wakes the
+/// screen and shows over the lock screen, the way an incoming call does. It only
+/// works for a notification this app posts itself, which is why the server sends
+/// data-only messages: a `notification` payload is rendered by the system, and
+/// the system does not know to do this.
+NotificationDetails _callDetails() => NotificationDetails(
+      android: AndroidNotificationDetails(
+        _callsChannel.id,
+        _callsChannel.name,
+        channelDescription: _callsChannel.description,
+        importance: Importance.max,
+        priority: Priority.max,
+        category: AndroidNotificationCategory.call,
+        fullScreenIntent: true,
+        audioAttributesUsage: AudioAttributesUsage.alarm,
+        // Stays until the call is dealt with rather than being swiped away in a
+        // pocket. The alert should end because somebody answered, not because a
+        // phone brushed against a uniform.
+        ongoing: true,
+        autoCancel: false,
+        visibility: NotificationVisibility.public,
+      ),
+    );
+
+/// Runs in its own isolate when a message arrives and the app is not in the
+/// foreground. Must be a top-level function — Android looks it up by name.
+@pragma('vm:entry-point')
+Future<void> handleBackgroundMessage(RemoteMessage message) async {
+  final room = message.data['room_number'];
+  final floor = message.data['floor'];
+  if (room == null) return;
+
+  final local = FlutterLocalNotificationsPlugin();
+  await local.initialize(
+    settings: const InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    ),
+  );
+  // Created again here on purpose: this isolate does not share state with the
+  // one that ran init(), and posting to a channel that does not exist gets the
+  // notification silently downgraded to default importance.
+  await local
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(_callsChannel);
+
+  await local.show(
+    id: int.tryParse(message.data['call_id']?.toString() ?? '') ?? room.hashCode,
+    title: 'Xona $room chaqirdi!',
+    body: floor == null ? null : '$floor-qavat',
+    notificationDetails: _callDetails(),
+    payload: message.data['call_id']?.toString(),
+  );
+}
 
 /// Registers this phone for call notifications and keeps the server's copy of
 /// its token current.
@@ -80,6 +146,7 @@ class PushService {
             AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
 
+    FirebaseMessaging.onBackgroundMessage(handleBackgroundMessage);
     _foregroundSub = FirebaseMessaging.onMessage.listen(_showForeground);
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageTap);
 
@@ -136,22 +203,14 @@ class PushService {
   /// foreground, so it is posted by hand. Without this, a nurse looking at
   /// another screen in this same app would get nothing at all.
   Future<void> _showForeground(RemoteMessage m) async {
-    final n = m.notification;
-    if (n == null) return;
+    final room = m.data['room_number'];
+    if (room == null) return;
+    final floor = m.data['floor'];
     await _local.show(
-      id: m.hashCode,
-      title: n.title,
-      body: n.body,
-      notificationDetails: NotificationDetails(
-        android: AndroidNotificationDetails(
-          _callsChannel.id,
-          _callsChannel.name,
-          channelDescription: _callsChannel.description,
-          importance: Importance.max,
-          priority: Priority.high,
-          category: AndroidNotificationCategory.call,
-        ),
-      ),
+      id: int.tryParse(m.data['call_id']?.toString() ?? '') ?? m.hashCode,
+      title: 'Xona $room chaqirdi!',
+      body: floor == null ? null : '$floor-qavat',
+      notificationDetails: _callDetails(),
       payload: m.data['call_id']?.toString(),
     );
   }
@@ -162,6 +221,15 @@ class PushService {
   void _handlePayload(String? raw) {
     final id = int.tryParse(raw ?? '');
     if (id != null) onCallTapped?.call(id);
+  }
+
+  /// Clears a call's notification once it has been answered. Without this an
+  /// `ongoing` alert would sit on the lock screen after the nurse has already
+  /// been to the room, and the next one would be easy to mistake for it.
+  Future<void> clearCall(int callId) async {
+    try {
+      await _local.cancel(id: callId);
+    } catch (_) {}
   }
 
   void dispose() {

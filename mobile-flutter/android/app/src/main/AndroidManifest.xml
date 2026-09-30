@@ -1,10 +1,22 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Wakes the screen and shows the call over the lock screen, the way an incoming
+         call does. On Android 14+ this is granted at install only for apps whose
+         notifications are categorised as calls or alarms, which ours are; on anything
+         earlier it is an install-time permission. -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- Lets the alert sound and vibrate reach a nurse whose phone is in Do Not Disturb.
+         Requested from the app, never assumed: Android shows the user a screen to grant
+         it, and without it the alarm channel is still silenced by DND. -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     <application
-        android:label="nursecall"
+        android:label="NurseCall"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""

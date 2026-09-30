@@ -112,24 +112,32 @@ def send(token: str, *, title: str, body: str, data: dict[str, str]) -> str | No
     if access is None:
         return None
 
+    # Data-only, with no `notification` block, and that is the whole point.
+    #
+    # A message carrying `notification` is rendered by the Android system itself while
+    # the app is backgrounded, and the system will not raise a full-screen intent, use
+    # the alarm audio stream, or keep the alert on screen until somebody answers. Only a
+    # notification the app builds can do those, and the app only gets the chance when the
+    # payload is data-only.
+    #
+    # The cost is that a force-stopped app receives nothing -- but a force-stopped app
+    # receives no notification payload either, so nothing is actually given up.
     payload = {
         "message": {
             "token": token,
-            "notification": {"title": title, "body": body},
             # Every value must be a string: FCM rejects the whole message otherwise, and
-            # call_id is an int on our side.
-            "data": {k: str(v) for k, v in data.items()},
+            # call_id is an int on our side. title/body ride along so the phone renders
+            # the same words the Expo build does.
+            "data": {
+                **{k: str(v) for k, v in data.items()},
+                "title": title,
+                "body": body,
+            },
             "android": {
-                # "high" is what lets the message through Doze on a phone that has been
-                # in a pocket all shift. A normal-priority alert can be held for
-                # minutes, which for this product is the same as losing it.
+                # "high" is what lets a data-only message through Doze on a phone that
+                # has been in a pocket all shift. At normal priority Android may hold it
+                # for minutes, which for this product is the same as losing it.
                 "priority": "high",
-                "notification": {
-                    # Must match the channel the app creates, or Android silently
-                    # applies default importance and the alert arrives quietly.
-                    "channel_id": "nursecall_calls",
-                    "default_sound": True,
-                },
             },
         }
     }
