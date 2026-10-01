@@ -1,0 +1,15 @@
+[Unit]
+Description=Javob berilmagan chaqiruvlar haqida qayta xabar yuborishni ishga tushiradi
+
+[Timer]
+# Every minute. The first alert goes out at the button press; this is what keeps
+# a call that nobody answered from going quiet -- the job itself decides which
+# minutes are re-alert minutes from each call's age, so running often costs
+# nothing when there is nothing waiting.
+OnBootSec=2min
+OnUnitActiveSec=1min
+AccuracySec=10s
+Unit=nursecall-renotify.service
+
+[Install]
+WantedBy=timers.target

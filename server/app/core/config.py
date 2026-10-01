@@ -103,6 +103,22 @@ VENDOR_PHONE = os.getenv("VENDOR_PHONE", "+998935580311")
 # Firebase service-account JSON for FCM HTTP v1. Empty == FCM disabled, and the push
 # service then serves only Expo tokens. Kept as a path rather than inline JSON so the
 # private key never sits in an env var that shows up in `systemctl show` or a crash dump.
+# How long a call may go unacknowledged before it starts re-announcing itself. The
+# first alert goes out at the button press; this is the gap before the second.
+RENOTIFY_AFTER_SECONDS = int(os.getenv("RENOTIFY_AFTER_SECONDS", "60"))
+# After this many minutes the repeat slows down. A phone that has buzzed fifteen times
+# will not be answered by the sixteenth, and an alert that never relents is one people
+# learn to silence -- which costs more than the repeat gains.
+RENOTIFY_SLOW_AFTER_MINUTES = int(os.getenv("RENOTIFY_SLOW_AFTER_MINUTES", "15"))
+RENOTIFY_SLOW_EVERY_MINUTES = int(os.getenv("RENOTIFY_SLOW_EVERY_MINUTES", "5"))
+# Past this, stop. A call still "active" after hours is not a patient waiting -- it is a
+# record nobody closed, because acknowledging is a button press a nurse makes after the
+# fact and often not at all. Measured when this was written: of 28 open calls across four
+# clinics, exactly one was under two hours old and eighteen were over a day, the oldest
+# six days. Re-alerting those would have meant hundreds of pushes an hour about patients
+# long since seen -- and an app that cries wolf on day one is uninstalled by day two.
+RENOTIFY_MAX_HOURS = int(os.getenv("RENOTIFY_MAX_HOURS", "2"))
+
 FCM_SERVICE_ACCOUNT_FILE = os.getenv("FCM_SERVICE_ACCOUNT_FILE", "")
 
 NTFY_TOPIC_URL = os.getenv("NTFY_TOPIC_URL", "")

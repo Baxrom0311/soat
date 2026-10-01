@@ -1,0 +1,13 @@
+[Unit]
+Description=NurseCall: javob berilmagan chaqiruvlar haqida qayta xabar
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/nursecall_backend
+EnvironmentFile=/root/nursecall_backend/.env
+ExecStart=/root/nursecall_backend/.venv/bin/python -m jobs.renotify_waiting_calls
+# Shorter than the one-minute interval on purpose: a run that has hung is better
+# killed than left to overlap the next one and double every alert.
+TimeoutStartSec=45

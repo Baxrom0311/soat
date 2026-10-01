@@ -25,7 +25,14 @@ EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send"
 EXPO_PUSH_CHUNK_SIZE = 100
 
 
-def send_new_call_notifications(clinic_id: int, *, call_id: int, room_number: str, floor: int) -> None:
+def send_new_call_notifications(
+    clinic_id: int,
+    *,
+    call_id: int,
+    room_number: str,
+    floor: int,
+    waited_seconds: int | None = None,
+) -> None:
     """Alert every nurse responsible for this floor, over whichever push service her
     app generation uses. Opens its own DB session -- by the time a BackgroundTask runs,
     the request-scoped session may be running on a different worker thread, so sharing
@@ -38,8 +45,17 @@ def send_new_call_notifications(clinic_id: int, *, call_id: int, room_number: st
             logger.info("No push tokens registered for clinic_id=%s, skipping push", clinic_id)
             return
 
-        title = f"Xona {room_number} chaqirdi!"
-        body = f"{floor}-qavat"
+        # A repeat says how long the patient has been waiting. The first alert
+        # cannot -- there is nothing to report yet -- but by the third one the
+        # number is the whole message: it is the difference between "somebody
+        # called" and "somebody has been calling for nine minutes".
+        if waited_seconds is None:
+            title = f"Xona {room_number} chaqirdi!"
+            body = f"{floor}-qavat"
+        else:
+            minutes = max(1, round(waited_seconds / 60))
+            title = f"Xona {room_number} — {minutes} daqiqa kutyapti"
+            body = f"{floor}-qavat · javob berilmadi"
         payload = {"call_id": call_id, "room_number": room_number, "floor": floor}
 
         # Two app generations are in the field at once while clinics migrate off the
