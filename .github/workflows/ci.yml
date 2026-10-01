@@ -1,0 +1,115 @@
+# Everything that can be checked without a hospital, checked on every push.
+#
+# Written after an audit found 96 tests that only ran when somebody remembered to run
+# them. In this same session a change broke the Flutter suite and was caught only
+# because `flutter test` happened to be typed; the whole point of this file is that
+# "happened to be typed" stops being part of the process.
+#
+# The three suites run as separate jobs so a red Flutter run still tells you whether the
+# server is fine. Nothing here deploys: deployment stays a deliberate act (server/deploy.sh).
+
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # A newer push makes an in-flight run of the same branch irrelevant.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  server:
+    name: Server (pytest)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        # A real Postgres, because the tests assert on native enum types, ON CONFLICT
+        # against a named constraint, and the atomic UPDATE that keeps two nurses from
+        # both acknowledging one call. SQLite would answer differently to all three.
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      TEST_PG_ADMIN_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+      PGPASSWORD: postgres
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: server/requirements.txt
+
+      - name: Install
+        working-directory: server
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest httpx
+
+      - name: Tests
+        working-directory: server
+        run: python -m pytest -q
+
+      - name: Migrations apply to an empty database
+        working-directory: server
+        # The tests build the schema from the models; this checks the other path -- that
+        # a fresh server can actually be brought up from the migration chain. The two
+        # drifting apart is how a migration that was never run on anything but a copy of
+        # production ends up broken.
+        env:
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/migration_check
+        run: |
+          psql "$TEST_PG_ADMIN_URL" -q -c 'CREATE DATABASE migration_check'
+          alembic upgrade head
+
+  web:
+    name: Dashboard (vitest + tsc)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web-dashboard/package-lock.json
+      - run: npm ci
+        working-directory: web-dashboard
+      - run: npx vitest run
+        working-directory: web-dashboard
+      - run: npm run lint
+        working-directory: web-dashboard
+      # `build` runs the design-token check and tsc before vite, so this covers both.
+      - run: npm run build
+        working-directory: web-dashboard
+
+  mobile:
+    name: Nurse app (flutter test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+        working-directory: mobile-flutter
+      - run: flutter analyze
+        working-directory: mobile-flutter
+      - run: flutter test
+        working-directory: mobile-flutter

@@ -126,3 +126,65 @@ journalctl -u nursecall-device-offline.service -n 50 --no-pager
 Until then **only the ntfy channel fires** — the timer still works and still warns, the
 Telegram half is just skipped with a log line. No restart of the API is needed; the
 timer's next run picks up the new `.env` values.
+
+## nursecall-expire-calls.timer
+
+Runs `jobs/expire_stale_calls.py` **every hour**, `Persistent=true`.
+
+Nothing in the system ever closed a call. A patient presses a button, a row goes active,
+and unless a nurse taps acknowledge it stays active forever — on her screen, in the badge
+count, and in the re-alert job's view of who is still waiting. When this was written: 28
+open calls across four clinics, 22 at one of them, the oldest **six days** old.
+
+After `CALL_EXPIRE_HOURS` (default 12) such a call is closed as `expired` — never as
+`acknowledged`, because nobody acknowledged it. Every answer-time figure in the product
+is computed from `acknowledged_at`, so an expired call is excluded from them by
+construction rather than by each caller remembering to.
+
+Twelve hours is longer than any shift at these clinics, so an expired call is one that no
+shift ever closed, never one a nurse was about to reach. The write is a single
+`UPDATE ... WHERE status = 'active'`, the same condition the acknowledge path uses, so a
+nurse answering at the stroke of the deadline keeps the answer and the clock changes
+nothing.
+
+`--dry-run` lists what would be closed, per clinic and room, without writing.
+
+## nursecall-backup.timer
+
+Runs `scripts/backup.sh` daily at **03:15 UTC**. `pg_dump | gzip` into
+`/root/nursecall_backups` (7 days kept), then a second copy onto the attached volume (30
+days). A failed dump sends an urgent ntfy alert; a failed volume copy only warns, because
+the primary backup already succeeded.
+
+The script reads `NTFY_TOPIC_URL` from the server's `.env`. The topic is effectively a
+password — anyone who knows it can read every alert and post fake ones — so it is not in
+this repository.
+
+**These backups are not proven until one has been restored.** Restore the most recent dump
+into the staging database (below) and compare clinic and call counts. Worth doing monthly.
+
+## nursecall-uptime.timer
+
+Runs `scripts/uptime_check.sh` every **5 minutes**: one HTTPS request to the public host,
+an urgent ntfy alert when it stops answering and a quiet one when it comes back. It keeps
+its memory in `.uptime_state` so a long outage is announced once, not every five minutes.
+
+## Deploying
+
+`server/deploy.sh` from the repository root. It refuses to run with uncommitted changes or
+a failing test suite, snapshots the live code *and* the database into
+`/root/nursecall_releases`, rsyncs, migrates, restarts, health-checks — and puts the old
+code back if any of that fails. `--dry-run` shows what would change; `--rollback` returns
+to the most recent snapshot.
+
+## Rotating the JWT signing key
+
+The server verifies against `JWT_SECRET_OLD` as well as `JWT_SECRET`, and signs only with
+`JWT_SECRET`. So a key can be replaced without logging out a ward mid-shift:
+
+1. `JWT_SECRET_OLD=<the current secret>` and `JWT_SECRET=<a new one>` in `.env`
+2. restart — every token in a nurse's pocket keeps working, every new one uses the new key
+3. after `JWT_EXPIRE_MINUTES` has passed (90 days), clear `JWT_SECRET_OLD` and restart
+
+Step 3 is the one that actually ends the exposure; skipping it leaves the old key working
+forever, which is what the rotation was for.

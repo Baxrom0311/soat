@@ -38,6 +38,12 @@ class SubscriptionStatus(StrEnum):
 class CallStatus(StrEnum):
     ACTIVE = "active"
     ACKNOWLEDGED = "acknowledged"
+    # Closed by the clock, not by a nurse. A call nobody acknowledged for half a day is
+    # not a patient still waiting -- it is a record left open, because acknowledging is a
+    # button press made after the fact and often not at all. Kept distinct from
+    # ACKNOWLEDGED on purpose: folding the two would turn "nobody ever answered this"
+    # into "answered", which is the one thing the history must never claim.
+    EXPIRED = "expired"
 
 
 class EffectiveStatus(StrEnum):

@@ -180,7 +180,7 @@ export interface UnassignedSignal {
   seen_count: number;
 }
 
-export type CallStatus = 'active' | 'acknowledged';
+export type CallStatus = 'active' | 'acknowledged' | 'expired';
 
 export interface ActiveCall {
   call_id: number;

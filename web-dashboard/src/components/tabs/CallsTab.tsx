@@ -1,5 +1,5 @@
 import { CallsLive } from '../calls/CallsLive';
-import type { ActiveCall, HistoryCall } from '../../api/types';
+import type { ActiveCall, CallStatus, HistoryCall } from '../../api/types';
 import type { ConnStatus } from '../../hooks/useCallsFeed';
 
 interface CallsTabProps {
@@ -11,6 +11,15 @@ interface CallsTabProps {
    *  live board above it is ungated and keeps working. */
   historyBlocked?: boolean;
 }
+
+/** Spelled out rather than an "active or else answered" ternary: a call closed by
+ *  the clock was never answered, and labelling it "Qabul qilindi" would put a lie in
+ *  the one table a clinic uses to check whether its patients were reached. */
+const CALL_STATUS_LABEL: Record<CallStatus, string> = {
+  active: 'Faol',
+  acknowledged: 'Qabul qilindi',
+  expired: 'Javobsiz qoldi',
+};
 
 function fmtTime(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
@@ -52,9 +61,7 @@ export function CallsTab({ activeCalls, history, ackCall, connStatus = 'live', h
                 <td data-label="Xona">{item.room_number}</td>
                 <td data-label="Qavat">{item.floor}</td>
                 <td data-label="Holat">
-                  <span className={`status-pill ${item.status}`}>
-                    {item.status === 'active' ? 'Faol' : 'Qabul qilindi'}
-                  </span>
+                  <span className={`status-pill ${item.status}`}>{CALL_STATUS_LABEL[item.status] ?? item.status}</span>
                 </td>
                 <td data-label="Yaratildi">{fmtTime(item.created_at)}</td>
                 <td data-label="Javob berildi">{item.acknowledged_at ? fmtTime(item.acknowledged_at) : '—'}</td>

@@ -26,8 +26,22 @@ if not os.getenv("JWT_SECRET"):
         "JWT_SECRET is not set — using a random per-process secret; "
         "all tokens will be invalidated on restart and multi-worker deployments will not work"
     )
+# Accepted for verification but never used to sign. This is what makes rotating the
+# signing key a non-event: set the old secret here, put a fresh one in JWT_SECRET, and
+# every token already in a nurse's pocket keeps working until it expires on its own
+# while every new token is signed with the key nobody else has. Clear it once the
+# longest-lived old token has aged out -- leaving it set forever would mean a leaked key
+# never actually stops working, which is the thing the rotation was for.
+JWT_SECRET_OLD = os.getenv("JWT_SECRET_OLD", "")
+
 JWT_ALGORITHM = "HS256"
-JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "1440"))
+
+# Ninety days, down from a year. The shorter this is, the shorter a stolen phone stays
+# useful to whoever took it -- but every expiry is a nurse locked out mid-shift and a
+# ward watch that has to be paired again by hand, so it cannot simply be made small.
+# Ninety is roughly the longest window that is still meaningfully bounded. Getting below
+# it needs refresh tokens, so that renewal stops being a login the nurse has to perform.
+JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", str(90 * 24 * 60)))
 
 # A device counts as online if its last heartbeat/call arrived within this window.
 DEVICE_ONLINE_WINDOW_SECONDS = int(os.getenv("DEVICE_ONLINE_WINDOW_SECONDS", "180"))
@@ -118,6 +132,15 @@ RENOTIFY_SLOW_EVERY_MINUTES = int(os.getenv("RENOTIFY_SLOW_EVERY_MINUTES", "5"))
 # six days. Re-alerting those would have meant hundreds of pushes an hour about patients
 # long since seen -- and an app that cries wolf on day one is uninstalled by day two.
 RENOTIFY_MAX_HOURS = int(os.getenv("RENOTIFY_MAX_HOURS", "2"))
+
+# When a call nobody acknowledged stops counting as waiting and is closed as expired
+# (jobs/expire_stale_calls.py). Deliberately far beyond RENOTIFY_MAX_HOURS: the repeat
+# alerts stopping is a judgement about what is worth buzzing a phone over, while this is
+# a judgement about what is still true, and the second must be the more conservative of
+# the two. Twelve hours is longer than any shift at these clinics, so a call that expires
+# is one no shift ever closed -- never one a nurse was about to get to. The expired rows
+# stay in history, and are exactly the number worth reporting to a clinic.
+CALL_EXPIRE_HOURS = int(os.getenv("CALL_EXPIRE_HOURS", "12"))
 
 FCM_SERVICE_ACCOUNT_FILE = os.getenv("FCM_SERVICE_ACCOUNT_FILE", "")
 

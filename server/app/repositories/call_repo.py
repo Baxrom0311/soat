@@ -86,6 +86,40 @@ def list_history_with_room_device_by_clinic(
     return [(call, room, device) for call, room, device in rows]
 
 
+def expire_stale(db: Session, *, older_than: datetime) -> int:
+    """Close every active call created before `older_than`. Returns how many.
+
+    One statement, so there is no window in which a nurse's acknowledgement and this
+    both land: the WHERE insists on ACTIVE, exactly as acknowledge_if_active does, and
+    whichever reaches the row first wins. A nurse answering at the stroke of the
+    deadline is credited with the answer; the clock never overwrites her name.
+
+    Deliberately leaves acknowledged_at and acknowledged_by NULL. Every answer-time
+    figure in the product is computed from acknowledged_at, so an expired call is
+    excluded from them by construction rather than by every caller remembering to.
+    """
+    result = db.execute(
+        update(Call)
+        .where(Call.status == CallStatus.ACTIVE, Call.created_at < older_than)
+        .values(status=CallStatus.EXPIRED)
+    )
+    return result.rowcount
+
+
+def count_expired_by_clinic(db: Session, *, since: datetime) -> list[tuple[int, int]]:
+    """(clinic_id, count) of calls that expired unanswered since `since`.
+
+    The number a clinic should be shown: not a performance score, but the count of
+    patients who pressed a button and whose call was never closed by anyone.
+    """
+    rows = db.execute(
+        select(Call.clinic_id, func.count())
+        .where(Call.status == CallStatus.EXPIRED, Call.created_at >= since)
+        .group_by(Call.clinic_id)
+    ).all()
+    return [(clinic_id, count) for clinic_id, count in rows]
+
+
 def acknowledge_if_active(db: Session, clinic_id: int, call_id: int, *, acknowledged_by: str) -> bool:
     """Atomic check-and-set: only flips an *active* call, so two concurrent acks can't
     both succeed (the loser sees rowcount 0 and surfaces a 409). clinic_id is required

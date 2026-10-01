@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 import bcrypt
 import jwt
 
-from app.core.config import JWT_ALGORITHM, JWT_EXPIRE_MINUTES, JWT_SECRET
+from app.core.config import JWT_ALGORITHM, JWT_EXPIRE_MINUTES, JWT_SECRET, JWT_SECRET_OLD
 
 
 def hash_password(plain: str) -> str:
@@ -48,5 +48,17 @@ def create_access_token(*, staff_id: int, clinic_id: int | None, role: str, emai
 
 
 def decode_token(token: str) -> dict:
-    """Raises jwt.PyJWTError on invalid/expired tokens; callers decide how to surface it."""
-    return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    """Raises jwt.PyJWTError on invalid/expired tokens; callers decide how to surface it.
+
+    Tries the previous signing key too, when one is configured. That is what lets the
+    signing key be replaced without logging out a ward mid-shift: tokens issued before
+    the change keep verifying until they expire, and nothing new is ever signed with the
+    old key. Signature failure is the ONLY reason to fall through -- an expired or
+    malformed token must stay rejected, not get a second opinion.
+    """
+    try:
+        return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except jwt.InvalidSignatureError:
+        if not JWT_SECRET_OLD:
+            raise
+        return jwt.decode(token, JWT_SECRET_OLD, algorithms=[JWT_ALGORITHM])

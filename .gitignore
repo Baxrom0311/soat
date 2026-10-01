@@ -62,3 +62,10 @@ esp32-firmware/.pio/
 !.vscode/extensions.json
 .idea/
 .claude/
+
+# Yig'ilgan dashboard: deploy paytida web-dashboard/ dan quriladi.
+# Manba bilan birga saqlansa, darhol eskiradi va manbadan ishonchliroqdek ko'rinadi.
+server/dashboard/
+
+# Tekshiruv skrinshotlari — ishchi fayllar, reponi shishiradi.
+design-stitch/*.png

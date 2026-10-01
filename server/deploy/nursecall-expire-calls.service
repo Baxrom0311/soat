@@ -1,0 +1,7 @@
+[Unit]
+Description=NurseCall: javobsiz qolgan eski chaqiruvlarni yopadi
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/nursecall_backend
+ExecStart=/root/nursecall_backend/.venv/bin/python -m jobs.expire_stale_calls

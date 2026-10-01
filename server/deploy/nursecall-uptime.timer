@@ -1,0 +1,9 @@
+[Unit]
+Description=NurseCall uptime - har 5 daqiqada
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target

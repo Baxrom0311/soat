@@ -1,0 +1,6 @@
+[Unit]
+Description=NurseCall uptime tekshiruvi
+
+[Service]
+Type=oneshot
+ExecStart=/root/nursecall_backups/uptime_check.sh

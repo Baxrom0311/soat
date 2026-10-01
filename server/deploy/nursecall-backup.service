@@ -1,0 +1,6 @@
+[Unit]
+Description=NurseCall Postgres kunlik backup
+
+[Service]
+Type=oneshot
+ExecStart=/root/nursecall_backups/backup.sh

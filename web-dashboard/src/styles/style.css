@@ -493,6 +493,10 @@ tbody tr:last-child td { border-bottom: none; }
 .status-pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
 .status-pill.active { background: var(--warn-soft); color: var(--warn); }
 .status-pill.acknowledged { background: var(--ok-soft); color: var(--ok); }
+/* Muted, not alarming. These are old records being closed hours after the fact, and a
+   wall of red would train people to ignore the column the week it appeared. Grey says
+   "nothing happened here", which is exactly what it means. */
+.status-pill.expired { background: var(--bg-2); color: var(--text-3); border: 1px solid var(--border); }
 
 .role-pill {
   display: inline-block; padding: 3px 10px; border-radius: 999px;

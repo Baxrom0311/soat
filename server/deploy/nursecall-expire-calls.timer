@@ -1,0 +1,15 @@
+[Unit]
+Description=Javobsiz qolgan chaqiruvlarni yopishni ishga tushiradi
+
+[Timer]
+# Hourly. The cutoff is twelve hours, so the exact minute a call is closed does not
+# matter -- running often enough that nothing sits open for a whole extra day does.
+# Persistent so a run missed while the server was down happens on the next boot.
+OnBootSec=10min
+OnUnitActiveSec=1h
+AccuracySec=5min
+Persistent=true
+Unit=nursecall-expire-calls.service
+
+[Install]
+WantedBy=timers.target
