@@ -13,12 +13,7 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: T.page,
-      systemNavigationBarIconBrightness: Brightness.light,
-    ),
+    const SystemUiOverlayStyle(statusBarColor: Colors.transparent),
   );
   runApp(const NurseCallApp());
 }
@@ -88,7 +83,13 @@ class _NurseCallAppState extends State<NurseCallApp> {
     return MaterialApp(
       title: 'NurseCall',
       debugShowCheckedModeBanner: false,
-      theme: T.theme(),
+      theme: T.theme(Brightness.light),
+      darkTheme: T.theme(Brightness.dark),
+      // Follows the handset rather than adding a switch. These are shared ward
+      // phones; a per-app preference is one more thing two nurses can disagree
+      // about, and the phone's own auto mode already turns dark at night, which
+      // is exactly the behaviour wanted.
+      themeMode: ThemeMode.system,
       // The device's font scale is honoured up to a point and no further. A
       // nurse who has set her phone to the largest text should get larger text;
       // at 2x, the room number stops fitting and the card is worse than useless.

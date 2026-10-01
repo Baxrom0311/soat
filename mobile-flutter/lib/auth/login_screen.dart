@@ -38,11 +38,15 @@ class _LoginScreenState extends State<LoginScreen> {
       // No navigation here: the root listens to the session store and swaps the
       // screen. One place decides what is on screen, so the two cannot disagree.
     } on ApiException catch (e) {
-      setState(() => _error = e.isUnauthorized
-          ? 'Email yoki parol noto‘g‘ri'
-          : e.message);
+      setState(
+        () => _error = e.isUnauthorized
+            ? 'Email yoki parol noto‘g‘ri'
+            : e.message,
+      );
     } catch (_) {
-      setState(() => _error = 'Serverga ulanib bo‘lmadi. Internetni tekshiring.');
+      setState(
+        () => _error = 'Serverga ulanib bo‘lmadi. Internetni tekshiring.',
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -50,8 +54,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final p = Palette.of(context);
     return Scaffold(
-      backgroundColor: T.page,
+      backgroundColor: p.page,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -59,27 +64,27 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.notifications_active,
-                    size: 52, color: T.sky400),
+                Icon(Icons.notifications_active, size: 52, color: p.accent),
                 const SizedBox(height: 18),
-                const Text(
+                Text(
                   'NurseCall',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: T.text1,
+                    color: p.text1,
                     fontSize: 30,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.5,
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
+                Text(
                   'Hamshira uchun',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: T.slate500, fontSize: 14),
+                  style: TextStyle(color: p.text3, fontSize: 14),
                 ),
                 const SizedBox(height: 34),
                 _field(
+                  p: p,
                   controller: _email,
                   hint: 'Email',
                   icon: Icons.alternate_email,
@@ -88,6 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 12),
                 _field(
+                  p: p,
                   controller: _password,
                   hint: 'Parol',
                   icon: Icons.lock_outline,
@@ -98,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () => setState(() => _obscure = !_obscure),
                     icon: Icon(
                       _obscure ? Icons.visibility_off : Icons.visibility,
-                      color: T.slate500,
+                      color: p.text3,
                       size: 20,
                     ),
                   ),
@@ -108,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text(
                     _error!,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: T.red400, fontSize: 13.5),
+                    style: const TextStyle(color: T.red600, fontSize: 13.5),
                   ),
                 ],
                 const SizedBox(height: 22),
@@ -117,8 +123,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: FilledButton(
                     onPressed: _busy ? null : _submit,
                     style: FilledButton.styleFrom(
-                      backgroundColor: T.sky400,
-                      foregroundColor: const Color(0xFF04121C),
+                      backgroundColor: p.accent,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(13),
                       ),
@@ -129,8 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             height: 22,
                             child: CircularProgressIndicator(
                               strokeWidth: 2.4,
-                              valueColor:
-                                  AlwaysStoppedAnimation(Color(0xFF04121C)),
+                              valueColor: AlwaysStoppedAnimation(Colors.white),
                             ),
                           )
                         : const Text(
@@ -152,6 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _field({
     required TextEditingController controller,
+    required Palette p,
     required String hint,
     required IconData icon,
     bool obscure = false,
@@ -159,32 +165,32 @@ class _LoginScreenState extends State<LoginScreen> {
     Iterable<String>? autofillHints,
     Widget? suffix,
     ValueChanged<String>? onSubmitted,
-  }) =>
-      TextField(
-        controller: controller,
-        obscureText: obscure,
-        keyboardType: keyboardType,
-        autofillHints: autofillHints,
-        onSubmitted: onSubmitted,
-        textInputAction:
-            onSubmitted != null ? TextInputAction.done : TextInputAction.next,
-        style: const TextStyle(color: T.text1, fontSize: 16),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(color: T.slate500),
-          prefixIcon: Icon(icon, color: T.slate500, size: 20),
-          suffixIcon: suffix,
-          filled: true,
-          fillColor: T.slate900,
-          contentPadding: const EdgeInsets.symmetric(vertical: 16),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(13),
-            borderSide: const BorderSide(color: T.slate800),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(13),
-            borderSide: const BorderSide(color: T.sky400, width: 1.6),
-          ),
-        ),
-      );
+  }) => TextField(
+    controller: controller,
+    obscureText: obscure,
+    keyboardType: keyboardType,
+    autofillHints: autofillHints,
+    onSubmitted: onSubmitted,
+    textInputAction: onSubmitted != null
+        ? TextInputAction.done
+        : TextInputAction.next,
+    style: TextStyle(color: p.text1, fontSize: 16),
+    decoration: InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(color: p.text3),
+      prefixIcon: Icon(icon, color: p.text3, size: 20),
+      suffixIcon: suffix,
+      filled: true,
+      fillColor: p.card,
+      contentPadding: const EdgeInsets.symmetric(vertical: 16),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(13),
+        borderSide: BorderSide(color: p.border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(13),
+        borderSide: BorderSide(color: p.accent, width: 1.6),
+      ),
+    ),
+  );
 }

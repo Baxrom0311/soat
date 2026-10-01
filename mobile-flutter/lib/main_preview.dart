@@ -147,7 +147,13 @@ class _PreviewAppState extends State<PreviewApp> {
   @override
   Widget build(BuildContext context) => MaterialApp(
         debugShowCheckedModeBanner: false,
-        theme: T.theme(),
+        // Mirrors main.dart exactly. The preview showed both schemes as dark
+        // until this line was fixed, which is the drift this file is supposed to
+        // be immune to -- worth keeping the two in step by hand until there is a
+        // reason to share one builder.
+        theme: T.theme(Brightness.light),
+        darkTheme: T.theme(Brightness.dark),
+        themeMode: ThemeMode.system,
         home: _ready
             ? CallsScreen(feed: _feed, sessions: _sessions)
             : const ColoredBox(color: T.page),

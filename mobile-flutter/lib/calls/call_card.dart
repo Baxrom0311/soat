@@ -32,7 +32,7 @@ class CallCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final waited = call.waited(now);
-    final s = T.step(ageStep(waited));
+    final s = T.step(ageStep(waited), Theme.of(context).brightness);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -45,7 +45,11 @@ class CallCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: s.glow.withValues(alpha: s.glowOpacity * 0.45),
+            // In light mode this is what separates a white card from a
+            // near-white page; in dark mode it is the step's own glow.
+            color: T.palette(Theme.of(context).brightness).cardShadow
+                ? Colors.black.withValues(alpha: 0.10)
+                : s.glow.withValues(alpha: s.glowOpacity * 0.45),
             blurRadius: 22,
             spreadRadius: -4,
             offset: const Offset(0, 6),
@@ -114,7 +118,7 @@ class CallCard extends StatelessWidget {
                                 // behind the number and from everything around it; a white
                                 // numeral stays the highest-contrast thing on the card at
                                 // every step, which is what a nurse is actually reading.
-                                color: Colors.white,
+                                color: s.numberInk,
                                 shadows: [
                                   Shadow(
                                     color: s.glow.withValues(

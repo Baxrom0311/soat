@@ -83,11 +83,12 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final p = Palette.of(context);
     final feed = widget.feed;
     final session = widget.sessions.session;
 
     return Scaffold(
-      backgroundColor: T.page,
+      backgroundColor: p.page,
       body: SafeArea(
         bottom: false,
         child: Center(
@@ -112,6 +113,7 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
   }
 
   Widget _callsTab(CallsFeed feed, Session? session) {
+    final p = Palette.of(context);
     final floors = {for (final c in feed.calls) c.floor}.toList()..sort();
 
     return Column(
@@ -121,9 +123,9 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
         // has it: the nurse's name, the floor filter and the subscription state
         // stay put while the calls scroll past them.
         Container(
-          decoration: const BoxDecoration(
-            color: T.navBar,
-            border: Border(bottom: BorderSide(color: T.slate800)),
+          decoration: BoxDecoration(
+            color: p.navBar,
+            border: Border(bottom: BorderSide(color: p.border)),
           ),
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
           child: Column(
@@ -132,25 +134,28 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
               _Header(name: session?.name ?? '', clinic: feed.clinicName),
               if (!feed.reachable) ...[
                 const SizedBox(height: 12),
-                const _Banner(
+                _Banner(
                   icon: Icons.cloud_off,
-                  tint: T.red500,
-                  bg: T.red950,
-                  text: 'Serverga ulanib bo‘lmadi — ro‘yxat eskirgan bo‘lishi mumkin',
+                  tint: p.dangerInk,
+                  bg: p.bannerBg(p.dangerInk),
+                  ink: p.text1,
+                  text:
+                      'Serverga ulanib bo‘lmadi — ro‘yxat eskirgan bo‘lishi mumkin',
                 ),
               ],
               if (feed.notice case final n? when n.warn || n.blocked) ...[
                 const SizedBox(height: 12),
                 _Banner(
                   icon: Icons.timelapse,
-                  tint: T.amber400,
-                  bg: T.amber950,
+                  tint: p.warnInk,
+                  bg: p.bannerBg(p.warnInk),
+                  ink: p.text1,
                   badge: n.blocked ? 'TO‘XTATILGAN' : 'OGOHLANTIRISH',
                   text: n.blocked
                       ? 'Obuna to‘lanmagan. Chaqiruvlar ishlashda davom etadi.'
                       : n.daysLeft != null
-                          ? 'Obuna: ${n.daysLeft} kun qoldi'
-                          : 'Obuna muddati tugayapti',
+                      ? 'Obuna: ${n.daysLeft} kun qoldi'
+                      : 'Obuna muddati tugayapti',
                 ),
               ],
               if (floors.length > 1) ...[
@@ -173,32 +178,32 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
           child: feed.loading
               ? const Center(child: CircularProgressIndicator())
               : _visible.isEmpty
-                  ? const _Empty()
-                  : RefreshIndicator(
-                      onRefresh: feed.refresh,
-                      backgroundColor: T.slate900,
-                      color: T.sky400,
-                      child: ListView(
-                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        children: [
-                          for (final c in _visible)
-                            CallCard(
-                              call: c,
-                              now: feed.now,
-                              busy: _busyCallId == c.callId,
-                              onAcknowledge: () => _ack(c),
-                            ),
-                          // Flows after the cards rather than being pinned to
-                          // the bottom, as the design has it. Pinned, the strip
-                          // competes with the call list for the eye; here it is
-                          // what you reach after the calls, which is when it
-                          // means anything.
-                          const SizedBox(height: 2),
-                          _StatsStrip(stats: feed.stats),
-                        ],
-                      ),
-                    ),
+              ? const _Empty()
+              : RefreshIndicator(
+                  onRefresh: feed.refresh,
+                  backgroundColor: p.card,
+                  color: T.sky400,
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      for (final c in _visible)
+                        CallCard(
+                          call: c,
+                          now: feed.now,
+                          busy: _busyCallId == c.callId,
+                          onAcknowledge: () => _ack(c),
+                        ),
+                      // Flows after the cards rather than being pinned to
+                      // the bottom, as the design has it. Pinned, the strip
+                      // competes with the call list for the eye; here it is
+                      // what you reach after the calls, which is when it
+                      // means anything.
+                      const SizedBox(height: 2),
+                      _StatsStrip(stats: feed.stats),
+                    ],
+                  ),
+                ),
         ),
       ],
     );
@@ -217,101 +222,108 @@ class _Header extends StatelessWidget {
   String get _initials {
     final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
     if (parts.isEmpty) return '—';
-    if (parts.length == 1) return parts.first.characters.take(2).toString().toUpperCase();
-    return (parts.first.characters.first + parts.last.characters.first).toUpperCase();
+    if (parts.length == 1)
+      return parts.first.characters.take(2).toString().toUpperCase();
+    return (parts.first.characters.first + parts.last.characters.first)
+        .toUpperCase();
   }
 
   @override
-  Widget build(BuildContext context) => Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: T.sky500.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: T.sky400.withValues(alpha: 0.30)),
-            ),
-            child: const Icon(Icons.local_hospital, size: 19, color: T.sky400),
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: T.sky500.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: T.sky400.withValues(alpha: 0.30)),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  clinic?.isNotEmpty == true ? clinic! : 'NurseCall',
+          child: Icon(Icons.local_hospital, size: 19, color: p.accent),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                clinic?.isNotEmpty == true ? clinic! : 'NurseCall',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: p.text1,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              Row(
+                children: [
+                  // The live dot, as the design has it. It says the phone is
+                  // in duty mode, which is the one thing a nurse glancing at
+                  // the top of the screen needs to be sure of.
+                  _Dot(),
+                  SizedBox(width: 5),
+                  Text(
+                    'Navbatchilik rejimi',
+                    style: TextStyle(fontSize: 11, color: p.text3),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.fromLTRB(6, 4, 12, 4),
+          decoration: BoxDecoration(
+            color: p.card,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: p.border),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: T.sky500.withValues(alpha: 0.20),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: T.sky400.withValues(alpha: 0.30)),
+                ),
+                child: Text(
+                  _initials,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: p.accent,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 108),
+                child: Text(
+                  name.isEmpty ? 'Hamshira' : name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: T.text1,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: p.text1,
                     letterSpacing: -0.2,
                   ),
                 ),
-                const Row(
-                  children: [
-                    // The live dot, as the design has it. It says the phone is
-                    // in duty mode, which is the one thing a nurse glancing at
-                    // the top of the screen needs to be sure of.
-                    _Dot(),
-                    SizedBox(width: 5),
-                    Text('Navbatchilik rejimi',
-                        style: TextStyle(fontSize: 11, color: T.slate500)),
-                  ],
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Container(
-            padding: const EdgeInsets.fromLTRB(6, 4, 12, 4),
-            decoration: BoxDecoration(
-              color: T.slate900.withValues(alpha: 0.90),
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: T.slate800),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 24,
-                  height: 24,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: T.sky500.withValues(alpha: 0.20),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: T.sky400.withValues(alpha: 0.30)),
-                  ),
-                  child: Text(
-                    _initials,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: T.sky300,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 108),
-                  child: Text(
-                    name.isEmpty ? 'Hamshira' : name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: T.slate200,
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
+        ),
+      ],
+    );
+  }
 }
 
 // -------------------------------------------------------------------- banners
@@ -320,14 +332,14 @@ class _Dot extends StatelessWidget {
   const _Dot();
 
   @override
-  Widget build(BuildContext context) => Container(
-        width: 6,
-        height: 6,
-        decoration: const BoxDecoration(
-          color: T.emerald400,
-          shape: BoxShape.circle,
-        ),
-      );
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    return Container(
+      width: 6,
+      height: 6,
+      decoration: BoxDecoration(color: p.accentOk, shape: BoxShape.circle),
+    );
+  }
 }
 
 class _Banner extends StatelessWidget {
@@ -335,6 +347,7 @@ class _Banner extends StatelessWidget {
     required this.icon,
     required this.tint,
     required this.bg,
+    required this.ink,
     required this.text,
     this.badge,
   });
@@ -342,50 +355,50 @@ class _Banner extends StatelessWidget {
   final IconData icon;
   final Color tint;
   final Color bg;
+  final Color ink;
   final String text;
   final String? badge;
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: bg.withValues(alpha: 0.30),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: tint.withValues(alpha: 0.35)),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 18, color: tint),
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: bg.withValues(alpha: 0.30),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: tint.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: tint),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(text, style: TextStyle(fontSize: 12.5, color: p.text2)),
+          ),
+          if (badge case final b?) ...[
             const SizedBox(width: 8),
-            Expanded(
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                border: Border.all(color: tint.withValues(alpha: 0.55)),
+                borderRadius: BorderRadius.circular(6),
+              ),
               child: Text(
-                text,
-                style: const TextStyle(fontSize: 12.5, color: T.slate200),
+                b,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.4,
+                  color: tint,
+                ),
               ),
             ),
-            if (badge case final b?) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  border: Border.all(color: tint.withValues(alpha: 0.55)),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  b,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.4,
-                    color: tint,
-                  ),
-                ),
-              ),
-            ],
           ],
-        ),
-      );
+        ],
+      ),
+    );
+  }
 }
 
 // --------------------------------------------------------------------- filter
@@ -406,19 +419,29 @@ class _FloorFilter extends StatelessWidget {
   final ValueChanged<int?> onSelect;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-        height: 30,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          children: [
-            _pill('Barchasi', total, selected == null, () => onSelect(null)),
-            for (final f in floors)
-              _pill('$f-qavat', counts[f] ?? 0, selected == f, () => onSelect(f)),
-          ],
-        ),
-      );
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    return SizedBox(
+      height: 30,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          _pill(p, 'Barchasi', total, selected == null, () => onSelect(null)),
+          for (final f in floors)
+            _pill(
+              p,
+              '$f-qavat',
+              counts[f] ?? 0,
+              selected == f,
+              () => onSelect(f),
+            ),
+        ],
+      ),
+    );
+  }
 
-  Widget _pill(String label, int count, bool on, VoidCallback tap) => Padding(
+  Widget _pill(Palette p, String label, int count, bool on, VoidCallback tap) =>
+      Padding(
         padding: const EdgeInsets.only(right: 8),
         child: GestureDetector(
           onTap: tap,
@@ -426,9 +449,9 @@ class _FloorFilter extends StatelessWidget {
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: 14),
             decoration: BoxDecoration(
-              color: on ? T.sky500 : T.slate900,
+              color: on ? T.sky500 : p.card,
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: on ? T.sky500 : T.slate800),
+              border: Border.all(color: on ? T.sky500 : p.border),
               boxShadow: on
                   ? [
                       BoxShadow(
@@ -446,16 +469,17 @@ class _FloorFilter extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: on ? T.slate950 : T.slate400,
+                    color: on ? T.slate950 : p.text3,
                   ),
                 ),
                 const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
-                    color: on
-                        ? T.slate950.withValues(alpha: 0.20)
-                        : T.slate800.withValues(alpha: 0.80),
+                    color: on ? T.slate950.withValues(alpha: 0.20) : p.border,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
@@ -463,7 +487,7 @@ class _FloorFilter extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
-                      color: on ? T.slate950 : T.slate400,
+                      color: on ? T.slate950 : p.text3,
                     ),
                   ),
                 ),
@@ -482,27 +506,30 @@ class _StatsStrip extends StatelessWidget {
   final ShiftStats stats;
 
   @override
-  Widget build(BuildContext context) => Row(
-        children: [
-          Expanded(
-            child: _StatCard(
-              icon: Icons.speed,
-              iconTint: T.sky400,
-              label: 'O‘rtacha javob',
-              value: answerLabel(stats.typicalAnswer),
-            ),
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: _StatCard(
+            icon: Icons.speed,
+            iconTint: p.accent,
+            label: 'O‘rtacha javob',
+            value: answerLabel(stats.typicalAnswer),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _StatCard(
-              icon: Icons.task_alt,
-              iconTint: T.emerald400,
-              label: 'Bugun qabul qilindi',
-              value: '${stats.answeredToday}',
-            ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _StatCard(
+            icon: Icons.task_alt,
+            iconTint: p.accentOk,
+            label: 'Bugun qabul qilindi',
+            value: '${stats.answeredToday}',
           ),
-        ],
-      );
+        ),
+      ],
+    );
+  }
 }
 
 class _StatCard extends StatelessWidget {
@@ -522,49 +549,52 @@ class _StatCard extends StatelessWidget {
   final String value;
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: T.slate900.withValues(alpha: 0.80),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: T.slate800.withValues(alpha: 0.80)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: T.slate400,
-                    ),
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: p.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: p.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: p.text3,
                   ),
                 ),
-                Icon(icon, size: 18, color: iconTint),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                fontFamily: T.mono,
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.5,
-                height: 1.1,
-                color: Colors.white,
               ),
+              Icon(icon, size: 18, color: iconTint),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontFamily: T.mono,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.5,
+              height: 1.1,
+              color: p.text1,
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ----------------------------------------------------------------------- misc
@@ -573,28 +603,31 @@ class _Empty extends StatelessWidget {
   const _Empty();
 
   @override
-  Widget build(BuildContext context) => const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.check_circle_outline, size: 46, color: T.emerald400),
-            SizedBox(height: 14),
-            Text(
-              'Faol chaqiruv yo‘q',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                color: T.text1,
-              ),
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.check_circle_outline, size: 46, color: T.emerald400),
+          SizedBox(height: 14),
+          Text(
+            'Faol chaqiruv yo‘q',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: p.text1,
             ),
-            SizedBox(height: 6),
-            Text(
-              'Yangi chaqiruv kelsa shu yerda chiqadi',
-              style: TextStyle(fontSize: 13, color: T.slate500),
-            ),
-          ],
-        ),
-      );
+          ),
+          SizedBox(height: 6),
+          Text(
+            'Yangi chaqiruv kelsa shu yerda chiqadi',
+            style: TextStyle(fontSize: 13, color: p.text3),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _BottomNav extends StatelessWidget {
@@ -609,27 +642,30 @@ class _BottomNav extends StatelessWidget {
   final ValueChanged<int> onSelect;
 
   @override
-  Widget build(BuildContext context) => Container(
-        decoration: const BoxDecoration(
-          color: T.navBar,
-          border: Border(top: BorderSide(color: T.slate800)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _item(0, Icons.notifications_active, 'Chaqiruvlar', badge),
-                _item(1, Icons.account_circle, 'Profil', 0),
-              ],
-            ),
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: p.navBar,
+        border: Border(top: BorderSide(color: p.border)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _item(p, 0, Icons.notifications_active, 'Chaqiruvlar', badge),
+              _item(p, 1, Icons.account_circle, 'Profil', 0),
+            ],
           ),
         ),
-      );
+      ),
+    );
+  }
 
-  Widget _item(int i, IconData icon, String label, int count) {
+  Widget _item(Palette p, int i, IconData icon, String label, int count) {
     final on = index == i;
     final tint = on ? T.sky400 : T.slate500;
     return GestureDetector(
@@ -647,13 +683,16 @@ class _BottomNav extends StatelessWidget {
                   right: -6,
                   top: -4,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 1,
+                    ),
                     decoration: BoxDecoration(
                       color: T.red600,
                       borderRadius: BorderRadius.circular(999),
                       // Ringed in the bar's own colour so the badge reads as a
                       // separate object rather than smudging into the icon.
-                      border: Border.all(color: T.navBar, width: 2),
+                      border: Border.all(color: p.navBar, width: 2),
                     ),
                     child: Text(
                       '$count',
@@ -677,7 +716,7 @@ class _BottomNav extends StatelessWidget {
               // The active label is white while its icon is blue: two channels
               // for the same fact, which is what keeps the tab readable on a
               // screen being glanced at from an angle.
-              color: on ? Colors.white : T.slate500,
+              color: on ? p.text1 : p.text3,
             ),
           ),
           const SizedBox(height: 3),
@@ -712,69 +751,72 @@ class _ProfileTab extends StatelessWidget {
   final Future<void> Function() onSignOut;
 
   @override
-  Widget build(BuildContext context) => ListView(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-        children: [
-          Center(
-            child: Container(
-              width: 76,
-              height: 76,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: T.sky500.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-                border: Border.all(color: T.sky400.withValues(alpha: 0.35)),
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+      children: [
+        Center(
+          child: Container(
+            width: 76,
+            height: 76,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: T.sky500.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+              border: Border.all(color: T.sky400.withValues(alpha: 0.35)),
+            ),
+            child: Icon(Icons.person, size: 38, color: p.accent),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          session?.name.isNotEmpty == true ? session!.name : 'Hamshira',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: p.text1,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          switch (session?.role) {
+            'nurse' => 'Hamshira',
+            'admin' => 'Klinika administratori',
+            _ => '',
+          },
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 13, color: p.text3),
+        ),
+        const SizedBox(height: 24),
+        _StatsStrip(stats: stats),
+        const SizedBox(height: 24),
+        SizedBox(
+          height: 52,
+          child: OutlinedButton.icon(
+            onPressed: onSignOut,
+            icon: const Icon(Icons.logout, size: 19),
+            label: const Text(
+              'Chiqish',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: T.red400,
+              side: BorderSide(color: T.red500.withValues(alpha: 0.5)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.person, size: 38, color: T.sky300),
             ),
           ),
-          const SizedBox(height: 14),
-          Text(
-            session?.name.isNotEmpty == true ? session!.name : 'Hamshira',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: T.text1,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            switch (session?.role) {
-              'nurse' => 'Hamshira',
-              'admin' => 'Klinika administratori',
-              _ => '',
-            },
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13, color: T.slate500),
-          ),
-          const SizedBox(height: 24),
-          _StatsStrip(stats: stats),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 52,
-            child: OutlinedButton.icon(
-              onPressed: onSignOut,
-              icon: const Icon(Icons.logout, size: 19),
-              label: const Text(
-                'Chiqish',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: T.red400,
-                side: BorderSide(color: T.red500.withValues(alpha: 0.5)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Chiqsangiz bu telefon chaqiruv bildirishnomalarini olmay qoladi.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11.5, color: T.slate500),
-          ),
-        ],
-      );
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'Chiqsangiz bu telefon chaqiruv bildirishnomalarini olmay qoladi.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 11.5, color: p.text3),
+        ),
+      ],
+    );
+  }
 }
