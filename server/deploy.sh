@@ -42,6 +42,7 @@ RSYNC_EXCLUDES=(
   --exclude='dashboard/'
   --exclude='firebase-service-account.json'
   --exclude='tests/'
+  --exclude='.pytest_cache/'
   --exclude='backups_dump/'
 )
 
