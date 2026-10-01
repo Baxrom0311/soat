@@ -188,3 +188,19 @@ The server verifies against `JWT_SECRET_OLD` as well as `JWT_SECRET`, and signs 
 
 Step 3 is the one that actually ends the exposure; skipping it leaves the old key working
 forever, which is what the rotation was for.
+
+## scripts/restore_check.sh — proving the backups
+
+Restores the most recent dump into `nursecall_staging` and compares every table's row
+count, plus the Alembic version, against production. Exits non-zero on any mismatch.
+
+It does double duty: it is the only evidence the backups work, and it leaves behind the
+staging database the project did not have, so a migration can be rehearsed somewhere
+other than four live hospitals.
+
+First run, 2026-10-01: every table matched (8 clinics, 27 staff, 1 393 calls) at
+`0010_call_expired`. One error appears and is expected — `unrecognized configuration
+parameter "transaction_timeout"`, because the dump is written by a newer `pg_dump` than
+the `psql` replaying it. Anything else in that list is worth reading.
+
+Run it monthly, and before any migration that is hard to reverse.
