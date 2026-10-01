@@ -25,10 +25,10 @@ class ApiClient {
   Uri _uri(String path) => Uri.parse('$baseUrl$path');
 
   Map<String, String> _headers({bool auth = true, bool json = false}) => {
-        if (json) 'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        if (auth && _token != null) 'Authorization': 'Bearer $_token',
-      };
+    if (json) 'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    if (auth && _token != null) 'Authorization': 'Bearer $_token',
+  };
 
   /// Maps the backend's `{"detail": "..."}` error shape onto [ApiException].
   /// Anything that is not 2xx throws, so no caller can accidentally treat an

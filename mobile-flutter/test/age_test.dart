@@ -8,12 +8,15 @@ void main() {
       expect(ageStep(Duration.zero), 1);
     });
 
-    test('steps change exactly at the thresholds, not a second either side', () {
-      expect(ageStep(const Duration(seconds: 119)), 1);
-      expect(ageStep(const Duration(seconds: 120)), 2);
-      expect(ageStep(const Duration(seconds: 599)), 2);
-      expect(ageStep(const Duration(seconds: 600)), 3);
-    });
+    test(
+      'steps change exactly at the thresholds, not a second either side',
+      () {
+        expect(ageStep(const Duration(seconds: 119)), 1);
+        expect(ageStep(const Duration(seconds: 120)), 2);
+        expect(ageStep(const Duration(seconds: 599)), 2);
+        expect(ageStep(const Duration(seconds: 600)), 3);
+      },
+    );
 
     test('nothing goes past step 3, however long it waits', () {
       expect(ageStep(const Duration(hours: 9)), 3);
@@ -37,13 +40,19 @@ void main() {
 
     test('grows an hours field rather than counting past 59 minutes', () {
       expect(elapsedLabel(const Duration(hours: 1)), '1:00:00');
-      expect(elapsedLabel(const Duration(hours: 2, minutes: 5, seconds: 3)), '2:05:03');
+      expect(
+        elapsedLabel(const Duration(hours: 2, minutes: 5, seconds: 3)),
+        '2:05:03',
+      );
     });
 
-    test('a clock skew that makes a call look future-dated shows 0:00, not a negative', () {
-      // The phone's clock and the server's can disagree. "-0:03" on a call card
-      // would look like a bug in the ward's eyes and tell them nothing useful.
-      expect(elapsedLabel(const Duration(seconds: -3)), '0:00');
-    });
+    test(
+      'a clock skew that makes a call look future-dated shows 0:00, not a negative',
+      () {
+        // The phone's clock and the server's can disagree. "-0:03" on a call card
+        // would look like a bug in the ward's eyes and tell them nothing useful.
+        expect(elapsedLabel(const Duration(seconds: -3)), '0:00');
+      },
+    );
   });
 }

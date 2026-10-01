@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../api/models.dart';
 import '../auth/session_store.dart';
+import '../push/push_service.dart';
+import '../settings/settings_store.dart';
 import '../theme/tokens.dart';
 import 'call_card.dart';
 import 'calls_feed.dart';
@@ -12,10 +14,18 @@ import 'shift_stats.dart';
 /// Laid out inside a 430px-wide column as the design is, so the proportions
 /// hold on a tablet at the nurses' station as well as on a phone.
 class CallsScreen extends StatefulWidget {
-  const CallsScreen({super.key, required this.feed, required this.sessions});
+  const CallsScreen({
+    super.key,
+    required this.feed,
+    required this.sessions,
+    required this.settings,
+    required this.push,
+  });
 
   final CallsFeed feed;
   final SessionStore sessions;
+  final SettingsStore settings;
+  final PushService push;
 
   @override
   State<CallsScreen> createState() => _CallsScreenState();
@@ -99,6 +109,8 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
                 : _ProfileTab(
                     session: session,
                     stats: feed.stats,
+                    settings: widget.settings,
+                    push: widget.push,
                     onSignOut: widget.sessions.signOut,
                   ),
           ),
@@ -222,8 +234,9 @@ class _Header extends StatelessWidget {
   String get _initials {
     final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
     if (parts.isEmpty) return '—';
-    if (parts.length == 1)
+    if (parts.length == 1) {
       return parts.first.characters.take(2).toString().toUpperCase();
+    }
     return (parts.first.characters.first + parts.last.characters.first)
         .toUpperCase();
   }
@@ -739,20 +752,58 @@ class _BottomNav extends StatelessWidget {
 
 // -------------------------------------------------------------------- profile
 
-class _ProfileTab extends StatelessWidget {
+class _ProfileTab extends StatefulWidget {
   const _ProfileTab({
     required this.session,
     required this.stats,
+    required this.settings,
+    required this.push,
     required this.onSignOut,
   });
 
   final Session? session;
   final ShiftStats stats;
+  final SettingsStore settings;
+  final PushService push;
   final Future<void> Function() onSignOut;
+
+  @override
+  State<_ProfileTab> createState() => _ProfileTabState();
+}
+
+class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
+  NotificationState _notif = NotificationState.unknown;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Re-read on return: the nurse has very likely just come back from the
+    // system settings screen this page sent her to, and showing the old answer
+    // would make the fix look like it did not work.
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final s = await widget.push.notificationState();
+    if (mounted) setState(() => _notif = s);
+  }
 
   @override
   Widget build(BuildContext context) {
     final p = Palette.of(context);
+    final session = widget.session;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       children: [
@@ -762,9 +813,9 @@ class _ProfileTab extends StatelessWidget {
             height: 76,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: T.sky500.withValues(alpha: 0.15),
+              color: p.accent.withValues(alpha: 0.15),
               shape: BoxShape.circle,
-              border: Border.all(color: T.sky400.withValues(alpha: 0.35)),
+              border: Border.all(color: p.accent.withValues(alpha: 0.35)),
             ),
             child: Icon(Icons.person, size: 38, color: p.accent),
           ),
@@ -789,21 +840,78 @@ class _ProfileTab extends StatelessWidget {
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 13, color: p.text3),
         ),
-        const SizedBox(height: 24),
-        _StatsStrip(stats: stats),
-        const SizedBox(height: 24),
+        const SizedBox(height: 22),
+        _StatsStrip(stats: widget.stats),
+        const SizedBox(height: 22),
+        _Section(
+          title: 'Bildirishnomalar',
+          children: [
+            _SwitchRow(
+              icon: Icons.notifications_active,
+              label: 'Bu telefonga chaqiruv kelsin',
+              sub: widget.settings.pushEnabled
+                  ? 'Chaqiruv kelganda bu telefon ogohlantiradi'
+                  : 'O‘chirilgan — bu telefonga chaqiruv kelmaydi',
+              value: widget.settings.pushEnabled,
+              onChanged: (v) async {
+                await widget.settings.setPushEnabled(v);
+                if (v) {
+                  await widget.push.register();
+                } else {
+                  await widget.push.unregister();
+                }
+                if (mounted) setState(() {});
+              },
+            ),
+            // Only meaningful while this handset is meant to ring. With the
+            // switch off, "the system settings are fine" would be a true
+            // sentence that reads as a false reassurance -- nothing is coming
+            // through either way, and the reason is the switch above.
+            if (widget.settings.pushEnabled) ...[
+              if (_notif.problem case final problem?)
+                _Warning(text: problem, onFix: widget.push.openSystemSettings)
+              else
+                _Row(
+                  icon: Icons.verified,
+                  tint: p.accentOk,
+                  label: 'Tizim sozlamalari joyida',
+                  sub: 'Chaqiruv jim rejimda ham eshitiladi',
+                ),
+              _Row(
+                icon: Icons.tune,
+                label: 'Ovoz va tebranish',
+                sub: 'Android sozlamalarida boshqariladi',
+                onTap: widget.push.openSystemSettings,
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 16),
+        _Section(
+          title: 'Mavzu',
+          children: [
+            _ThemePicker(
+              mode: widget.settings.themeMode,
+              onSelect: (m) async {
+                await widget.settings.setThemeMode(m);
+                if (mounted) setState(() {});
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 22),
         SizedBox(
           height: 52,
           child: OutlinedButton.icon(
-            onPressed: onSignOut,
+            onPressed: widget.onSignOut,
             icon: const Icon(Icons.logout, size: 19),
             label: const Text(
               'Chiqish',
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
             ),
             style: OutlinedButton.styleFrom(
-              foregroundColor: T.red400,
-              side: BorderSide(color: T.red500.withValues(alpha: 0.5)),
+              foregroundColor: p.dangerInk,
+              side: BorderSide(color: p.dangerInk.withValues(alpha: 0.5)),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -817,6 +925,261 @@ class _ProfileTab extends StatelessWidget {
           style: TextStyle(fontSize: 11.5, color: p.text3),
         ),
       ],
+    );
+  }
+}
+
+// ------------------------------------------------------------------ settings
+
+class _Section extends StatelessWidget {
+  const _Section({required this.title, required this.children});
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            title.toUpperCase(),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+              color: p.text3,
+            ),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: p.card,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: p.border),
+          ),
+          child: Column(children: children),
+        ),
+      ],
+    );
+  }
+}
+
+class _Row extends StatelessWidget {
+  const _Row({
+    required this.icon,
+    required this.label,
+    this.sub,
+    this.tint,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String? sub;
+  final Color? tint;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: tint ?? p.text3),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: p.text1,
+                    ),
+                  ),
+                  if (sub case final s?)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        s,
+                        style: TextStyle(fontSize: 11.5, color: p.text3),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (onTap != null)
+              Icon(Icons.chevron_right, size: 20, color: p.text3),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SwitchRow extends StatelessWidget {
+  const _SwitchRow({
+    required this.icon,
+    required this.label,
+    required this.sub,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String label;
+  final String sub;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: value ? p.accent : p.text3),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: p.text1,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    sub,
+                    style: TextStyle(fontSize: 11.5, color: p.text3),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(value: value, onChanged: onChanged),
+        ],
+      ),
+    );
+  }
+}
+
+/// Shown when the system will swallow a call alert.
+///
+/// Phrased as what will happen to a patient rather than as a settings state,
+/// and always with the way out attached: a warning a nurse cannot act on from
+/// where she is standing is just noise.
+class _Warning extends StatelessWidget {
+  const _Warning({required this.text, required this.onFix});
+
+  final String text;
+  final VoidCallback onFix;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    return Container(
+      margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+      padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+      decoration: BoxDecoration(
+        color: p.bannerBg(p.dangerInk),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: p.dangerInk.withValues(alpha: 0.45)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.volume_off, size: 19, color: p.dangerInk),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(text, style: TextStyle(fontSize: 12.5, color: p.text1)),
+          ),
+          const SizedBox(width: 8),
+          TextButton(
+            onPressed: onFix,
+            style: TextButton.styleFrom(
+              foregroundColor: p.dangerInk,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              minimumSize: const Size(0, 34),
+            ),
+            child: const Text(
+              'Tuzatish',
+              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThemePicker extends StatelessWidget {
+  const _ThemePicker({required this.mode, required this.onSelect});
+
+  final ThemeMode mode;
+  final ValueChanged<ThemeMode> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    return Padding(
+      padding: const EdgeInsets.all(10),
+      child: Row(
+        children: [
+          _option(p, ThemeMode.system, Icons.brightness_auto, 'Avtomatik'),
+          const SizedBox(width: 8),
+          _option(p, ThemeMode.light, Icons.light_mode, 'Kunduzgi'),
+          const SizedBox(width: 8),
+          _option(p, ThemeMode.dark, Icons.dark_mode, 'Tungi'),
+        ],
+      ),
+    );
+  }
+
+  Widget _option(Palette p, ThemeMode m, IconData icon, String label) {
+    final on = mode == m;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => onSelect(m),
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: on ? p.accent.withValues(alpha: 0.14) : p.chipBg,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: on ? p.accent : p.border),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, size: 20, color: on ? p.accent : p.text3),
+              const SizedBox(height: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: on ? FontWeight.w700 : FontWeight.w500,
+                  color: on ? p.text1 : p.text3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -20,6 +20,8 @@ import 'api/client.dart';
 import 'auth/session_store.dart';
 import 'calls/calls_feed.dart';
 import 'calls/calls_screen.dart';
+import 'push/push_service.dart';
+import 'settings/settings_store.dart';
 import 'theme/tokens.dart';
 
 /// The instant the fixtures are dated against: 23:08, 4:15 and 0:42 of waiting.
@@ -84,8 +86,9 @@ List<Map<String, Object?>> _history() {
       'floor': 1,
       'status': 'acknowledged',
       'created_at': created.toIso8601String(),
-      'acknowledged_at':
-          created.add(const Duration(seconds: 75)).toIso8601String(),
+      'acknowledged_at': created
+          .add(const Duration(seconds: 75))
+          .toIso8601String(),
       'acknowledged_by': 'Nigora Saidova',
     });
   }
@@ -93,22 +96,31 @@ List<Map<String, Object?>> _history() {
 }
 
 http.Client _fakeServer() => MockClient((req) async {
-      final path = req.url.path;
-      if (path.startsWith('/api/v1/calls/history')) {
-        return http.Response(jsonEncode(_history()), 200,
-            headers: {'content-type': 'application/json; charset=utf-8'});
-      }
-      if (path == '/api/v1/calls/active') {
-        return http.Response(jsonEncode(_calls), 200,
-            headers: {'content-type': 'application/json; charset=utf-8'});
-      }
-      final body = _fixtures[path];
-      if (body != null) {
-        return http.Response(jsonEncode(body), 200,
-            headers: {'content-type': 'application/json; charset=utf-8'});
-      }
-      return http.Response('{"detail":"preview"}', 404);
-    });
+  final path = req.url.path;
+  if (path.startsWith('/api/v1/calls/history')) {
+    return http.Response(
+      jsonEncode(_history()),
+      200,
+      headers: {'content-type': 'application/json; charset=utf-8'},
+    );
+  }
+  if (path == '/api/v1/calls/active') {
+    return http.Response(
+      jsonEncode(_calls),
+      200,
+      headers: {'content-type': 'application/json; charset=utf-8'},
+    );
+  }
+  final body = _fixtures[path];
+  if (body != null) {
+    return http.Response(
+      jsonEncode(body),
+      200,
+      headers: {'content-type': 'application/json; charset=utf-8'},
+    );
+  }
+  return http.Response('{"detail":"preview"}', 404);
+});
 
 void main() => runApp(const PreviewApp());
 
@@ -123,6 +135,8 @@ class _PreviewAppState extends State<PreviewApp> {
   late final ApiClient _api;
   late final SessionStore _sessions;
   late final CallsFeed _feed;
+  late final SettingsStore _settings;
+  late final PushService _push;
   bool _ready = false;
 
   @override
@@ -131,6 +145,9 @@ class _PreviewAppState extends State<PreviewApp> {
     _api = ApiClient(httpClient: _fakeServer());
     _sessions = SessionStore(_api);
     _feed = CallsFeed(_api, onUnauthorized: () {});
+    _settings = SettingsStore()..addListener(() => setState(() {}));
+    _settings.load();
+    _push = PushService(_api);
     _signIn();
   }
 
@@ -146,16 +163,21 @@ class _PreviewAppState extends State<PreviewApp> {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-        debugShowCheckedModeBanner: false,
-        // Mirrors main.dart exactly. The preview showed both schemes as dark
-        // until this line was fixed, which is the drift this file is supposed to
-        // be immune to -- worth keeping the two in step by hand until there is a
-        // reason to share one builder.
-        theme: T.theme(Brightness.light),
-        darkTheme: T.theme(Brightness.dark),
-        themeMode: ThemeMode.system,
-        home: _ready
-            ? CallsScreen(feed: _feed, sessions: _sessions)
-            : const ColoredBox(color: T.page),
-      );
+    debugShowCheckedModeBanner: false,
+    // Mirrors main.dart exactly. The preview showed both schemes as dark
+    // until this line was fixed, which is the drift this file is supposed to
+    // be immune to -- worth keeping the two in step by hand until there is a
+    // reason to share one builder.
+    theme: T.theme(Brightness.light),
+    darkTheme: T.theme(Brightness.dark),
+    themeMode: _settings.themeMode,
+    home: _ready
+        ? CallsScreen(
+            feed: _feed,
+            sessions: _sessions,
+            settings: _settings,
+            push: _push,
+          )
+        : const ColoredBox(color: T.page),
+  );
 }

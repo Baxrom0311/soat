@@ -19,7 +19,7 @@ import '../api/models.dart';
 /// which is recoverable, where an exception on launch is not.
 class SessionStore extends ChangeNotifier {
   SessionStore(this._api, {FlutterSecureStorage? storage})
-      : _storage = storage ?? const FlutterSecureStorage();
+    : _storage = storage ?? const FlutterSecureStorage();
 
   static const _key = 'nursecall.session';
 

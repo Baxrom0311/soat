@@ -45,7 +45,8 @@ class ShiftStats {
     final median = answeredTimes.length.isOdd
         ? answeredTimes[mid]
         : Duration(
-            microseconds: (answeredTimes[mid - 1].inMicroseconds +
+            microseconds:
+                (answeredTimes[mid - 1].inMicroseconds +
                     answeredTimes[mid].inMicroseconds) ~/
                 2,
           );

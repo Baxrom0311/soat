@@ -72,7 +72,10 @@ class CallsFeed extends ChangeNotifier {
     // Far less often than the call list: the strip is context for the shift, and
     // history is a heavier query that must never compete with finding out that
     // somebody is waiting.
-    _stats2 = Timer.periodic(const Duration(minutes: 2), (_) => _refreshStats());
+    _stats2 = Timer.periodic(
+      const Duration(minutes: 2),
+      (_) => _refreshStats(),
+    );
   }
 
   void stop() {

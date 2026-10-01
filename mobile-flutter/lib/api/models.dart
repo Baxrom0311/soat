@@ -23,11 +23,11 @@ class Session {
   bool get isAdmin => role == 'admin';
 
   factory Session.fromJson(Map<String, dynamic> j) => Session(
-        accessToken: j['access_token'] as String,
-        role: j['role'] as String,
-        name: (j['name'] as String?) ?? '',
-        clinicId: j['clinic_id'] as int?,
-      );
+    accessToken: j['access_token'] as String,
+    role: j['role'] as String,
+    name: (j['name'] as String?) ?? '',
+    clinicId: j['clinic_id'] as int?,
+  );
 }
 
 class Call {
@@ -54,12 +54,12 @@ class Call {
   Duration waited(DateTime now) => now.toUtc().difference(createdAt.toUtc());
 
   factory Call.fromJson(Map<String, dynamic> j) => Call(
-        callId: j['call_id'] as int,
-        roomNumber: j['room_number'] as String,
-        floor: j['floor'] as int,
-        createdAt: DateTime.parse(j['created_at'] as String),
-        status: j['status'] as String,
-      );
+    callId: j['call_id'] as int,
+    roomNumber: j['room_number'] as String,
+    floor: j['floor'] as int,
+    createdAt: DateTime.parse(j['created_at'] as String),
+    status: j['status'] as String,
+  );
 }
 
 /// The clinic this phone belongs to. Fetched so the header can name it, the
@@ -75,10 +75,7 @@ class Clinic {
 /// A past call, as the history endpoint returns it. Only the two timestamps are
 /// used here, to work out how long the ward took to answer.
 class HistoryCall {
-  const HistoryCall({
-    required this.createdAt,
-    this.acknowledgedAt,
-  });
+  const HistoryCall({required this.createdAt, this.acknowledgedAt});
 
   final DateTime createdAt;
   final DateTime? acknowledgedAt;
@@ -87,11 +84,11 @@ class HistoryCall {
       acknowledgedAt?.toUtc().difference(createdAt.toUtc());
 
   factory HistoryCall.fromJson(Map<String, dynamic> j) => HistoryCall(
-        createdAt: DateTime.parse(j['created_at'] as String),
-        acknowledgedAt: j['acknowledged_at'] == null
-            ? null
-            : DateTime.parse(j['acknowledged_at'] as String),
-      );
+    createdAt: DateTime.parse(j['created_at'] as String),
+    acknowledgedAt: j['acknowledged_at'] == null
+        ? null
+        : DateTime.parse(j['acknowledged_at'] as String),
+  );
 }
 
 /// What the clinic's subscription banner says. Readable by every clinic member,
@@ -109,10 +106,10 @@ class BillingNotice {
   final int? daysLeft;
 
   factory BillingNotice.fromJson(Map<String, dynamic> j) => BillingNotice(
-        warn: j['warn'] as bool? ?? false,
-        blocked: j['blocked'] as bool? ?? false,
-        daysLeft: j['days_left'] as int?,
-      );
+    warn: j['warn'] as bool? ?? false,
+    blocked: j['blocked'] as bool? ?? false,
+    daysLeft: j['days_left'] as int?,
+  );
 }
 
 class VersionInfo {
@@ -120,9 +117,8 @@ class VersionInfo {
 
   final int minMobileVersion;
 
-  factory VersionInfo.fromJson(Map<String, dynamic> j) => VersionInfo(
-        minMobileVersion: j['min_mobile_version'] as int? ?? 1,
-      );
+  factory VersionInfo.fromJson(Map<String, dynamic> j) =>
+      VersionInfo(minMobileVersion: j['min_mobile_version'] as int? ?? 1);
 }
 
 /// Raised for any non-2xx response. [status] is kept so callers can tell the

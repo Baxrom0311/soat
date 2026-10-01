@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../api/client.dart';
+import '../settings/settings_store.dart';
 
 /// Must match `android.notification.channel_id` in the backend's FCM payload.
 ///
@@ -45,23 +47,23 @@ const AndroidNotificationChannel _callsChannel = AndroidNotificationChannel(
 /// data-only messages: a `notification` payload is rendered by the system, and
 /// the system does not know to do this.
 NotificationDetails _callDetails() => NotificationDetails(
-      android: AndroidNotificationDetails(
-        _callsChannel.id,
-        _callsChannel.name,
-        channelDescription: _callsChannel.description,
-        importance: Importance.max,
-        priority: Priority.max,
-        category: AndroidNotificationCategory.call,
-        fullScreenIntent: true,
-        audioAttributesUsage: AudioAttributesUsage.alarm,
-        // Stays until the call is dealt with rather than being swiped away in a
-        // pocket. The alert should end because somebody answered, not because a
-        // phone brushed against a uniform.
-        ongoing: true,
-        autoCancel: false,
-        visibility: NotificationVisibility.public,
-      ),
-    );
+  android: AndroidNotificationDetails(
+    _callsChannel.id,
+    _callsChannel.name,
+    channelDescription: _callsChannel.description,
+    importance: Importance.max,
+    priority: Priority.max,
+    category: AndroidNotificationCategory.call,
+    fullScreenIntent: true,
+    audioAttributesUsage: AudioAttributesUsage.alarm,
+    // Stays until the call is dealt with rather than being swiped away in a
+    // pocket. The alert should end because somebody answered, not because a
+    // phone brushed against a uniform.
+    ongoing: true,
+    autoCancel: false,
+    visibility: NotificationVisibility.public,
+  ),
+);
 
 /// Runs in its own isolate when a message arrives and the app is not in the
 /// foreground. Must be a top-level function — Android looks it up by name.
@@ -82,11 +84,14 @@ Future<void> handleBackgroundMessage(RemoteMessage message) async {
   // notification silently downgraded to default importance.
   await local
       .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()
+        AndroidFlutterLocalNotificationsPlugin
+      >()
       ?.createNotificationChannel(_callsChannel);
 
   await local.show(
-    id: int.tryParse(message.data['call_id']?.toString() ?? '') ?? room.hashCode,
+    id:
+        int.tryParse(message.data['call_id']?.toString() ?? '') ??
+        room.hashCode,
     title: 'Xona $room chaqirdi!',
     body: floor == null ? null : '$floor-qavat',
     notificationDetails: _callDetails(),
@@ -136,14 +141,16 @@ class PushService {
     );
     await _local
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(_callsChannel);
 
     // Android 13+ refuses to show anything without this, and refuses silently.
     await FirebaseMessaging.instance.requestPermission();
     await _local
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.requestNotificationsPermission();
 
     FirebaseMessaging.onBackgroundMessage(handleBackgroundMessage);
@@ -229,6 +236,36 @@ class PushService {
   Future<void> clearCall(int callId) async {
     try {
       await _local.cancel(id: callId);
+    } catch (_) {}
+  }
+
+  static const _platform = MethodChannel('uz.boos.nursecall/settings');
+
+  /// Asks Android what it will actually do with an alert on this handset.
+  ///
+  /// Not what the app configured -- what the system reports now. The channel is
+  /// the user's once created, and Do Not Disturb silences even an alarm channel
+  /// unless this app has been let through. A nurse who believes the phone will
+  /// ring when it will not is worse off than one who knows it will not.
+  Future<NotificationState> notificationState() async {
+    try {
+      final m = await _platform.invokeMapMethod<String, dynamic>(
+        'notificationState',
+      );
+      return m == null
+          ? NotificationState.unknown
+          : NotificationState.fromMap(m);
+    } catch (_) {
+      return NotificationState.unknown;
+    }
+  }
+
+  /// Opens the system screen where the call channel's sound and importance live.
+  Future<void> openSystemSettings() async {
+    try {
+      await _platform.invokeMethod('openChannelSettings', {
+        'channelId': callsChannelId,
+      });
     } catch (_) {}
   }
 

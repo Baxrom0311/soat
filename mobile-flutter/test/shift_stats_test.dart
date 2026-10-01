@@ -30,37 +30,42 @@ void main() {
     });
 
     test('yesterday does not count towards today', () {
-      final s = ShiftStats.from(
-        [_h(agoMinutes: 60 * 20, answeredAfterSeconds: 30)],
-        _now,
-      );
+      final s = ShiftStats.from([
+        _h(agoMinutes: 60 * 20, answeredAfterSeconds: 30),
+      ], _now);
       expect(s.answeredToday, 0);
     });
 
-    test('a few slow outliers do not drag the figure somewhere unrecognisable', () {
-      // This is the whole reason it is a median. On the real database one
-      // clinic's mean was 435 minutes while its median was two: calls cleared in
-      // a batch hours later moved the average, not the experience.
-      final s = ShiftStats.from([
-        _h(agoMinutes: 30, answeredAfterSeconds: 40),
-        _h(agoMinutes: 29, answeredAfterSeconds: 50),
-        _h(agoMinutes: 28, answeredAfterSeconds: 60),
-        _h(agoMinutes: 27, answeredAfterSeconds: 70),
-        _h(agoMinutes: 26, answeredAfterSeconds: 26000),
-      ], _now);
-      expect(s.answeredToday, 5);
-      expect(s.typicalAnswer, const Duration(seconds: 60));
-    });
+    test(
+      'a few slow outliers do not drag the figure somewhere unrecognisable',
+      () {
+        // This is the whole reason it is a median. On the real database one
+        // clinic's mean was 435 minutes while its median was two: calls cleared in
+        // a batch hours later moved the average, not the experience.
+        final s = ShiftStats.from([
+          _h(agoMinutes: 30, answeredAfterSeconds: 40),
+          _h(agoMinutes: 29, answeredAfterSeconds: 50),
+          _h(agoMinutes: 28, answeredAfterSeconds: 60),
+          _h(agoMinutes: 27, answeredAfterSeconds: 70),
+          _h(agoMinutes: 26, answeredAfterSeconds: 26000),
+        ], _now);
+        expect(s.answeredToday, 5);
+        expect(s.typicalAnswer, const Duration(seconds: 60));
+      },
+    );
 
-    test('an even number of calls takes the midpoint of the two middle ones', () {
-      final s = ShiftStats.from([
-        _h(agoMinutes: 30, answeredAfterSeconds: 10),
-        _h(agoMinutes: 29, answeredAfterSeconds: 20),
-        _h(agoMinutes: 28, answeredAfterSeconds: 40),
-        _h(agoMinutes: 27, answeredAfterSeconds: 60),
-      ], _now);
-      expect(s.typicalAnswer, const Duration(seconds: 30));
-    });
+    test(
+      'an even number of calls takes the midpoint of the two middle ones',
+      () {
+        final s = ShiftStats.from([
+          _h(agoMinutes: 30, answeredAfterSeconds: 10),
+          _h(agoMinutes: 29, answeredAfterSeconds: 20),
+          _h(agoMinutes: 28, answeredAfterSeconds: 40),
+          _h(agoMinutes: 27, answeredAfterSeconds: 60),
+        ], _now);
+        expect(s.typicalAnswer, const Duration(seconds: 30));
+      },
+    );
   });
 
   group('answerLabel', () {

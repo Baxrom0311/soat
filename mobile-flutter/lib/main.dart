@@ -6,6 +6,7 @@ import 'auth/login_screen.dart';
 import 'auth/session_store.dart';
 import 'calls/calls_feed.dart';
 import 'calls/calls_screen.dart';
+import 'settings/settings_store.dart';
 import 'push/push_service.dart';
 import 'theme/tokens.dart';
 
@@ -30,6 +31,7 @@ class _NurseCallAppState extends State<NurseCallApp> {
   late final SessionStore _sessions;
   late final CallsFeed _feed;
   late final PushService _push;
+  late final SettingsStore _settings;
   bool _pushWanted = false;
 
   @override
@@ -40,6 +42,8 @@ class _NurseCallAppState extends State<NurseCallApp> {
     // Signing out on a 401 lives here rather than in the feed so there is one
     // owner of "who is signed in". The feed reports the fact; it does not decide
     // what to do about it.
+    _settings = SettingsStore()..addListener(_onSession);
+    _settings.load();
     _push = PushService(_api);
     _feed = CallsFeed(
       _api,
@@ -54,6 +58,7 @@ class _NurseCallAppState extends State<NurseCallApp> {
   @override
   void dispose() {
     _sessions.removeListener(_onSession);
+    _settings.removeListener(_onSession);
     _push.dispose();
     _feed.dispose();
     _api.close();
@@ -70,7 +75,11 @@ class _NurseCallAppState extends State<NurseCallApp> {
     final signedIn = _sessions.isSignedIn;
     if (signedIn && !_pushWanted) {
       _pushWanted = true;
-      _push.init().then((_) => _push.register());
+      // Honours the nurse's own switch: a phone she has silenced for her shift
+      // must not quietly re-register itself on the next sign-in.
+      _push.init().then((_) {
+        if (_settings.pushEnabled) _push.register();
+      });
     } else if (!signedIn && _pushWanted) {
       _pushWanted = false;
       _push.unregister();
@@ -89,15 +98,15 @@ class _NurseCallAppState extends State<NurseCallApp> {
       // phones; a per-app preference is one more thing two nurses can disagree
       // about, and the phone's own auto mode already turns dark at night, which
       // is exactly the behaviour wanted.
-      themeMode: ThemeMode.system,
+      // The nurse's choice when she has made one, the handset's otherwise.
+      themeMode: _settings.themeMode,
       // The device's font scale is honoured up to a point and no further. A
       // nurse who has set her phone to the largest text should get larger text;
       // at 2x, the room number stops fitting and the card is worse than useless.
       builder: (context, child) {
-        final scale = MediaQuery.textScalerOf(context).clamp(
-          minScaleFactor: 0.9,
-          maxScaleFactor: 1.3,
-        );
+        final scale = MediaQuery.textScalerOf(
+          context,
+        ).clamp(minScaleFactor: 0.9, maxScaleFactor: 1.3);
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(textScaler: scale),
           child: child!,
@@ -106,8 +115,13 @@ class _NurseCallAppState extends State<NurseCallApp> {
       home: !_sessions.restored
           ? const _Splash()
           : _sessions.isSignedIn
-              ? CallsScreen(feed: _feed, sessions: _sessions)
-              : LoginScreen(sessions: _sessions),
+          ? CallsScreen(
+              feed: _feed,
+              sessions: _sessions,
+              settings: _settings,
+              push: _push,
+            )
+          : LoginScreen(sessions: _sessions),
     );
   }
 }
@@ -120,9 +134,9 @@ class _Splash extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Scaffold(
-        backgroundColor: T.page,
-        body: Center(
-          child: Icon(Icons.notifications_active, size: 52, color: T.step1),
-        ),
-      );
+    backgroundColor: T.page,
+    body: Center(
+      child: Icon(Icons.notifications_active, size: 52, color: T.step1),
+    ),
+  );
 }
