@@ -3,10 +3,22 @@ import 'package:http/http.dart' as http;
 
 import 'models.dart';
 
-/// Hardcoded rather than configurable. The app is installed by the vendor onto
-/// clinic phones; a settings field for the server address is one more thing that
-/// can be typed wrong on a device nobody will debug in person.
-const String baseUrl = 'https://nurcecall.boos.uz';
+/// Fixed at build time rather than configurable in the app. The app is
+/// installed by the vendor onto clinic phones; a settings field for the server
+/// address is one more thing that can be typed wrong on a device nobody will
+/// debug in person.
+///
+/// The build-time override exists for one case only: running the real app
+/// locally in a browser behind a proxy that serves the page and the API from
+/// the same origin, so the real screens can be driven against the real server
+/// without the browser's cross-origin rules getting in the way. Every shipped
+/// build leaves it at the default, so an APK is unaffected.
+///
+///     flutter build web --dart-define=API_BASE_URL=
+const String baseUrl = String.fromEnvironment(
+  'API_BASE_URL',
+  defaultValue: 'https://nurcecall.boos.uz',
+);
 
 /// Short on purpose. This app's job is to tell a nurse that somebody is waiting;
 /// a request still hanging after ten seconds has already failed at that, and the
