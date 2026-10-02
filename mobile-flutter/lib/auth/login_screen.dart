@@ -100,12 +100,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscure: _obscure,
                   autofillHints: const [AutofillHints.password],
                   onSubmitted: (_) => _submit(),
-                  suffix: IconButton(
-                    onPressed: () => setState(() => _obscure = !_obscure),
-                    icon: Icon(
-                      _obscure ? Icons.visibility_off : Icons.visibility,
-                      color: p.text3,
-                      size: 20,
+                  // ExcludeFocus: keyboard traversal must go email -> password,
+                  // never email -> eye -> password, or what the nurse types next
+                  // lands in the box she just left.
+                  suffix: ExcludeFocus(
+                    child: IconButton(
+                      onPressed: () => setState(() => _obscure = !_obscure),
+                      icon: Icon(
+                        _obscure ? Icons.visibility_off : Icons.visibility,
+                        color: p.text3,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ),

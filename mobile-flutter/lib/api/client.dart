@@ -78,6 +78,26 @@ class ApiClient {
     return Session.fromJson(_decode(r) as Map<String, dynamic>);
   }
 
+  /// Changes this nurse's own password.
+  ///
+  /// Matters more than it looks on a shared ward phone: an account is created by
+  /// the clinic admin, which means the password was chosen by somebody else and
+  /// is usually known to several people. Until now there was no way to change it
+  /// from the phone at all.
+  Future<void> changePassword({
+    required String current,
+    required String next,
+  }) async {
+    final r = await _http
+        .post(
+          _uri('/api/v1/auth/change-password'),
+          headers: _headers(json: true),
+          body: jsonEncode({'current_password': current, 'new_password': next}),
+        )
+        .timeout(_timeout);
+    _decode(r);
+  }
+
   Future<List<Call>> activeCalls() async {
     final r = await _http
         .get(_uri('/api/v1/calls/active'), headers: _headers())

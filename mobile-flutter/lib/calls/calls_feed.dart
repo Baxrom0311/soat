@@ -3,19 +3,32 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../api/client.dart';
+import '../api/live_socket.dart';
 import '../api/models.dart';
 import 'shift_stats.dart';
 
 /// The ward's unanswered calls, kept fresh while the app is on screen.
 ///
-/// Two clocks, deliberately separate:
+/// Three clocks and a socket, deliberately separate:
 ///
-///  - a **poll** every few seconds, which is what discovers new calls and calls
-///    other nurses have answered;
-///  - a **tick** every second, which only re-renders the waiting counters.
+///  - a **socket**, which carries the server's own "somebody just pressed a
+///    button" the instant it happens;
+///  - a **poll**, now slow, which exists only to heal whatever the socket
+///    missed -- a connection that died quietly, a frame lost on a carrier NAT;
+///  - a **tick** every second, which only re-renders the waiting counters;
+///  - a **statistics refresh** every couple of minutes.
 ///
-/// Folding them together would mean either counters that jump in five-second
-/// steps, or a network request every second on a phone in somebody's pocket.
+/// Folding the first two together is the tempting mistake. A WebSocket that
+/// dies silently is the classic way to build a screen that looks live and is
+/// not: the phone sleeps, the connection is dropped by something in the middle,
+/// the socket object stays open and no error is ever delivered. On a ward that
+/// failure mode looks exactly like a quiet night. So the poll stays -- just at
+/// thirty seconds instead of five, since it is now a safety net rather than the
+/// mechanism.
+///
+/// The socket never carries the call list itself, only the news that something
+/// changed; the list is always re-read over HTTP. A dropped or duplicated event
+/// therefore cannot leave the screen disagreeing with the server.
 class CallsFeed extends ChangeNotifier {
   CallsFeed(this._api, {required this.onUnauthorized, this.onAcknowledged});
 
@@ -32,11 +45,22 @@ class CallsFeed extends ChangeNotifier {
   /// been to is worse than none: the next one is easy to mistake for it.
   final void Function(int callId)? onAcknowledged;
 
-  static const Duration pollInterval = Duration(seconds: 5);
+  /// The safety net, not the mechanism -- see the class comment. Still frequent
+  /// enough that a nurse whose socket has died never waits more than this.
+  static const Duration pollInterval = Duration(seconds: 30);
+
+  /// Used while the socket is down, so a phone with no live connection is no
+  /// worse off than it was before the socket existed.
+  static const Duration fallbackPollInterval = Duration(seconds: 5);
 
   Timer? _poll;
   Timer? _tick;
   Timer? _stats2;
+  LiveSocket? _socket;
+  bool _live = false;
+
+  /// True when the server can reach this phone the instant a button is pressed.
+  bool get live => _live;
 
   List<Call> _calls = const [];
   DateTime _now = DateTime.now();
@@ -58,13 +82,14 @@ class CallsFeed extends ChangeNotifier {
   /// from a ward where nobody needs anything.
   bool get reachable => _reachable;
 
-  void start() {
+  void start({String? token}) {
     stop();
     _tick = Timer.periodic(const Duration(seconds: 1), (_) {
       _now = DateTime.now();
       notifyListeners();
     });
-    _poll = Timer.periodic(pollInterval, (_) => refresh());
+    _startPolling(pollInterval);
+    if (token != null) _connectSocket(token);
     refresh();
     _refreshNotice();
     _refreshStats();
@@ -78,13 +103,36 @@ class CallsFeed extends ChangeNotifier {
     );
   }
 
+  void _startPolling(Duration every) {
+    _poll?.cancel();
+    _poll = Timer.periodic(every, (_) => refresh());
+  }
+
+  void _connectSocket(String token) {
+    _socket = LiveSocket(
+      onEvent: (_) => refresh(),
+      onStateChanged: (connected) {
+        _live = connected;
+        // Falling back to the old five-second poll the moment the socket drops
+        // is what makes this safe to depend on: the worst case is exactly the
+        // behaviour the app had before, never a screen that has stopped moving.
+        _startPolling(connected ? pollInterval : fallbackPollInterval);
+        if (connected) refresh();
+        notifyListeners();
+      },
+    )..connect(token);
+  }
+
   void stop() {
     _poll?.cancel();
     _tick?.cancel();
     _stats2?.cancel();
+    _socket?.dispose();
     _poll = null;
     _tick = null;
     _stats2 = null;
+    _socket = null;
+    _live = false;
   }
 
   Future<void> refresh() async {

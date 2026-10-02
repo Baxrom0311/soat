@@ -177,6 +177,7 @@ class _PreviewAppState extends State<PreviewApp> {
             sessions: _sessions,
             settings: _settings,
             push: _push,
+            api: _api,
           )
         : const ColoredBox(color: T.page),
   );

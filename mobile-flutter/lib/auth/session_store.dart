@@ -61,6 +61,26 @@ class SessionStore extends ChangeNotifier {
     return s;
   }
 
+  /// Trades the current token for a fresh one, silently.
+  ///
+  /// Tokens last ninety days, down from a year. That is short enough to matter
+  /// to somebody who leaves the app open all shift and never signs out: without
+  /// this, a nurse would one morning find herself at the login screen for no
+  /// reason she could see. Called when the app comes to the foreground, so a
+  /// phone in daily use renews long before it ever expires.
+  ///
+  /// Every failure is swallowed. The existing token is still valid -- a failed
+  /// renewal is a network blip, not a reason to touch a working session. The one
+  /// exception is 401, which the caller's own unauthorized handling covers
+  /// anyway; here it simply means the stored session is already dead.
+  Future<void> renew() async {
+    if (_session == null) return;
+    try {
+      final s = await _api.refresh();
+      await _persist(s);
+    } catch (_) {}
+  }
+
   Future<void> _persist(Session s) async {
     _session = s;
     _api.setToken(s.accessToken);

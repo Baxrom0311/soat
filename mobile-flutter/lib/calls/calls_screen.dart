@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../api/client.dart';
 import '../api/models.dart';
+import '../auth/change_password_screen.dart';
 import '../auth/session_store.dart';
 import '../push/push_service.dart';
 import '../settings/settings_store.dart';
 import '../theme/tokens.dart';
 import 'call_card.dart';
+import 'history_screen.dart';
 import 'calls_feed.dart';
 import 'shift_stats.dart';
 
@@ -20,12 +23,17 @@ class CallsScreen extends StatefulWidget {
     required this.sessions,
     required this.settings,
     required this.push,
+    required this.api,
   });
 
   final CallsFeed feed;
   final SessionStore sessions;
   final SettingsStore settings;
   final PushService push;
+
+  /// Passed down for the screens the profile opens -- history and the password
+  /// form -- rather than each of them reaching for a global.
+  final ApiClient api;
 
   @override
   State<CallsScreen> createState() => _CallsScreenState();
@@ -41,7 +49,7 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     widget.feed.addListener(_onFeed);
-    widget.feed.start();
+    widget.feed.start(token: widget.sessions.session?.accessToken);
   }
 
   @override
@@ -58,10 +66,15 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Polling stops when the screen does. A phone in a pocket should be woken by
-    // a push, not by a request every five seconds all shift.
+    // Polling and the live socket both stop when the screen does. A phone in a
+    // pocket should be woken by a push, not by a request every few seconds all
+    // shift -- and an open socket on a sleeping phone is a battery cost that
+    // buys nothing, because the push path is what wakes a backgrounded app.
     if (state == AppLifecycleState.resumed) {
-      widget.feed.start();
+      widget.feed.start(token: widget.sessions.session?.accessToken);
+      // Renew while we are here. Ninety-day tokens expire quietly otherwise, and
+      // the first a nurse would know of it is the login screen mid-shift.
+      widget.sessions.renew();
     } else if (state == AppLifecycleState.paused) {
       widget.feed.stop();
     }
@@ -111,6 +124,7 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
                     stats: feed.stats,
                     settings: widget.settings,
                     push: widget.push,
+                    api: widget.api,
                     onSignOut: widget.sessions.signOut,
                   ),
           ),
@@ -758,6 +772,7 @@ class _ProfileTab extends StatefulWidget {
     required this.stats,
     required this.settings,
     required this.push,
+    required this.api,
     required this.onSignOut,
   });
 
@@ -765,6 +780,7 @@ class _ProfileTab extends StatefulWidget {
   final ShiftStats stats;
   final SettingsStore settings;
   final PushService push;
+  final ApiClient api;
   final Future<void> Function() onSignOut;
 
   @override
@@ -884,6 +900,48 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
                 onTap: widget.push.openSystemSettings,
               ),
             ],
+          ],
+        ),
+        const SizedBox(height: 16),
+        _Section(
+          title: 'Smena',
+          children: [
+            _Row(
+              icon: Icons.history,
+              label: 'Chaqiruvlar tarixi',
+              sub: 'Kim javob bergan, qancha kutilgan',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => HistoryScreen(api: widget.api),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _Section(
+          title: 'Hisob',
+          children: [
+            _Row(
+              icon: Icons.password,
+              label: 'Parolni o‘zgartirish',
+              sub: 'Hisobingizni admin ochgan — parolni o‘zingizniki qiling',
+              onTap: () async {
+                final changed = await Navigator.of(context).push<bool>(
+                  MaterialPageRoute(
+                    builder: (_) => ChangePasswordScreen(api: widget.api),
+                  ),
+                );
+                // context.mounted, not State.mounted: the snack bar is shown
+                // through this context after an await, and it is the context
+                // that has to still be in the tree.
+                if (changed == true && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Parol o‘zgartirildi')),
+                  );
+                }
+              },
+            ),
           ],
         ),
         const SizedBox(height: 16),

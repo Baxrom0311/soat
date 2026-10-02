@@ -120,6 +120,7 @@ class _NurseCallAppState extends State<NurseCallApp> {
               sessions: _sessions,
               settings: _settings,
               push: _push,
+              api: _api,
             )
           : LoginScreen(sessions: _sessions),
     );

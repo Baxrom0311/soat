@@ -72,22 +72,54 @@ class Clinic {
       Clinic(name: (j['name'] as String?) ?? '');
 }
 
-/// A past call, as the history endpoint returns it. Only the two timestamps are
-/// used here, to work out how long the ward took to answer.
+/// A past call, as the history endpoint returns it.
 class HistoryCall {
-  const HistoryCall({required this.createdAt, this.acknowledgedAt});
+  const HistoryCall({
+    required this.callId,
+    required this.roomNumber,
+    required this.floor,
+    required this.status,
+    required this.createdAt,
+    this.acknowledgedAt,
+    this.acknowledgedBy,
+  });
+
+  final int callId;
+  final String roomNumber;
+  final int floor;
+
+  /// 'active', 'acknowledged' or 'expired'. Kept as the server's own string
+  /// rather than an enum: a value this client has not heard of must render as
+  /// itself, not crash the list or silently become one of the others.
+  final String status;
 
   final DateTime createdAt;
   final DateTime? acknowledgedAt;
 
+  /// The name of whoever answered, as the server attributed it. Null for a call
+  /// that was never answered.
+  final String? acknowledgedBy;
+
   Duration? get answeredIn =>
       acknowledgedAt?.toUtc().difference(createdAt.toUtc());
 
+  /// Closed by the clock after half a day, because nobody ever acknowledged it.
+  /// Distinct from answered on purpose -- the history must never claim somebody
+  /// went when nobody did.
+  bool get expired => status == 'expired';
+
+  bool get answered => acknowledgedAt != null;
+
   factory HistoryCall.fromJson(Map<String, dynamic> j) => HistoryCall(
+    callId: j['call_id'] as int,
+    roomNumber: j['room_number'] as String? ?? '',
+    floor: j['floor'] as int? ?? 0,
+    status: j['status'] as String? ?? 'acknowledged',
     createdAt: DateTime.parse(j['created_at'] as String),
     acknowledgedAt: j['acknowledged_at'] == null
         ? null
         : DateTime.parse(j['acknowledged_at'] as String),
+    acknowledgedBy: j['acknowledged_by'] as String?,
   );
 }
 

@@ -4,9 +4,15 @@ import 'package:nursecall/calls/shift_stats.dart';
 
 final _now = DateTime(2026, 10, 1, 15, 0);
 
+int _nextId = 1;
+
 HistoryCall _h({required int agoMinutes, int? answeredAfterSeconds}) {
   final created = _now.subtract(Duration(minutes: agoMinutes));
   return HistoryCall(
+    callId: _nextId++,
+    roomNumber: '10$_nextId',
+    floor: 1,
+    status: answeredAfterSeconds == null ? 'active' : 'acknowledged',
     createdAt: created.toUtc(),
     acknowledgedAt: answeredAfterSeconds == null
         ? null
