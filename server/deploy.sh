@@ -134,6 +134,19 @@ say "Kod yuborilmoqda"
 rsync -rc --delete "${RSYNC_EXCLUDES[@]}" -e "ssh -i $SSH_KEY" server/ "$HOST:$REMOTE_DIR/"
 rsync -rc --delete -e "ssh -i $SSH_KEY" web-dashboard/dist/ "$HOST:$REMOTE_DIR/dashboard/"
 
+# static/ is excluded above and then handled here, separately and WITHOUT --delete.
+# The directory holds two different kinds of thing: files that live in git (the
+# landing page, the favicons) and files that only ever exist on the server (the
+# APKs, which are 50MB and are uploaded after a build). Excluding the whole
+# directory protected the second kind and silently never deployed the first --
+# which is how an edited landing page sat in git for a day without reaching
+# production. Listing git's own files is what keeps the two apart.
+say "static/ dagi versiyalangan fayllar"
+git -C "$REPO_ROOT" ls-files -z server/static \
+  | sed -z 's|^server/static/||' \
+  | rsync -rc --files-from=- --from0 -e "ssh -i $SSH_KEY" \
+      server/static/ "$HOST:$REMOTE_DIR/static/"
+
 say "Migratsiya va qayta ishga tushirish"
 if ! "${SSH[@]}" bash -se <<REMOTE
 set -euo pipefail
