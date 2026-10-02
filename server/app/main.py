@@ -72,6 +72,17 @@ app.include_router(ws.router)
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 DASHBOARD_DIR = Path(__file__).resolve().parent.parent / "dashboard"
+
+# Both directories are build or upload output, not source: `dashboard/` is produced by
+# `npm run build` at deploy time and `static/` holds files that only ever existed on the
+# server. Mounting one that is absent used to raise at import, which meant the whole API
+# -- every patient call, every acknowledgement -- could not start on a machine where the
+# dashboard had not been built yet. Importing the app must not depend on a front-end
+# build; the dashboard routes below already answer 404 when the file is missing, which is
+# the right failure: the API serves patients, the dashboard is a page.
+for path in (STATIC_DIR, DASHBOARD_DIR):
+    path.mkdir(parents=True, exist_ok=True)
+
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 # JS/CSS bundle o'z mustaqil yo'lida — qaysi SPA route orqali ochilishidan qat'i
 # nazar (/login, /app, /admin barchasi shu bitta bundle'ni yuklaydi).
