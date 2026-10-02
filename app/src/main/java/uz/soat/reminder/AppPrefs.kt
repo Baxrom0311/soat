@@ -1,8 +1,6 @@
 package uz.soat.reminder
 
 import android.content.Context
-import android.util.Base64
-import org.json.JSONObject
 
 object AppPrefs {
     private const val PREFS_NAME = "app_prefs"
@@ -30,26 +28,8 @@ object AppPrefs {
     fun setToken(context: Context, token: String?) {
         prefs(context).edit()
             .putString(KEY_TOKEN, token)
-            .putString(KEY_NURSE_NAME, token?.let { nameFromToken(it) })
+            .putString(KEY_NURSE_NAME, WatchToken.nameOf(token))
             .apply()
-    }
-
-    /**
-     * JWT'ning o'rta qismidagi `name` da'vosi. Imzo TEKSHIRILMAYDI — bu faqat
-     * ekranda ism ko'rsatish uchun, va soat hech qachon o'zi qaror qabul
-     * qilmaydi: har bir so'rovni server tokenni tekshirib javob beradi.
-     * Buzuq token bo'lsa ism yo'q bo'ladi, xolos.
-     */
-    private fun nameFromToken(token: String): String? = try {
-        val payload = token.split(".").getOrNull(1)
-        if (payload == null) null else {
-            val bytes = Base64.decode(payload, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
-            JSONObject(String(bytes, Charsets.UTF_8))
-                .optString("name", "")
-                .ifEmpty { null }
-        }
-    } catch (_: Exception) {
-        null
     }
 
     fun getServerHost(context: Context, default: String): String =

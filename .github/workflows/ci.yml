@@ -113,3 +113,25 @@ jobs:
         working-directory: mobile-flutter
       - run: flutter test
         working-directory: mobile-flutter
+
+  watch:
+    name: Ward watch (gradle test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+      # Unit tests only, not a build: assembling the watch APK needs the release
+      # keystore, which is not in the repository and must not be. The logic worth
+      # protecting -- reading the nurse's name out of a token that arrives over
+      # Bluetooth from the phone -- is plain JVM code and runs here.
+      - run: chmod +x gradlew
+      - run: ./gradlew :app:testReleaseUnitTest
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: watch-test-report
+          path: app/build/reports/tests/
