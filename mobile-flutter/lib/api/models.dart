@@ -169,3 +169,158 @@ class ApiException implements Exception {
   @override
   String toString() => 'ApiException($status): $message';
 }
+
+// ---------------------------------------------------------------- management
+//
+// Everything below is for the clinic admin's half of the app. A nurse never
+// sees any of it: the routes are admin-only on the server, and the screens that
+// use these are only reachable when the signed-in session says so.
+
+/// A 433MHz receiver — the box on the wall that hears the buttons.
+class Device {
+  const Device({
+    required this.id,
+    required this.deviceId,
+    required this.floor,
+    required this.online,
+    this.lastSeenAt,
+  });
+
+  final int id;
+
+  /// The name the receiver identifies itself by, as configured on the ESP32.
+  final String deviceId;
+
+  final int floor;
+
+  /// The server's own judgement, not something computed here: it knows the
+  /// heartbeat window and this app must not disagree with the alert that is
+  /// already being sent when a receiver goes quiet.
+  final bool online;
+
+  final DateTime? lastSeenAt;
+
+  /// Registered but never heard from once — a setup mistake, not an outage, and
+  /// worth saying differently.
+  bool get neverSeen => lastSeenAt == null;
+
+  factory Device.fromJson(Map<String, dynamic> j) => Device(
+    id: j['id'] as int,
+    deviceId: j['device_id'] as String,
+    floor: j['floor'] as int,
+    online: j['online'] as bool? ?? false,
+    lastSeenAt: j['last_seen_at'] == null
+        ? null
+        : DateTime.parse(j['last_seen_at'] as String),
+  );
+}
+
+class Room {
+  const Room({required this.id, required this.roomNumber, required this.floor});
+
+  final int id;
+  final String roomNumber;
+  final int floor;
+
+  factory Room.fromJson(Map<String, dynamic> j) => Room(
+    id: j['id'] as int,
+    roomNumber: j['room_number'] as String,
+    floor: j['floor'] as int,
+  );
+}
+
+class Staff {
+  const Staff({
+    required this.id,
+    required this.email,
+    required this.role,
+    required this.name,
+    required this.floors,
+  });
+
+  final int id;
+  final String email;
+  final String role;
+  final String name;
+
+  /// Empty means every floor. That is the server's safe default: a nurse who
+  /// has not been assigned anywhere must keep receiving everything, never
+  /// nothing.
+  final List<int> floors;
+
+  bool get isAdmin => role == 'admin';
+  bool get allFloors => floors.isEmpty;
+
+  factory Staff.fromJson(Map<String, dynamic> j) => Staff(
+    id: j['id'] as int,
+    email: j['email'] as String,
+    role: j['role'] as String,
+    name: (j['name'] as String?) ?? '',
+    floors: ((j['floors'] as List<dynamic>?) ?? const [])
+        .map((e) => e as int)
+        .toList(growable: false),
+  );
+}
+
+/// A button already paired to a room.
+class ButtonPairing {
+  const ButtonPairing({
+    required this.id,
+    required this.roomId,
+    required this.roomNumber,
+    required this.floor,
+    required this.code,
+  });
+
+  final int id;
+  final int roomId;
+  final String roomNumber;
+  final int floor;
+  final int code;
+
+  factory ButtonPairing.fromJson(Map<String, dynamic> j) => ButtonPairing(
+    id: j['id'] as int,
+    roomId: j['room_id'] as int,
+    roomNumber: j['room_number'] as String,
+    floor: j['floor'] as int,
+    code: j['ev1527_code'] as int,
+  );
+}
+
+/// A button press from a transmitter nobody has paired to a room yet.
+///
+/// This is the installation workflow, seen from the server's side: press a new
+/// button, and the code it sent turns up here. Pairing it to a room is what
+/// turns it into a working call button.
+class UnassignedSignal {
+  const UnassignedSignal({
+    required this.id,
+    required this.deviceId,
+    required this.code,
+    required this.seenCount,
+    required this.lastSeenAt,
+  });
+
+  final int id;
+
+  /// Which receiver heard it — which is also roughly where in the building it
+  /// was pressed, and the only locating information available during setup.
+  final String deviceId;
+
+  final int code;
+
+  /// How many times this code has been heard. A single sighting is often
+  /// interference from a neighbouring building; a button somebody is standing
+  /// there pressing climbs fast.
+  final int seenCount;
+
+  final DateTime lastSeenAt;
+
+  factory UnassignedSignal.fromJson(Map<String, dynamic> j) => UnassignedSignal(
+    id: j['id'] as int,
+    deviceId: j['device_id'] as String,
+    code: j['ev1527_code'] as int,
+    seenCount: j['seen_count'] as int? ?? 1,
+    lastSeenAt: DateTime.parse(j['last_seen_at'] as String),
+  );
+}

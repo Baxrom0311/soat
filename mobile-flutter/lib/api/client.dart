@@ -195,5 +195,152 @@ class ApiClient {
     _decode(r);
   }
 
+  // -------------------------------------------------------------- management
+  //
+  // Admin-only on the server. These are the routes the web dashboard has always
+  // had and the phone never did -- which mattered because the person who
+  // installs the hardware is standing in the room with a phone, not sitting at
+  // a laptop.
+
+  Future<List<Device>> devices() async {
+    final r = await _http
+        .get(_uri('/api/v1/devices'), headers: _headers())
+        .timeout(_timeout);
+    return (_decode(r) as List<dynamic>)
+        .map((e) => Device.fromJson(e as Map<String, dynamic>))
+        .toList(growable: false);
+  }
+
+  Future<List<Room>> rooms() async {
+    final r = await _http
+        .get(_uri('/api/v1/rooms'), headers: _headers())
+        .timeout(_timeout);
+    return (_decode(r) as List<dynamic>)
+        .map((e) => Room.fromJson(e as Map<String, dynamic>))
+        .toList(growable: false);
+  }
+
+  Future<Room> createRoom({required String number, required int floor}) async {
+    final r = await _http
+        .post(
+          _uri('/api/v1/rooms'),
+          headers: _headers(json: true),
+          body: jsonEncode({'room_number': number, 'floor': floor}),
+        )
+        .timeout(_timeout);
+    return Room.fromJson(_decode(r) as Map<String, dynamic>);
+  }
+
+  Future<void> deleteRoom(int roomId) async {
+    final r = await _http
+        .delete(_uri('/api/v1/rooms/$roomId'), headers: _headers())
+        .timeout(_timeout);
+    if (r.statusCode != 204) _decode(r);
+  }
+
+  Future<List<Staff>> staff() async {
+    final r = await _http
+        .get(_uri('/api/v1/staff'), headers: _headers())
+        .timeout(_timeout);
+    return (_decode(r) as List<dynamic>)
+        .map((e) => Staff.fromJson(e as Map<String, dynamic>))
+        .toList(growable: false);
+  }
+
+  Future<Staff> createStaff({
+    required String name,
+    required String email,
+    required String password,
+    required String role,
+    List<int> floors = const [],
+  }) async {
+    final r = await _http
+        .post(
+          _uri('/api/v1/staff'),
+          headers: _headers(json: true),
+          body: jsonEncode({
+            'name': name.trim(),
+            'email': email.trim().toLowerCase(),
+            'password': password,
+            'role': role,
+            'floors': floors,
+          }),
+        )
+        .timeout(_timeout);
+    return Staff.fromJson(_decode(r) as Map<String, dynamic>);
+  }
+
+  /// Floors only. Everything else about a colleague's account is left to the
+  /// dashboard: this exists because floor coverage is the one thing that
+  /// changes between shifts, and changing it is what decides whose phone rings.
+  Future<Staff> setStaffFloors(int staffId, List<int> floors) async {
+    final r = await _http
+        .patch(
+          _uri('/api/v1/staff/$staffId'),
+          headers: _headers(json: true),
+          body: jsonEncode({'floors': floors}),
+        )
+        .timeout(_timeout);
+    return Staff.fromJson(_decode(r) as Map<String, dynamic>);
+  }
+
+  Future<void> deleteStaff(int staffId) async {
+    final r = await _http
+        .delete(_uri('/api/v1/staff/$staffId'), headers: _headers())
+        .timeout(_timeout);
+    if (r.statusCode != 204) _decode(r);
+  }
+
+  Future<List<ButtonPairing>> buttons() async {
+    final r = await _http
+        .get(_uri('/api/v1/buttons'), headers: _headers())
+        .timeout(_timeout);
+    return (_decode(r) as List<dynamic>)
+        .map((e) => ButtonPairing.fromJson(e as Map<String, dynamic>))
+        .toList(growable: false);
+  }
+
+  /// Pairs a transmitter to a room. This is the last step of installing a
+  /// button, and the first moment pressing it does anything.
+  Future<ButtonPairing> pairButton({
+    required int code,
+    required int roomId,
+  }) async {
+    final r = await _http
+        .post(
+          _uri('/api/v1/buttons'),
+          headers: _headers(json: true),
+          body: jsonEncode({'ev1527_code': code, 'room_id': roomId}),
+        )
+        .timeout(_timeout);
+    return ButtonPairing.fromJson(_decode(r) as Map<String, dynamic>);
+  }
+
+  Future<void> deleteButton(int buttonId) async {
+    final r = await _http
+        .delete(_uri('/api/v1/buttons/$buttonId'), headers: _headers())
+        .timeout(_timeout);
+    if (r.statusCode != 204) _decode(r);
+  }
+
+  Future<List<UnassignedSignal>> unassignedSignals() async {
+    final r = await _http
+        .get(_uri('/api/v1/unassigned-signals'), headers: _headers())
+        .timeout(_timeout);
+    return (_decode(r) as List<dynamic>)
+        .map((e) => UnassignedSignal.fromJson(e as Map<String, dynamic>))
+        .toList(growable: false);
+  }
+
+  Future<void> dismissSignal(int signalId) async {
+    final r = await _http
+        .delete(
+          _uri('/api/v1/unassigned-signals/$signalId'),
+          headers: _headers(),
+        )
+        .timeout(_timeout);
+    if (r.statusCode != 204) _decode(r);
+  }
+
   void close() => _http.close();
 }

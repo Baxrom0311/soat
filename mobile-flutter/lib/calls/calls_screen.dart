@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../admin/admin_screen.dart';
 import '../api/client.dart';
 import '../api/models.dart';
 import '../auth/change_password_screen.dart';
@@ -918,6 +919,27 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
             ),
           ],
         ),
+        // Admin-only. A nurse never sees this section; the routes behind it are
+        // admin-only on the server too, so hiding it is a courtesy rather than
+        // the enforcement.
+        if (session?.isAdmin == true) ...[
+          const SizedBox(height: 16),
+          _Section(
+            title: 'Klinika',
+            children: [
+              _Row(
+                icon: Icons.admin_panel_settings,
+                label: 'Klinika sozlamalari',
+                sub: 'Qabul qilgichlar, tugmalar, xonalar, hamshiralar',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => AdminScreen(api: widget.api),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: 16),
         _Section(
           title: 'Hisob',
