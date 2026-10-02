@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Siluetning rangi. Ilovaning o'z ko'ki: status panelida ham, bildirishnoma
+         ichida ham shu rang chiqadi. -->
+    <color name="notification_tint">#0A6AFA</color>
+</resources>

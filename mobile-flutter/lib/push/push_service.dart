@@ -76,7 +76,7 @@ Future<void> handleBackgroundMessage(RemoteMessage message) async {
   final local = FlutterLocalNotificationsPlugin();
   await local.initialize(
     settings: const InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      android: AndroidInitializationSettings('@drawable/ic_notification'),
     ),
   );
   // Created again here on purpose: this isolate does not share state with the
@@ -135,7 +135,7 @@ class PushService {
 
     await _local.initialize(
       settings: const InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        android: AndroidInitializationSettings('@drawable/ic_notification'),
       ),
       onDidReceiveNotificationResponse: (r) => _handlePayload(r.payload),
     );

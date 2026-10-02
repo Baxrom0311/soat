@@ -117,6 +117,34 @@ def cropped_mark(img: Image.Image) -> Image.Image:
     return out
 
 
+
+# ---------------------------------------------------------------- notification
+#
+# Android's status bar uses ONLY the alpha channel of a notification's small
+# icon: every opaque pixel is painted a single flat colour. A full-colour icon
+# therefore shows up as a solid white square -- which is exactly what this app
+# shipped, on the one screen that matters most for a product whose entire job is
+# notifications.
+#
+# So the small icon is the mark's silhouette: white where the mark is,
+# transparent everywhere else. 24dp at each density, as Android asks.
+
+NOTIFICATION_DP = 24
+NOTIFICATION_FILL = 0.92  # the mark fills the tile; the system adds its own padding
+
+
+def notification_icon(mark: Image.Image, size: int) -> Image.Image:
+    """White silhouette of the mark on transparent."""
+    inner = max(1, int(size * NOTIFICATION_FILL))
+    scaled = mark.resize((inner, inner), Image.LANCZOS)
+    # Colour is discarded: only the shape survives into the status bar.
+    silhouette = Image.new("RGBA", scaled.size, (255, 255, 255, 0))
+    silhouette.putalpha(scaled.getchannel("A"))
+    tile = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    tile.alpha_composite(silhouette, ((size - inner) // 2, (size - inner) // 2))
+    return tile
+
+
 def compose(mark: Image.Image, size: int, fill: float, background) -> Image.Image:
     tile = Image.new("RGBA", (size, size), background)
     inner = max(1, int(size * fill))
@@ -133,6 +161,7 @@ def main() -> None:
     for name, mult in DENSITIES.items():
         out = RES / f"mipmap-{name}"
         out.mkdir(parents=True, exist_ok=True)
+        (RES / f"drawable-{name}").mkdir(parents=True, exist_ok=True)
         size = int(BASE_DP * mult)
 
         compose(mark, size, LEGACY_FILL, WHITE).save(out / "ic_launcher.png")
@@ -142,7 +171,9 @@ def main() -> None:
         compose(mark, adaptive, ADAPTIVE_FILL, (0, 0, 0, 0)).save(
             out / "ic_launcher_foreground.png"
         )
-        print(f"  {name}: {size}px + {adaptive}px adaptive")
+        notif = int(NOTIFICATION_DP * mult)
+        notification_icon(mark, notif).save(out.parent / f"drawable-{name}" / "ic_notification.png")
+        print(f"  {name}: {size}px + {adaptive}px adaptive + {notif}px bildirishnoma")
 
     # A full-resolution copy, for the Play listing and anywhere else a big one
     # is wanted without re-deriving it from the original.
