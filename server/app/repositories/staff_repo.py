@@ -30,7 +30,9 @@ def get(db: Session, clinic_id: int, staff_id: int) -> Staff | None:
 
 def count_admins(db: Session, clinic_id: int) -> int:
     return db.scalar(
-        select(func.count()).select_from(Staff).where(Staff.clinic_id == clinic_id, Staff.role == StaffRole.ADMIN)
+        select(func.count())
+        .select_from(Staff)
+        .where(Staff.clinic_id == clinic_id, Staff.role == StaffRole.ADMIN)
     )
 
 
@@ -41,9 +43,7 @@ def delete(db: Session, staff: Staff) -> None:
 def count_by_clinic(db: Session) -> dict[int, int]:
     """One grouped query for the superadmin clinics list (avoids a COUNT per clinic)."""
     rows = db.execute(
-        select(Staff.clinic_id, func.count())
-        .where(Staff.clinic_id.is_not(None))
-        .group_by(Staff.clinic_id)
+        select(Staff.clinic_id, func.count()).where(Staff.clinic_id.is_not(None)).group_by(Staff.clinic_id)
     ).all()
     return {clinic_id: count for clinic_id, count in rows}
 
@@ -52,7 +52,9 @@ def list_by_clinic(db: Session, clinic_id: int) -> list[Staff]:
     return list(db.scalars(select(Staff).where(Staff.clinic_id == clinic_id).order_by(Staff.id)).all())
 
 
-def create(db: Session, *, clinic_id: int, email: str, password_hash: str, role: StaffRole, name: str) -> Staff:
+def create(
+    db: Session, *, clinic_id: int, email: str, password_hash: str, role: StaffRole, name: str
+) -> Staff:
     staff = Staff(
         clinic_id=clinic_id,
         email=email,

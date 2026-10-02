@@ -67,7 +67,7 @@ def _collect(db: Session, now: datetime) -> list[dict]:
             )
         offset += CLINIC_PAGE_SIZE
 
-    warnings.sort(key=lambda row: (row["days_left"] if row["days_left"] is not None else 0))
+    warnings.sort(key=lambda row: row["days_left"] if row["days_left"] is not None else 0)
     return warnings
 
 
@@ -188,10 +188,7 @@ def run(dry_run: bool = False) -> int:
         print(message)
         print("--- kanallar ---")
         print(f"ntfy: {'sozlangan' if NTFY_TOPIC_URL else 'sozlanmagan'}")
-        print(
-            "telegram: "
-            + ("sozlangan" if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID else "sozlanmagan")
-        )
+        print("telegram: " + ("sozlangan" if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID else "sozlanmagan"))
         return 0
 
     notify(message)
@@ -202,9 +199,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Muddati tugayotgan obunalar haqida vendorga ogohlantirish yuboradi"
     )
-    parser.add_argument(
-        "--dry-run", action="store_true", help="xabarni yubormasdan faqat chop etadi"
-    )
+    parser.add_argument("--dry-run", action="store_true", help="xabarni yubormasdan faqat chop etadi")
     args = parser.parse_args()
 
     logging.basicConfig(

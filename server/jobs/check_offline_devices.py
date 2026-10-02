@@ -103,9 +103,7 @@ def collect(db: Session, now: datetime) -> tuple[list[ClinicOutage], list[tuple[
                 name=clinic_name,
                 total=len(devices),
                 whole_clinic=whole_clinic,
-                newly_silent=[
-                    (d.device_id, d.floor, _days_silent(d.last_seen_at, now)) for d in unreported
-                ],
+                newly_silent=[(d.device_id, d.floor, _days_silent(d.last_seen_at, now)) for d in unreported],
                 # Listed for context inside a clinic that is already being reported --
                 # never a trigger on their own.
                 never_connected=[(d.device_id, d.floor) for d in never] if whole_clinic else [],
@@ -130,11 +128,12 @@ def build_message(outages: list[ClinicOutage], recoveries: list[tuple[str, str, 
         for outage in outages:
             if outage.whole_clinic:
                 lines.append(
-                    f"[!] {outage.name} — BUTUNLAY ISHLAMAYAPTI"
-                    f" ({outage.total} tadan hech biri ulanmagan)"
+                    f"[!] {outage.name} — BUTUNLAY ISHLAMAYAPTI ({outage.total} tadan hech biri ulanmagan)"
                 )
             else:
-                lines.append(f"[-] {outage.name} — {outage.total} tadan {len(outage.newly_silent)} tasi uzildi")
+                lines.append(
+                    f"[-] {outage.name} — {outage.total} tadan {len(outage.newly_silent)} tasi uzildi"
+                )
             for device_id, floor, days in outage.newly_silent:
                 lines.append(f"    {device_id} ({floor}-qavat) — {_format_silence(days)}")
             for device_id, floor in outage.never_connected:
@@ -255,10 +254,7 @@ def run(dry_run: bool = False) -> int:
             print(message)
             print("--- kanallar ---")
             print(f"ntfy: {'sozlangan' if NTFY_TOPIC_URL else 'sozlanmagan'}")
-            print(
-                "telegram: "
-                + ("sozlangan" if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID else "sozlanmagan")
-            )
+            print("telegram: " + ("sozlangan" if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID else "sozlanmagan"))
             print(f"muhimlik: {'shoshilinch' if urgent else 'oddiy'}")
             return 0
 
@@ -286,9 +282,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Ulanmay qolgan qabul qilgichlar haqida vendorga ogohlantirish yuboradi"
     )
-    parser.add_argument(
-        "--dry-run", action="store_true", help="xabarni yubormasdan faqat chop etadi"
-    )
+    parser.add_argument("--dry-run", action="store_true", help="xabarni yubormasdan faqat chop etadi")
     args = parser.parse_args()
 
     logging.basicConfig(

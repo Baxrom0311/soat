@@ -25,9 +25,7 @@ def get_billing(user: CurrentUser = Depends(require_admin_ungated), db: Session 
 @router.get("/billing-notice", response_model=ClinicBillingNotice)
 # Any clinic member, including nurses: the phone app and the watch poll this to show an
 # "obuna tugayapti" banner. Carries no financial data -- see ClinicBillingNotice.
-def get_billing_notice(
-    user: CurrentUser = Depends(get_clinic_user_ungated), db: Session = Depends(get_db)
-):
+def get_billing_notice(user: CurrentUser = Depends(get_clinic_user_ungated), db: Session = Depends(get_db)):
     return clinic_service.get_billing_notice(db, user.clinic_id)
 
 

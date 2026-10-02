@@ -38,9 +38,7 @@ def _clean_optional(value: str | None, *, max_length: int, field_label: str) -> 
     if not value:
         return None
     if len(value) > max_length:
-        raise HTTPException(
-            status_code=422, detail=f"{field_label} {max_length} belgidan oshmasligi kerak"
-        )
+        raise HTTPException(status_code=422, detail=f"{field_label} {max_length} belgidan oshmasligi kerak")
     return value
 
 
@@ -73,9 +71,7 @@ def submit(
             detail=f"Telefon raqami {PHONE_MIN_LENGTH} dan {PHONE_MAX_LENGTH} belgigacha bo'lishi kerak",
         )
 
-    clinic_name = _clean_optional(
-        clinic_name, max_length=CLINIC_NAME_MAX_LENGTH, field_label="Klinika nomi"
-    )
+    clinic_name = _clean_optional(clinic_name, max_length=CLINIC_NAME_MAX_LENGTH, field_label="Klinika nomi")
     message = _clean_optional(message, max_length=MESSAGE_MAX_LENGTH, field_label="Xabar")
 
     contact_request_repo.create(

@@ -27,9 +27,7 @@ def get_for_update(db: Session, clinic_id: int) -> Clinic | None:
 
 
 def list_all(db: Session, *, limit: int = 100, offset: int = 0) -> list[Clinic]:
-    return list(
-        db.scalars(select(Clinic).order_by(Clinic.id).limit(limit).offset(offset)).all()
-    )
+    return list(db.scalars(select(Clinic).order_by(Clinic.id).limit(limit).offset(offset)).all())
 
 
 def count_all(db: Session) -> int:

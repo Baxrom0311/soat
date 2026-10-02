@@ -27,15 +27,9 @@ from sqlalchemy import text
 def main() -> None:
     with engine.begin() as conn:
         conn.execute(text("ALTER TABLE devices ADD COLUMN IF NOT EXISTS chip_id VARCHAR"))
-        conn.execute(
-            text("CREATE UNIQUE INDEX IF NOT EXISTS ix_devices_chip_id ON devices (chip_id)")
-        )
-        conn.execute(
-            text("ALTER TABLE devices ADD COLUMN IF NOT EXISTS pending_key_plaintext VARCHAR")
-        )
-        conn.execute(
-            text("ALTER TABLE devices ADD COLUMN IF NOT EXISTS key_delivered_at TIMESTAMPTZ")
-        )
+        conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_devices_chip_id ON devices (chip_id)"))
+        conn.execute(text("ALTER TABLE devices ADD COLUMN IF NOT EXISTS pending_key_plaintext VARCHAR"))
+        conn.execute(text("ALTER TABLE devices ADD COLUMN IF NOT EXISTS key_delivered_at TIMESTAMPTZ"))
         print("devices.chip_id / pending_key_plaintext / key_delivered_at ensured")
 
     Base.metadata.create_all(bind=engine, tables=[DiscoveredDevice.__table__])

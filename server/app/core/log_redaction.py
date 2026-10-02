@@ -38,13 +38,9 @@ class RedactSecretsFilter(logging.Filter):
             record.msg = scrub(record.msg)
         if record.args:
             if isinstance(record.args, dict):
-                record.args = {
-                    k: scrub(v) if isinstance(v, str) else v for k, v in record.args.items()
-                }
+                record.args = {k: scrub(v) if isinstance(v, str) else v for k, v in record.args.items()}
             elif isinstance(record.args, tuple):
-                record.args = tuple(
-                    scrub(a) if isinstance(a, str) else a for a in record.args
-                )
+                record.args = tuple(scrub(a) if isinstance(a, str) else a for a in record.args)
         return True
 
 

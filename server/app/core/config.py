@@ -12,9 +12,7 @@ load_dotenv()
 # anyone who requests /docs. Set ENVIRONMENT=development locally to see it again.
 ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", "postgresql+psycopg://baxrom@127.0.0.1:5432/soat_nursecall"
-)
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg://baxrom@127.0.0.1:5432/soat_nursecall")
 
 # JWT_SECRET should be set in .env for prod; a random one is fine for a single dev-server run
 # (it just means tokens become invalid if the process restarts without a fixed secret).

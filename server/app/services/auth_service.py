@@ -43,7 +43,11 @@ def login(db: Session, *, email: str, password: str, client_ip: str = "unknown")
             raise HTTPException(status_code=403, detail="subscription_suspended")
 
     token = create_access_token(
-        staff_id=staff.id, clinic_id=staff.clinic_id, role=staff.role.value, email=staff.email, name=staff.name
+        staff_id=staff.id,
+        clinic_id=staff.clinic_id,
+        role=staff.role.value,
+        email=staff.email,
+        name=staff.name,
     )
     return LoginOut(access_token=token, role=staff.role, name=staff.name, clinic_id=staff.clinic_id)
 

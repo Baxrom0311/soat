@@ -21,7 +21,5 @@ def delete_unassigned_signal(
 
 
 @router.delete("", status_code=status.HTTP_204_NO_CONTENT)
-def clear_all_unassigned_signals(
-    user: CurrentUser = Depends(require_admin), db: Session = Depends(get_db)
-):
+def clear_all_unassigned_signals(user: CurrentUser = Depends(require_admin), db: Session = Depends(get_db)):
     unassigned_service.clear_all_unassigned(db, user.clinic_id)

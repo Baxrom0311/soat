@@ -8,7 +8,5 @@ from app.models import AuditLog
 
 def list_recent(db: Session, *, limit: int = 100, offset: int = 0) -> list[AuditLog]:
     return list(
-        db.scalars(
-            select(AuditLog).order_by(AuditLog.created_at.desc()).limit(limit).offset(offset)
-        ).all()
+        db.scalars(select(AuditLog).order_by(AuditLog.created_at.desc()).limit(limit).offset(offset)).all()
     )

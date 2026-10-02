@@ -19,7 +19,9 @@ async def create_button(
     user: CurrentUser = Depends(require_admin),  # rebinding buttons re-routes alarms — admin only
     db: Session = Depends(get_db),
 ):
-    return await button_service.create_button(db, user.clinic_id, room_id=body.room_id, ev1527_code=body.ev1527_code)
+    return await button_service.create_button(
+        db, user.clinic_id, room_id=body.room_id, ev1527_code=body.ev1527_code
+    )
 
 
 @router.patch("/{button_id}", response_model=ButtonOut)

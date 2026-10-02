@@ -10,11 +10,7 @@ from app.models import Button, Device, UnassignedSignal
 
 
 def list_with_device_by_clinic(db: Session, clinic_id: int) -> list[tuple[UnassignedSignal, Device]]:
-    bound_codes_subquery = (
-        select(Button.ev1527_code)
-        .where(Button.clinic_id == clinic_id)
-        .scalar_subquery()
-    )
+    bound_codes_subquery = select(Button.ev1527_code).where(Button.clinic_id == clinic_id).scalar_subquery()
 
     rows = db.execute(
         select(UnassignedSignal, Device)
@@ -30,11 +26,7 @@ def list_with_device_by_clinic(db: Session, clinic_id: int) -> list[tuple[Unassi
 
 def cleanup_bound_signals(db: Session, clinic_id: int) -> int:
     """Removes any unassigned_signals rows whose ev1527_code is already bound in buttons table."""
-    bound_codes_subquery = (
-        select(Button.ev1527_code)
-        .where(Button.clinic_id == clinic_id)
-        .scalar_subquery()
-    )
+    bound_codes_subquery = select(Button.ev1527_code).where(Button.clinic_id == clinic_id).scalar_subquery()
     result = db.execute(
         delete(UnassignedSignal).where(
             UnassignedSignal.clinic_id == clinic_id,
@@ -115,8 +107,6 @@ def delete_by_id(db: Session, clinic_id: int, signal_id: int) -> bool:
 
 
 def delete_all_by_clinic(db: Session, clinic_id: int) -> int:
-    result = db.execute(
-        delete(UnassignedSignal).where(UnassignedSignal.clinic_id == clinic_id)
-    )
+    result = db.execute(delete(UnassignedSignal).where(UnassignedSignal.clinic_id == clinic_id))
     db.commit()
     return result.rowcount

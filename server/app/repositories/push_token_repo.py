@@ -39,9 +39,7 @@ def get_by_token(db: Session, token: str) -> PushToken | None:
 
 
 def count_for_staff(db: Session, staff_id: int) -> int:
-    return db.scalar(
-        select(func.count()).select_from(PushToken).where(PushToken.staff_id == staff_id)
-    )
+    return db.scalar(select(func.count()).select_from(PushToken).where(PushToken.staff_id == staff_id))
 
 
 def upsert(db: Session, *, clinic_id: int, staff_id: int, token: str) -> PushToken:

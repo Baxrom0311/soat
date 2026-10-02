@@ -50,8 +50,6 @@ def visible_staff_ids_for_floor(db: Session, clinic_id: int, floor: int):
         or_(
             Staff.role == StaffRole.ADMIN,
             Staff.id.not_in(assigned_staff_ids),
-            Staff.id.in_(
-                select(StaffFloorAssignment.staff_id).where(StaffFloorAssignment.floor == floor)
-            ),
+            Staff.id.in_(select(StaffFloorAssignment.staff_id).where(StaffFloorAssignment.floor == floor)),
         ),
     )

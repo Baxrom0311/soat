@@ -9,9 +9,7 @@ from app.enums import CallStatus
 from app.models import Call, Device, Room
 
 
-def create(
-    db: Session, clinic_id: int, *, room_id: int, device_id: int, press_id: str | None = None
-) -> Call:
+def create(db: Session, clinic_id: int, *, room_id: int, device_id: int, press_id: str | None = None) -> Call:
     call = Call(
         clinic_id=clinic_id, room_id=room_id, device_id=device_id, status=CallStatus.ACTIVE, press_id=press_id
     )

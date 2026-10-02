@@ -40,9 +40,7 @@ def main() -> None:
             print("staff.clinic_id is now nullable")
 
         conn.execute(text("ALTER TABLE calls ADD COLUMN IF NOT EXISTS press_id VARCHAR"))
-        conn.execute(
-            text("CREATE UNIQUE INDEX IF NOT EXISTS uq_calls_press_id ON calls (press_id)")
-        )
+        conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_calls_press_id ON calls (press_id)"))
         print("calls.press_id column + unique index ensured")
 
         # Zero-touch provisioning columns on the pre-existing devices table.
@@ -51,18 +49,16 @@ def main() -> None:
         conn.execute(
             text("ALTER TABLE devices ADD COLUMN IF NOT EXISTS key_delivered_at TIMESTAMP WITH TIME ZONE")
         )
-        conn.execute(
-            text("CREATE UNIQUE INDEX IF NOT EXISTS ix_devices_chip_id ON devices (chip_id)")
-        )
+        conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_devices_chip_id ON devices (chip_id)"))
         print("devices.{chip_id, pending_key_plaintext, key_delivered_at} + index ensured")
 
         # Billing columns on the pre-existing clinics table (plans + payments are NEW
         # tables, so create_all above already made them).
-        conn.execute(text("ALTER TABLE clinics ADD COLUMN IF NOT EXISTS plan_id INTEGER REFERENCES plans(id)"))
-        conn.execute(text("ALTER TABLE clinics ADD COLUMN IF NOT EXISTS custom_price_amount BIGINT"))
         conn.execute(
-            text("ALTER TABLE clinics ADD COLUMN IF NOT EXISTS paid_until TIMESTAMP WITH TIME ZONE")
+            text("ALTER TABLE clinics ADD COLUMN IF NOT EXISTS plan_id INTEGER REFERENCES plans(id)")
         )
+        conn.execute(text("ALTER TABLE clinics ADD COLUMN IF NOT EXISTS custom_price_amount BIGINT"))
+        conn.execute(text("ALTER TABLE clinics ADD COLUMN IF NOT EXISTS paid_until TIMESTAMP WITH TIME ZONE"))
         print("clinics.{plan_id, custom_price_amount, paid_until} ensured")
 
 

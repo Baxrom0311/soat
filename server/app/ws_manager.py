@@ -25,7 +25,9 @@ class ConnectionManager:
         # role/floors per connection, for floor-scoped broadcasts (see broadcast()).
         self.meta: dict[WebSocket, tuple[str, list[int]]] = {}
 
-    def register(self, ws: WebSocket, clinic_id: int, *, role: str = "", floors: list[int] | None = None) -> None:
+    def register(
+        self, ws: WebSocket, clinic_id: int, *, role: str = "", floors: list[int] | None = None
+    ) -> None:
         """Register an ALREADY-accepted socket. Accept happens in the route handler so
         it can deliver custom close codes (4401/4402) on the reject paths — a close
         before accept() is downgraded to a plain HTTP 403 and the code is lost."""

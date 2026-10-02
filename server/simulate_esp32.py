@@ -16,7 +16,9 @@ import requests
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Simulate an ESP32 SOS button press or heartbeat")
-    parser.add_argument("--code", type=int, help="ev1527_code from the RF button (required unless --heartbeat)")
+    parser.add_argument(
+        "--code", type=int, help="ev1527_code from the RF button (required unless --heartbeat)"
+    )
     parser.add_argument("--device", type=str, required=True, help="device_id of the sending ESP32")
     parser.add_argument("--key", type=str, required=True, help="this device's own plaintext API key")
     parser.add_argument("--heartbeat", action="store_true", help="send a heartbeat instead of a button press")

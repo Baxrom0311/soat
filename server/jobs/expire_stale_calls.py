@@ -59,7 +59,9 @@ def run(dry_run: bool = False) -> int:
     try:
         if dry_run:
             doomed = _doomed(db, cutoff)
-            print(f"--- DRY RUN: {len(doomed)} ta chaqiruv yopilardi " f"({CALL_EXPIRE_HOURS} soatdan oshgan) ---")
+            print(
+                f"--- DRY RUN: {len(doomed)} ta chaqiruv yopilardi ({CALL_EXPIRE_HOURS} soatdan oshgan) ---"
+            )
             for clinic, room, hours in doomed:
                 print(f"  {clinic}: xona {room} — {hours} soat kutgan")
             return 0

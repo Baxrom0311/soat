@@ -85,9 +85,7 @@ def list_discovered(db: Session) -> list[DiscoveredDeviceOut]:
     ]
 
 
-def claim(
-    db: Session, *, chip_id: str, clinic_id: int, floor: int, device_id: str | None
-) -> ClaimDeviceOut:
+def claim(db: Session, *, chip_id: str, clinic_id: int, floor: int, device_id: str | None) -> ClaimDeviceOut:
     discovered = discovered_device_repo.get_by_chip_id(db, chip_id)
     if discovered is None:
         raise HTTPException(status_code=404, detail="Discovered device not found")

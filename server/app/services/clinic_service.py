@@ -156,9 +156,7 @@ def render_bill_html(db: Session, clinic_id: int) -> str:
     rows.append(_row("To'langan muddat (shu sanagacha)", _date(clinic.paid_until)))
 
     vendor = _vendor_rows()
-    vendor_block = (
-        f"<h2>To'lov qabul qiluvchi</h2><table>{vendor}</table>" if vendor else ""
-    )
+    vendor_block = f"<h2>To'lov qabul qiluvchi</h2><table>{vendor}</table>" if vendor else ""
 
     return f"""<!DOCTYPE html>
 <html lang="uz">

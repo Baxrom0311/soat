@@ -130,9 +130,7 @@ def _ingest_sync(
         db.commit()  # persists the last_seen_at bump and releases the room lock
         return out, device.clinic_id, None, None
 
-    call = call_repo.create(
-        db, device.clinic_id, room_id=room.id, device_id=device.id, press_id=press_id
-    )
+    call = call_repo.create(db, device.clinic_id, room_id=room.id, device_id=device.id, press_id=press_id)
     db.commit()
     db.refresh(call)
 
@@ -183,9 +181,7 @@ async def create_call_from_device(
     if out is None:
         raise HTTPException(status_code=404, detail="Unknown code")
     if push_args is not None and background_tasks is not None:
-        background_tasks.add_task(
-            push_service.send_new_call_notifications, clinic_id, **push_args
-        )
+        background_tasks.add_task(push_service.send_new_call_notifications, clinic_id, **push_args)
     return out
 
 
@@ -196,13 +192,19 @@ def list_active_calls(db: Session, clinic_id: int, *, staff_id: int, role: str) 
         rows = [(call, room) for call, room in rows if room.floor in visible_floors]
     return [
         ActiveCallOut(
-            call_id=call.id, room_number=room.room_number, floor=room.floor, created_at=call.created_at, status=call.status
+            call_id=call.id,
+            room_number=room.room_number,
+            floor=room.floor,
+            created_at=call.created_at,
+            status=call.status,
         )
         for call, room in rows
     ]
 
 
-def call_history(db: Session, clinic_id: int, *, limit: int, staff_id: int, role: str) -> list[HistoryCallOut]:
+def call_history(
+    db: Session, clinic_id: int, *, limit: int, staff_id: int, role: str
+) -> list[HistoryCallOut]:
     visible_floors = staff_floor_repo.get_visible_floors(db, staff_id, role)
     rows = call_repo.list_history_with_room_device_by_clinic(
         db, clinic_id, limit=limit, floors=visible_floors

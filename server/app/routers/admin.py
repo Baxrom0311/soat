@@ -25,9 +25,7 @@ from app.schemas.device import ClaimDeviceIn, ClaimDeviceOut, DeviceCreateOut, D
 from app.services import admin_service, discovered_device_service
 
 # every route here is superadmin-only, so the guard lives on the router itself
-router = APIRouter(
-    prefix="/api/v1/admin", tags=["admin"], dependencies=[Depends(require_superadmin)]
-)
+router = APIRouter(prefix="/api/v1/admin", tags=["admin"], dependencies=[Depends(require_superadmin)])
 
 
 def _ip(request: Request) -> str | None:
@@ -47,8 +45,10 @@ def list_plans(db: Session = Depends(get_db)):
 
 @router.post("/plans", response_model=PlanOut, status_code=201)
 def create_plan(
-    body: PlanCreate, request: Request,
-    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+    body: PlanCreate,
+    request: Request,
+    user: CurrentUser = Depends(require_superadmin),
+    db: Session = Depends(get_db),
 ):
     return admin_service.create_plan(
         db,
@@ -65,8 +65,11 @@ def create_plan(
 
 @router.patch("/plans/{plan_id}", response_model=PlanOut)
 def update_plan(
-    plan_id: int, body: PlanUpdate, request: Request,
-    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+    plan_id: int,
+    body: PlanUpdate,
+    request: Request,
+    user: CurrentUser = Depends(require_superadmin),
+    db: Session = Depends(get_db),
 ):
     return admin_service.update_plan(
         db, plan_id, changes=body.model_dump(exclude_unset=True), actor=user, ip_address=_ip(request)
@@ -75,8 +78,10 @@ def update_plan(
 
 @router.delete("/plans/{plan_id}", status_code=204)
 def delete_plan(
-    plan_id: int, request: Request,
-    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+    plan_id: int,
+    request: Request,
+    user: CurrentUser = Depends(require_superadmin),
+    db: Session = Depends(get_db),
 ):
     admin_service.delete_plan(db, plan_id, actor=user, ip_address=_ip(request))
 
@@ -92,16 +97,21 @@ def list_clinics(
 
 @router.post("/clinics", response_model=AdminClinicListItem, status_code=201)
 def create_clinic(
-    body: AdminClinicCreate, request: Request,
-    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+    body: AdminClinicCreate,
+    request: Request,
+    user: CurrentUser = Depends(require_superadmin),
+    db: Session = Depends(get_db),
 ):
     return admin_service.create_clinic(db, name=body.name, actor=user, ip_address=_ip(request))
 
 
 @router.patch("/clinics/{clinic_id}", response_model=AdminClinicListItem)
 def update_clinic(
-    clinic_id: int, body: AdminClinicUpdate, request: Request,
-    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+    clinic_id: int,
+    body: AdminClinicUpdate,
+    request: Request,
+    user: CurrentUser = Depends(require_superadmin),
+    db: Session = Depends(get_db),
 ):
     return admin_service.update_clinic(
         db,
@@ -126,8 +136,10 @@ def update_clinic(
 
 @router.post("/clinics/{clinic_id}/start-billing", response_model=AdminClinicListItem)
 def start_billing(
-    clinic_id: int, request: Request,
-    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+    clinic_id: int,
+    request: Request,
+    user: CurrentUser = Depends(require_superadmin),
+    db: Session = Depends(get_db),
 ):
     return admin_service.start_billing(db, clinic_id, actor=user, ip_address=_ip(request))
 
@@ -162,12 +174,20 @@ def record_payment(
 
 @router.post("/clinics/{clinic_id}/admins", response_model=AdminClinicAdminOut, status_code=201)
 def create_clinic_admin(
-    clinic_id: int, body: AdminClinicAdminCreate, request: Request,
-    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+    clinic_id: int,
+    body: AdminClinicAdminCreate,
+    request: Request,
+    user: CurrentUser = Depends(require_superadmin),
+    db: Session = Depends(get_db),
 ):
     staff = admin_service.create_clinic_admin(
-        db, clinic_id, email=body.email, password=body.password, name=body.name,
-        actor=user, ip_address=_ip(request),
+        db,
+        clinic_id,
+        email=body.email,
+        password=body.password,
+        name=body.name,
+        actor=user,
+        ip_address=_ip(request),
     )
     return AdminClinicAdminOut(id=staff.id, email=staff.email, name=staff.name, role=staff.role)
 
@@ -179,8 +199,11 @@ def list_clinic_staff(clinic_id: int, db: Session = Depends(get_db)):
 
 @router.post("/clinics/{clinic_id}/staff/{staff_id}/reset-password", response_model=AdminPasswordResetOut)
 def reset_staff_password(
-    clinic_id: int, staff_id: int, request: Request,
-    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+    clinic_id: int,
+    staff_id: int,
+    request: Request,
+    user: CurrentUser = Depends(require_superadmin),
+    db: Session = Depends(get_db),
 ):
     new_password = admin_service.reset_staff_password(
         db, clinic_id, staff_id, actor=user, ip_address=_ip(request)
@@ -200,21 +223,30 @@ def list_devices(
 
 @router.post("/devices", response_model=DeviceCreateOut, status_code=201)
 def create_device(
-    body: AdminDeviceCreate, request: Request,
-    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+    body: AdminDeviceCreate,
+    request: Request,
+    user: CurrentUser = Depends(require_superadmin),
+    db: Session = Depends(get_db),
 ):
     # plaintext_key is only ever returned here — it is not recoverable afterwards
     device, plaintext_key = admin_service.register_fleet_device(
-        db, clinic_id=body.clinic_id, device_id=body.device_id, floor=body.floor,
-        actor=user, ip_address=_ip(request),
+        db,
+        clinic_id=body.clinic_id,
+        device_id=body.device_id,
+        floor=body.floor,
+        actor=user,
+        ip_address=_ip(request),
     )
     return DeviceCreateOut(device_id=device.device_id, device_api_key=plaintext_key)
 
 
 @router.patch("/devices/{device_pk}", response_model=AdminDeviceOut)
 def update_device(
-    device_pk: int, body: AdminDeviceUpdate, request: Request,
-    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+    device_pk: int,
+    body: AdminDeviceUpdate,
+    request: Request,
+    user: CurrentUser = Depends(require_superadmin),
+    db: Session = Depends(get_db),
 ):
     return admin_service.update_fleet_device_floor(
         db, device_pk, floor=body.floor, actor=user, ip_address=_ip(request)
@@ -223,8 +255,10 @@ def update_device(
 
 @router.delete("/devices/{device_pk}", status_code=204)
 def delete_device(
-    device_pk: int, request: Request,
-    user: CurrentUser = Depends(require_superadmin), db: Session = Depends(get_db),
+    device_pk: int,
+    request: Request,
+    user: CurrentUser = Depends(require_superadmin),
+    db: Session = Depends(get_db),
 ):
     admin_service.delete_fleet_device(db, device_pk, actor=user, ip_address=_ip(request))
 

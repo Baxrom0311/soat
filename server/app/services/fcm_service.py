@@ -71,9 +71,7 @@ def _load() -> tuple[object, str] | None:
         # The path and the exception type are safe to log; the key material is not, so
         # the exception is not logged with a traceback that could echo file contents.
         _unavailable_reason = f"{type(exc).__name__}"
-        logger.error(
-            "FCM service account o'qilmadi (%s): %s", FCM_SERVICE_ACCOUNT_FILE, _unavailable_reason
-        )
+        logger.error("FCM service account o'qilmadi (%s): %s", FCM_SERVICE_ACCOUNT_FILE, _unavailable_reason)
         return None
 
     _credentials, _project_id = creds, project_id

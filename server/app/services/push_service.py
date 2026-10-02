@@ -67,8 +67,9 @@ def send_new_call_notifications(
         fcm_tokens = [t for t in all_tokens if not t.expo_push_token.startswith("ExponentPushToken[")]
 
         if fcm_tokens:
-            _send_fcm(db, fcm_tokens, title=title, body=body, data=payload,
-                      clinic_id=clinic_id, call_id=call_id)
+            _send_fcm(
+                db, fcm_tokens, title=title, body=body, data=payload, clinic_id=clinic_id, call_id=call_id
+            )
 
         tokens = expo_tokens
         if not tokens:
@@ -100,13 +101,18 @@ def send_new_call_notifications(
             except requests.RequestException:
                 logger.exception(
                     "Expo push request failed for clinic_id=%s call_id=%s (chunk of %d tokens)",
-                    clinic_id, call_id, len(chunk_messages),
+                    clinic_id,
+                    call_id,
+                    len(chunk_messages),
                 )
                 continue
 
             logger.info(
                 "Expo push send -> status=%s clinic_id=%s call_id=%s tokens=%d",
-                resp.status_code, clinic_id, call_id, len(chunk_messages),
+                resp.status_code,
+                clinic_id,
+                call_id,
+                len(chunk_messages),
             )
 
             if resp.status_code >= 400:
@@ -173,7 +179,9 @@ def _send_fcm(
     if not fcm_service.is_configured():
         logger.warning(
             "FCM tokens registered for clinic_id=%s but FCM is not configured -- %d nurse(s) "
-            "will not be alerted", clinic_id, len(tokens),
+            "will not be alerted",
+            clinic_id,
+            len(tokens),
         )
         return
 
@@ -192,5 +200,8 @@ def _send_fcm(
 
     logger.info(
         "FCM push -> delivered=%d/%d clinic_id=%s call_id=%s",
-        sent, len(tokens), clinic_id, call_id,
+        sent,
+        len(tokens),
+        clinic_id,
+        call_id,
     )

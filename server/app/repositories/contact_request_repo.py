@@ -29,9 +29,7 @@ def create(
 
 def list_recent(db: Session, limit: int) -> list[ContactRequest]:
     return list(
-        db.scalars(
-            select(ContactRequest).order_by(ContactRequest.created_at.desc()).limit(limit)
-        ).all()
+        db.scalars(select(ContactRequest).order_by(ContactRequest.created_at.desc()).limit(limit)).all()
     )
 
 

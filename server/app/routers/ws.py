@@ -45,11 +45,7 @@ async def ws_calls(websocket: WebSocket, token: str | None = None):
     try:
         user = get_current_user_ws(subprotocol_token or token, db)
         clinic = clinic_repo.get(db, user.clinic_id) if user and user.clinic_id else None
-        floors = (
-            staff_floor_repo.get_visible_floors(db, user.staff_id, user.role) or []
-            if user
-            else []
-        )
+        floors = staff_floor_repo.get_visible_floors(db, user.staff_id, user.role) or [] if user else []
     finally:
         db.close()
 

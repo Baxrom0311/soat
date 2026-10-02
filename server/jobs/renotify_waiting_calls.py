@@ -141,12 +141,8 @@ def run(dry_run: bool = False) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Javob berilmagan chaqiruvlar haqida qayta xabar yuboradi"
-    )
-    parser.add_argument(
-        "--dry-run", action="store_true", help="xabarni yubormasdan faqat chop etadi"
-    )
+    parser = argparse.ArgumentParser(description="Javob berilmagan chaqiruvlar haqida qayta xabar yuboradi")
+    parser.add_argument("--dry-run", action="store_true", help="xabarni yubormasdan faqat chop etadi")
     args = parser.parse_args()
 
     logging.basicConfig(

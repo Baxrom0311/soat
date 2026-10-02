@@ -179,12 +179,12 @@ class StaffFloorAssignment(Base):
     regardless of what's stored here."""
 
     __tablename__ = "staff_floor_assignments"
-    __table_args__ = (
-        UniqueConstraint("staff_id", "floor", name="uq_staff_floor_assignments_staff_floor"),
-    )
+    __table_args__ = (UniqueConstraint("staff_id", "floor", name="uq_staff_floor_assignments_staff_floor"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    staff_id: Mapped[int] = mapped_column(ForeignKey("staff.id", ondelete="CASCADE"), nullable=False, index=True)
+    staff_id: Mapped[int] = mapped_column(
+        ForeignKey("staff.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     floor: Mapped[int] = mapped_column(Integer, nullable=False)
 
     staff: Mapped["Staff"] = relationship(back_populates="floor_assignments")
@@ -230,9 +230,7 @@ class Device(Base):
     # check_offline_devices job when it sends an alert, cleared when the device
     # heartbeats again. Exists so a receiver that has been down for days is reported
     # ONCE rather than on every run of the timer -- the alert has to stay worth reading.
-    offline_alerted_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    offline_alerted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class DiscoveredDevice(Base):
@@ -269,9 +267,7 @@ class Button(Base):
 
 class UnassignedSignal(Base):
     __tablename__ = "unassigned_signals"
-    __table_args__ = (
-        UniqueConstraint("clinic_id", "ev1527_code", name="uq_unassigned_clinic_code"),
-    )
+    __table_args__ = (UniqueConstraint("clinic_id", "ev1527_code", name="uq_unassigned_clinic_code"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     clinic_id: Mapped[int] = mapped_column(ForeignKey("clinics.id"), nullable=False, index=True)

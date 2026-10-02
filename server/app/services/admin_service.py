@@ -243,8 +243,7 @@ def list_clinics(db: Session, *, limit: int = 100, offset: int = 0) -> list[Admi
     room_counts = room_repo.count_by_clinic(db)
     active_calls = call_repo.count_active_by_clinic(db)
     return [
-        _list_item(c, plans, staff_counts, device_counts, room_counts, active_calls, now)
-        for c in clinics
+        _list_item(c, plans, staff_counts, device_counts, room_counts, active_calls, now) for c in clinics
     ]
 
 
@@ -261,12 +260,19 @@ def _one_list_item(db: Session, clinic: Clinic) -> AdminClinicListItem:
     )
 
 
-def create_clinic(db: Session, *, name: str, actor: CurrentUser, ip_address: str | None = None) -> AdminClinicListItem:
+def create_clinic(
+    db: Session, *, name: str, actor: CurrentUser, ip_address: str | None = None
+) -> AdminClinicListItem:
     clinic = clinic_repo.create(db, name=name)
     db.flush()
     audit_service.record(
-        db, actor, action="clinic.created", target_type="clinic", target_id=clinic.id,
-        after={"name": name}, ip_address=ip_address,
+        db,
+        actor,
+        action="clinic.created",
+        target_type="clinic",
+        target_id=clinic.id,
+        after={"name": name},
+        ip_address=ip_address,
     )
     db.commit()
     db.refresh(clinic)
@@ -376,8 +382,14 @@ def update_clinic(
 
     after = _clinic_audit_snapshot(clinic)
     audit_service.record(
-        db, actor, action="clinic.updated", target_type="clinic", target_id=clinic.id,
-        before=before, after=after, ip_address=ip_address,
+        db,
+        actor,
+        action="clinic.updated",
+        target_type="clinic",
+        target_id=clinic.id,
+        before=before,
+        after=after,
+        ip_address=ip_address,
     )
     db.commit()
     db.refresh(clinic)
@@ -406,7 +418,11 @@ def start_billing(
     clinic.subscription_status = SubscriptionStatus.ACTIVE
     clinic.paid_until = billing.add_months(now, clinic.billing_period_months)
     audit_service.record(
-        db, actor, action="clinic.billing_started", target_type="clinic", target_id=clinic.id,
+        db,
+        actor,
+        action="clinic.billing_started",
+        target_type="clinic",
+        target_id=clinic.id,
         before=before,
         after={
             "subscription_status": clinic.subscription_status,
@@ -421,15 +437,27 @@ def start_billing(
 
 
 def create_clinic_admin(
-    db: Session, clinic_id: int, *, email: str, password: str, name: str,
-    actor: CurrentUser, ip_address: str | None = None,
+    db: Session,
+    clinic_id: int,
+    *,
+    email: str,
+    password: str,
+    name: str,
+    actor: CurrentUser,
+    ip_address: str | None = None,
 ) -> Staff:
     if clinic_repo.get(db, clinic_id) is None:
         raise HTTPException(status_code=404, detail="Clinic not found")
     # staff_service handles the duplicate-email 409 and password hashing
-    staff = staff_service.create_staff(db, clinic_id, email=email, password=password, role=StaffRole.ADMIN, name=name)
+    staff = staff_service.create_staff(
+        db, clinic_id, email=email, password=password, role=StaffRole.ADMIN, name=name
+    )
     audit_service.record(
-        db, actor, action="staff.created", target_type="staff", target_id=staff.id,
+        db,
+        actor,
+        action="staff.created",
+        target_type="staff",
+        target_id=staff.id,
         after={"email": email, "name": name, "role": StaffRole.ADMIN.value, "clinic_id": clinic_id},
         ip_address=ip_address,
     )
@@ -455,8 +483,13 @@ def reset_staff_password(
     new_password = secrets.token_urlsafe(9)
     staff.password_hash = hash_password(new_password)
     audit_service.record(
-        db, actor, action="staff.password_reset", target_type="staff", target_id=staff.id,
-        after={"email": staff.email}, ip_address=ip_address,
+        db,
+        actor,
+        action="staff.password_reset",
+        target_type="staff",
+        target_id=staff.id,
+        after={"email": staff.email},
+        ip_address=ip_address,
     )
     db.commit()
     return new_password
@@ -466,9 +499,17 @@ def reset_staff_password(
 
 
 def record_payment(
-    db: Session, clinic_id: int, *, amount: int, period_months: int | None, note: str | None,
-    recorded_by: str | None, actor: CurrentUser, ip_address: str | None = None,
-    idempotency_key: str | None = None, allow_amount_mismatch: bool = False,
+    db: Session,
+    clinic_id: int,
+    *,
+    amount: int,
+    period_months: int | None,
+    note: str | None,
+    recorded_by: str | None,
+    actor: CurrentUser,
+    ip_address: str | None = None,
+    idempotency_key: str | None = None,
+    allow_amount_mismatch: bool = False,
 ) -> PaymentOut:
     # A network retry (or, less likely given the dashboard's own submit-guard, a real
     # double-click) resending the exact same request must return the payment that
@@ -546,8 +587,16 @@ def record_payment(
                 return PaymentOut.model_validate(existing)
         raise
     audit_service.record(
-        db, actor, action="payment.recorded", target_type="clinic", target_id=clinic_id,
-        after={"amount": amount, "period_months": period_months, "paid_until_after": new_paid_until.isoformat()},
+        db,
+        actor,
+        action="payment.recorded",
+        target_type="clinic",
+        target_id=clinic_id,
+        after={
+            "amount": amount,
+            "period_months": period_months,
+            "paid_until_after": new_paid_until.isoformat(),
+        },
         ip_address=ip_address,
     )
     db.commit()
@@ -597,8 +646,14 @@ def update_fleet_device_floor(
     before_floor = device.floor
     device.floor = floor
     audit_service.record(
-        db, actor, action="device.floor_updated", target_type="device", target_id=device.id,
-        before={"floor": before_floor}, after={"floor": floor}, ip_address=ip_address,
+        db,
+        actor,
+        action="device.floor_updated",
+        target_type="device",
+        target_id=device.id,
+        before={"floor": before_floor},
+        after={"floor": floor},
+        ip_address=ip_address,
     )
     db.commit()
     db.refresh(device)
@@ -621,7 +676,11 @@ def delete_fleet_device(
     if device is None:
         raise HTTPException(status_code=404, detail="Device not found")
     audit_service.record(
-        db, actor, action="device.deleted", target_type="device", target_id=device.id,
+        db,
+        actor,
+        action="device.deleted",
+        target_type="device",
+        target_id=device.id,
         before={"device_id": device.device_id, "clinic_id": device.clinic_id, "floor": device.floor},
         ip_address=ip_address,
     )
@@ -630,8 +689,13 @@ def delete_fleet_device(
 
 
 def register_fleet_device(
-    db: Session, *, clinic_id: int, device_id: str, floor: int,
-    actor: CurrentUser, ip_address: str | None = None,
+    db: Session,
+    *,
+    clinic_id: int,
+    device_id: str,
+    floor: int,
+    actor: CurrentUser,
+    ip_address: str | None = None,
 ) -> tuple[Device, str]:
     if clinic_repo.get(db, clinic_id) is None:
         raise HTTPException(status_code=404, detail="Clinic not found")
@@ -639,8 +703,13 @@ def register_fleet_device(
     # commits its own transaction
     device, plaintext_key = device_service.register_device(db, clinic_id, device_id=device_id, floor=floor)
     audit_service.record(
-        db, actor, action="device.registered", target_type="device", target_id=device.id,
-        after={"device_id": device_id, "clinic_id": clinic_id, "floor": floor}, ip_address=ip_address,
+        db,
+        actor,
+        action="device.registered",
+        target_type="device",
+        target_id=device.id,
+        after={"device_id": device_id, "clinic_id": clinic_id, "floor": floor},
+        ip_address=ip_address,
     )
     db.commit()
     return device, plaintext_key

@@ -36,7 +36,9 @@ def main() -> None:
                     f"{args.email} already exists with role {existing.role!r} — refusing to touch it"
                 )
             if not args.force:
-                raise SystemExit(f"superadmin {args.email} already exists — use --force to reset the password")
+                raise SystemExit(
+                    f"superadmin {args.email} already exists — use --force to reset the password"
+                )
             existing.password_hash = hash_password(args.password)
             existing.name = args.name
             db.commit()

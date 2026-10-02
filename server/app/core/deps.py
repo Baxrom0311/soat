@@ -132,9 +132,7 @@ def get_clinic_user(
     """
     clinic = _resolve_clinic(user, db)
     if billing.is_blocked(clinic):
-        raise HTTPException(
-            status_code=status.HTTP_402_PAYMENT_REQUIRED, detail="subscription_suspended"
-        )
+        raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail="subscription_suspended")
     return user
 
 
@@ -156,9 +154,7 @@ def require_admin_ungated(user: CurrentUser = Depends(get_clinic_user_ungated)) 
 
 def require_superadmin(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
     if user.role != StaffRole.SUPERADMIN.value:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Superadmin role required"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Superadmin role required")
     return user
 
 

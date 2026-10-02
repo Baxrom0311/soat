@@ -14,9 +14,7 @@ from app.models import Clinic, Device
 
 
 def list_by_clinic(db: Session, clinic_id: int) -> list[Device]:
-    return list(
-        db.scalars(select(Device).where(Device.clinic_id == clinic_id).order_by(Device.id)).all()
-    )
+    return list(db.scalars(select(Device).where(Device.clinic_id == clinic_id).order_by(Device.id)).all())
 
 
 def list_with_clinic(

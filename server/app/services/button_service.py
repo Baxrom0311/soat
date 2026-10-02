@@ -10,7 +10,13 @@ from app.ws_manager import manager
 def list_buttons(db: Session, clinic_id: int) -> list[ButtonOut]:
     rows = button_repo.list_with_room_by_clinic(db, clinic_id)
     return [
-        ButtonOut(id=btn.id, room_id=room.id, room_number=room.room_number, floor=room.floor, ev1527_code=btn.ev1527_code)
+        ButtonOut(
+            id=btn.id,
+            room_id=room.id,
+            room_number=room.room_number,
+            floor=room.floor,
+            ev1527_code=btn.ev1527_code,
+        )
         for btn, room in rows
     ]
 
@@ -36,7 +42,11 @@ async def create_button(db: Session, clinic_id: int, *, room_id: int, ev1527_cod
     await manager.broadcast(clinic_id, {"type": "unassigned_removed", "ev1527_code": ev1527_code})
 
     return ButtonOut(
-        id=button.id, room_id=room.id, room_number=room.room_number, floor=room.floor, ev1527_code=button.ev1527_code
+        id=button.id,
+        room_id=room.id,
+        room_number=room.room_number,
+        floor=room.floor,
+        ev1527_code=button.ev1527_code,
     )
 
 
@@ -53,7 +63,11 @@ def update_button(db: Session, clinic_id: int, button_id: int, *, room_id: int) 
     db.commit()
     db.refresh(button)
     return ButtonOut(
-        id=button.id, room_id=room.id, room_number=room.room_number, floor=room.floor, ev1527_code=button.ev1527_code
+        id=button.id,
+        room_id=room.id,
+        room_number=room.room_number,
+        floor=room.floor,
+        ev1527_code=button.ev1527_code,
     )
 
 
