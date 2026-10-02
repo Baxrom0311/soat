@@ -224,7 +224,7 @@ fun CallMonitorScreen() {
                                         onClick = {
                                             scope.launch(Dispatchers.IO) {
                                                 runCatching {
-                                                    ApiClient.ackCall(context, call.callId, "Palata soati")
+                                                    ApiClient.ackCall(context, call.callId)
                                                 }
                                             }
                                         },
@@ -265,6 +265,19 @@ fun CallMonitorScreen() {
                                     style = MaterialTheme.typography.caption2,
                                     color = statusColor(status)
                                 )
+                                // Kim kirgani. Umumiy palata soati smenadan
+                                // smenaga o'tadi va chaqiruvni kim qabul
+                                // qilgani shu nom bilan yoziladi — ya'ni "bu
+                                // soat hozir kimniki" degan savolning javobi
+                                // ekranda turishi kerak, qidirilmasligi emas.
+                                AppPrefs.getNurseName(context)?.let { who ->
+                                    Text(
+                                        text = who,
+                                        maxLines = 1,
+                                        style = MaterialTheme.typography.caption2,
+                                        color = NurseCallTokens.ColorDark.text3
+                                    )
+                                }
 
                                 if (calls.isEmpty()) {
                                     Text(
@@ -294,7 +307,7 @@ fun CallMonitorScreen() {
                                             onClick = {
                                                 scope.launch(Dispatchers.IO) {
                                                     runCatching {
-                                                        ApiClient.ackCall(context, call.callId, "Palata soati")
+                                                        ApiClient.ackCall(context, call.callId)
                                                     }
                                                 }
                                             },

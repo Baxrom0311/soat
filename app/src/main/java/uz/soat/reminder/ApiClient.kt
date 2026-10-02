@@ -134,12 +134,26 @@ object ApiClient {
             if (response.code == 403) throw IOException("Klinika obunasi to'xtatilgan")
             if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
             val respBody = response.body?.string() ?: throw IOException("Bo'sh javob")
+            // Ism bu yerda saqlanmaydi: AppPrefs.setToken uni tokenning o'zidan
+            // oladi, shunda telefondan kelgan token ham xuddi shunday ishlaydi.
             return JSONObject(respBody).getString("access_token")
         }
     }
 
-    fun ackCall(context: Context, callId: Int, acknowledgedBy: String) {
-        val json = JSONObject().put("acknowledged_by", acknowledgedBy).toString()
+    /**
+     * Qabul qilish. `acknowledged_by` ataylab YUBORILMAYDI.
+     *
+     * Avval bu yerga "Palata soati" degan qattiq yozilgan satr ketardi, ya'ni
+     * soatdan kelgan har bir qabul o'sha nom bilan yozilardi. Natijasi
+     * production ma'lumotida ko'rindi: bitta klinikaning 283 ta qabulining
+     * 283 tasi "Palata soati" — birortasi ham odam nomi emas. Tarix kim
+     * bemorga borganini aytolmay qoldi.
+     *
+     * Bo'sh qoldirilganda server tokenga qarab kimligini o'zi yozadi — buni
+     * klient yolg'on qila olmaydi. Telefon ilovasi ham xuddi shunday qiladi.
+     */
+    fun ackCall(context: Context, callId: Int) {
+        val json = JSONObject().toString()
         val body = json.toRequestBody("application/json".toMediaType())
         val request = Request.Builder()
             .url("${baseUrl(context)}/api/v1/calls/$callId/ack")

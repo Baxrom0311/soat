@@ -22,6 +22,7 @@ import 'calls/calls_feed.dart';
 import 'calls/calls_screen.dart';
 import 'push/push_service.dart';
 import 'settings/settings_store.dart';
+import 'wear/wear_service.dart';
 import 'theme/tokens.dart';
 
 /// The instant the fixtures are dated against: 23:08, 4:15 and 0:42 of waiting.
@@ -137,6 +138,7 @@ class _PreviewAppState extends State<PreviewApp> {
   late final CallsFeed _feed;
   late final SettingsStore _settings;
   late final PushService _push;
+  late final WearService _wear;
   bool _ready = false;
 
   @override
@@ -148,6 +150,7 @@ class _PreviewAppState extends State<PreviewApp> {
     _settings = SettingsStore()..addListener(() => setState(() {}));
     _settings.load();
     _push = PushService(_api);
+    _wear = WearService();
     _signIn();
   }
 
@@ -178,6 +181,7 @@ class _PreviewAppState extends State<PreviewApp> {
             settings: _settings,
             push: _push,
             api: _api,
+            wear: _wear,
           )
         : const ColoredBox(color: T.page),
   );

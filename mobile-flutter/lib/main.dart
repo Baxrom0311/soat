@@ -7,6 +7,7 @@ import 'auth/session_store.dart';
 import 'calls/calls_feed.dart';
 import 'calls/calls_screen.dart';
 import 'settings/settings_store.dart';
+import 'wear/wear_service.dart';
 import 'push/push_service.dart';
 import 'theme/tokens.dart';
 
@@ -32,6 +33,7 @@ class _NurseCallAppState extends State<NurseCallApp> {
   late final CallsFeed _feed;
   late final PushService _push;
   late final SettingsStore _settings;
+  late final WearService _wear;
   bool _pushWanted = false;
 
   @override
@@ -45,6 +47,7 @@ class _NurseCallAppState extends State<NurseCallApp> {
     _settings = SettingsStore()..addListener(_onSession);
     _settings.load();
     _push = PushService(_api);
+    _wear = WearService();
     _feed = CallsFeed(
       _api,
       onUnauthorized: _sessions.signOut,
@@ -75,6 +78,12 @@ class _NurseCallAppState extends State<NurseCallApp> {
     final signedIn = _sessions.isSignedIn;
     if (signedIn && !_pushWanted) {
       _pushWanted = true;
+      // Hand the session to the ward watch, if one is paired. Without awaiting:
+      // a watch asleep in a drawer must never delay the screen a nurse is
+      // waiting for, and a failure here is reported on the profile screen
+      // rather than thrown at somebody mid-shift.
+      final token = _sessions.session?.accessToken;
+      if (token != null) _wear.sendToken(token);
       // Honours the nurse's own switch: a phone she has silenced for her shift
       // must not quietly re-register itself on the next sign-in.
       _push.init().then((_) {
@@ -83,6 +92,10 @@ class _NurseCallAppState extends State<NurseCallApp> {
     } else if (!signedIn && _pushWanted) {
       _pushWanted = false;
       _push.unregister();
+      // And sign the watch out with her. A ward watch left holding the previous
+      // nurse's session keeps answering calls in her name, which is exactly how
+      // one clinic's entire history ended up attributed to one account.
+      _wear.signOutWatch();
     }
     if (mounted) setState(() {});
   }
@@ -121,6 +134,7 @@ class _NurseCallAppState extends State<NurseCallApp> {
               settings: _settings,
               push: _push,
               api: _api,
+              wear: _wear,
             )
           : LoginScreen(sessions: _sessions),
     );

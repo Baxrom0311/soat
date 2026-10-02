@@ -20,6 +20,7 @@ import io.flutter.plugin.common.MethodChannel
  */
 class MainActivity : FlutterActivity() {
     private val channel = "uz.boos.nursecall/settings"
+    private val wearChannel = "uz.boos.nursecall/wear"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -32,6 +33,23 @@ class MainActivity : FlutterActivity() {
                         result.success(true)
                     }
                     "notificationState" -> result.success(notificationState())
+                    else -> result.notImplemented()
+                }
+            }
+
+        // Separate channel from the settings one: this talks to another device
+        // over Bluetooth and can block for seconds, while the settings calls are
+        // local and instant. Keeping them apart stops a sleeping watch from
+        // holding up a screen that is only asking about notifications.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, wearChannel)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "connectedWatches" -> WearBridge.connectedWatches(this, result)
+                    "sendToken" -> WearBridge.sendToken(
+                        this,
+                        call.argument<String>("token") ?: "",
+                        result,
+                    )
                     else -> result.notImplemented()
                 }
             }

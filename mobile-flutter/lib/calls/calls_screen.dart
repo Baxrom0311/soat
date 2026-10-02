@@ -8,6 +8,7 @@ import '../auth/session_store.dart';
 import '../push/push_service.dart';
 import '../settings/settings_store.dart';
 import '../theme/tokens.dart';
+import '../wear/wear_service.dart';
 import 'call_card.dart';
 import 'history_screen.dart';
 import 'calls_feed.dart';
@@ -25,6 +26,7 @@ class CallsScreen extends StatefulWidget {
     required this.settings,
     required this.push,
     required this.api,
+    required this.wear,
   });
 
   final CallsFeed feed;
@@ -35,6 +37,8 @@ class CallsScreen extends StatefulWidget {
   /// Passed down for the screens the profile opens -- history and the password
   /// form -- rather than each of them reaching for a global.
   final ApiClient api;
+
+  final WearService wear;
 
   @override
   State<CallsScreen> createState() => _CallsScreenState();
@@ -126,6 +130,7 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
                     settings: widget.settings,
                     push: widget.push,
                     api: widget.api,
+                    wear: widget.wear,
                     onSignOut: widget.sessions.signOut,
                   ),
           ),
@@ -774,6 +779,7 @@ class _ProfileTab extends StatefulWidget {
     required this.settings,
     required this.push,
     required this.api,
+    required this.wear,
     required this.onSignOut,
   });
 
@@ -782,6 +788,7 @@ class _ProfileTab extends StatefulWidget {
   final SettingsStore settings;
   final PushService push;
   final ApiClient api;
+  final WearService wear;
   final Future<void> Function() onSignOut;
 
   @override
@@ -790,6 +797,8 @@ class _ProfileTab extends StatefulWidget {
 
 class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
   NotificationState _notif = NotificationState.unknown;
+  WatchState _watch = WatchState.none;
+  bool _sendingToWatch = false;
 
   @override
   void initState() {
@@ -815,6 +824,33 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
   Future<void> _refresh() async {
     final s = await widget.push.notificationState();
     if (mounted) setState(() => _notif = s);
+    // Asked here rather than on a timer: it is a Bluetooth round trip, and the
+    // only moment the answer matters is when somebody is looking at this screen.
+    final w = await widget.wear.refresh();
+    if (mounted) setState(() => _watch = w);
+  }
+
+  /// Re-sends the session to the watch, for when it was out of range at sign-in.
+  Future<void> _sendToWatch() async {
+    final token = widget.session?.accessToken;
+    if (token == null || _sendingToWatch) return;
+    setState(() => _sendingToWatch = true);
+    final ok = await widget.wear.sendToken(token);
+    if (!mounted) return;
+    setState(() {
+      _sendingToWatch = false;
+      _watch = widget.wear.state;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? 'Soatga yuborildi — endi soatda ham shu hisob ishlaydi'
+              : 'Soat topilmadi. Bluetooth yoqilganini va soat yaqinda '
+                    'ekanini tekshiring.',
+        ),
+      ),
+    );
   }
 
   @override
@@ -940,6 +976,38 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
             ],
           ),
         ],
+        const SizedBox(height: 16),
+        _Section(
+          title: 'Palata soati',
+          children: [
+            if (!_watch.connected)
+              _Row(
+                icon: Icons.watch_off,
+                label: 'Soat ulanmagan',
+                sub:
+                    'Bluetooth yoqilgan va soat yaqinda bo‘lsa shu yerda chiqadi',
+              )
+            else ...[
+              _Row(
+                icon: Icons.watch,
+                tint: p.accentOk,
+                label: _watch.names.join(', '),
+                // Says what was actually done, not what is assumed. A watch can
+                // be connected over Bluetooth and still be signed in as the
+                // nurse who went home.
+                sub: _watch.tokenSent
+                    ? 'Hisobingiz soatga yuborilgan'
+                    : 'Hisob hali yuborilmagan',
+              ),
+              _Row(
+                icon: _sendingToWatch ? Icons.sync : Icons.ios_share,
+                label: 'Hisobni soatga yuborish',
+                sub: 'Soatda email va parol terish shart emas',
+                onTap: _sendingToWatch ? null : _sendToWatch,
+              ),
+            ],
+          ],
+        ),
         const SizedBox(height: 16),
         _Section(
           title: 'Hisob',

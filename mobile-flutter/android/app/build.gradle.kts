@@ -77,4 +77,11 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+
+    // Wear OS data layer. This is what carries the nurse's session to the ward
+    // watch over Bluetooth, so she signs in once on the phone rather than typing
+    // an email and a password on a 45mm screen. The previous app generation had
+    // it; the Flutter rewrite did not, which is why the watch has had to be
+    // signed in by hand since.
+    implementation("com.google.android.gms:play-services-wearable:19.0.0")
 }
