@@ -16,7 +16,7 @@ def create_room(db: Session, clinic_id: int, *, room_number: str, floor: int) ->
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="This room number already exists in this clinic")
+        raise HTTPException(status_code=409, detail="This room number already exists in this clinic") from None
     db.refresh(room)
     return room
 
@@ -35,7 +35,7 @@ def update_room(
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="This room number already exists in this clinic")
+        raise HTTPException(status_code=409, detail="This room number already exists in this clinic") from None
     db.refresh(room)
     return room
 

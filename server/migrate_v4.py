@@ -18,10 +18,9 @@ database's schema state actually is; if Alembic already covers these indexes/tab
 best and, against a database whose schema has since moved on, at worst.
 """
 
-from sqlalchemy import text
-
 from app.database import Base, engine
 from app.models import AuditLog  # noqa: F401  (registers the table with Base.metadata)
+from sqlalchemy import text
 
 
 def main() -> None:

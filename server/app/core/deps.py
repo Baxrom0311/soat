@@ -1,9 +1,9 @@
 """FastAPI dependencies: DB session, current-user extraction, role guards."""
 
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
-import jwt
 
 from app.core import billing
 from app.core.security import decode_token
@@ -36,7 +36,7 @@ def _user_from_payload(payload: dict) -> CurrentUser:
         role = StaffRole(payload["role"]).value
         staff_id = int(payload["sub"])
     except (KeyError, ValueError):
-        raise HTTPException(status_code=401, detail="invalid token")
+        raise HTTPException(status_code=401, detail="invalid token") from None
     return CurrentUser(
         staff_id=staff_id,
         clinic_id=payload.get("clinic_id"),  # null for superadmin tokens
@@ -82,7 +82,7 @@ def get_current_user(
     try:
         payload = decode_token(creds.credentials)
     except jwt.PyJWTError:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+        raise HTTPException(status_code=401, detail="Invalid or expired token") from None
     return revalidate_against_db(db, _user_from_payload(payload))
 
 

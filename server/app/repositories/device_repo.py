@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
+
 from app.models import Clinic, Device
 
 

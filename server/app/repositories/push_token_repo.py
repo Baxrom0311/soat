@@ -6,7 +6,8 @@ token), so upsert looks the token up by its own value first -- if it already exi
 just re-points clinic_id/staff_id instead of raising a unique-constraint violation.
 """
 
-from sqlalchemy import delete as sa_delete, func, select
+from sqlalchemy import delete as sa_delete
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models import PushToken

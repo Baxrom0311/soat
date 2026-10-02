@@ -62,6 +62,17 @@ jobs:
           pip install -r requirements.txt
           pip install pytest httpx
 
+      - name: Lint
+        working-directory: server
+        # Added after a review found Python was the only component without a
+        # linter -- 6,843 lines held to style by discipline alone, while Dart and
+        # TypeScript had this automated. It found a shadowed import and eleven
+        # broken exception chains on its first run.
+        run: |
+          pip install ruff
+          ruff check --config ../ruff.toml .
+          ruff format --check --config ../ruff.toml .
+
       - name: Tests
         working-directory: server
         run: python -m pytest -q

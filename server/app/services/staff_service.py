@@ -30,7 +30,7 @@ def create_staff(
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="Email already registered")
+        raise HTTPException(status_code=409, detail="Email already registered") from None
     db.refresh(staff)
     return staff
 
@@ -76,7 +76,7 @@ def update_staff(
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="Email already registered")
+        raise HTTPException(status_code=409, detail="Email already registered") from None
     db.refresh(staff)
     return staff
 

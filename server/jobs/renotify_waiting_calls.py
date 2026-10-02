@@ -35,7 +35,7 @@ from app.core.config import (  # noqa: E402
     RENOTIFY_SLOW_EVERY_MINUTES,
 )
 from app.database import SessionLocal  # noqa: E402
-from app.repositories import clinic_repo, call_repo  # noqa: E402
+from app.repositories import call_repo, clinic_repo  # noqa: E402
 from app.services import push_service  # noqa: E402
 
 logger = logging.getLogger("jobs.renotify_waiting_calls")

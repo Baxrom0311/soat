@@ -22,7 +22,6 @@ and with it every other request and websocket -- for the duration of a bcrypt ch
 """
 
 import asyncio
-from datetime import datetime, timezone
 
 from fastapi import BackgroundTasks, HTTPException
 from fastapi.concurrency import run_in_threadpool
@@ -31,7 +30,7 @@ from sqlalchemy.orm import Session
 from app.core.config import CALL_INGEST_RATE_LIMIT_MAX, CALL_INGEST_RATE_LIMIT_WINDOW_SECONDS
 from app.core.rate_limit import SlidingWindowLimiter
 from app.repositories import button_repo, call_repo, device_repo, staff_floor_repo, unassigned_repo
-from app.schemas.call import ActiveCallOut, AckOut, CallCreateOut, HistoryCallOut
+from app.schemas.call import AckOut, ActiveCallOut, CallCreateOut, HistoryCallOut
 from app.services import push_service
 from app.services.device_service import authenticate_device, check_device_auth_rate
 from app.ws_manager import manager

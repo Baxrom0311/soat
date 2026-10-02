@@ -12,8 +12,9 @@ from sqlalchemy.orm import Session
 
 from app.core import billing
 from app.core.deps import CurrentUser
+from app.core.security import hash_password
 from app.enums import StaffRole, SubscriptionStatus, SuspensionReason
-from app.models import Clinic, Device, Payment, Plan, Staff
+from app.models import Clinic, Device, Plan, Staff
 from app.repositories import (
     audit_repo,
     call_repo,
@@ -33,7 +34,6 @@ from app.schemas.admin import (
     PaymentOut,
     PlanOut,
 )
-from app.core.security import hash_password
 from app.services import audit_service, device_service, staff_service
 
 
@@ -97,7 +97,7 @@ def create_plan(
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="A plan with this name already exists")
+        raise HTTPException(status_code=409, detail="A plan with this name already exists") from None
     db.refresh(plan)
     return plan
 
@@ -129,7 +129,7 @@ def update_plan(
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="A plan with this name already exists")
+        raise HTTPException(status_code=409, detail="A plan with this name already exists") from None
     db.refresh(plan)
     return plan
 
@@ -164,7 +164,7 @@ def delete_plan(db: Session, plan_id: int, *, actor: CurrentUser, ip_address: st
         raise HTTPException(
             status_code=409,
             detail="Plan is assigned to clinics — archive it (is_active=false) instead of deleting",
-        )
+        ) from None
 
 
 # ---------------------------------------------------------------- Clinics

@@ -141,7 +141,7 @@ def _cleanup_invalid_tokens(db: Session, payload: dict, tokens: list[PushToken])
         logger.warning("Unexpected Expo push response shape: %r", payload)
         return
 
-    for token, ticket in zip(tokens, tickets):
+    for token, ticket in zip(tokens, tickets, strict=False):
         if not isinstance(ticket, dict):
             continue
         status = ticket.get("status")

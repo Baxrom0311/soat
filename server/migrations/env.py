@@ -20,9 +20,9 @@ from sqlalchemy import engine_from_config, pool
 # invoked from.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import app.models  # noqa: E402,F401  -- side effect: populates Base.metadata
 from app.core.config import DATABASE_URL  # noqa: E402
 from app.database import Base  # noqa: E402
-import app.models  # noqa: E402,F401  -- side effect: populates Base.metadata
 
 config = context.config
 

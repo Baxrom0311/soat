@@ -46,7 +46,11 @@ def register_token(db: Session, *, clinic_id: int, staff_id: int, token: str) ->
     token = _validate(token)
 
     existing = push_token_repo.get_by_token(db, token)
-    if existing is not None and existing.staff_id != staff_id:
+    # noqa izohi: SIM102 bu ikki shartni birlashtirishni taklif qiladi, lekin
+    # ularning orasidagi izoh aynan ICHKI shartni tushuntiradi. Birlashtirilsa,
+    # izoh o'zi tegishli bo'lgan shartdan ajralib qoladi — qoidadan ko'ra izoh
+    # qimmatroq.
+    if existing is not None and existing.staff_id != staff_id:  # noqa: SIM102
         # Same device now used by a different account in the SAME clinic is a normal
         # handover (shared ward phone), so allow it; across clinics it is a hijack.
         if existing.clinic_id != clinic_id:

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import CurrentUser, require_admin, get_db
+from app.core.deps import CurrentUser, get_db, require_admin
 from app.schemas.button import UnassignedSignalOut
 from app.services import unassigned_service
 

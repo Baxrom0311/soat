@@ -1,0 +1,33 @@
+# Python uchun yagona formatlovchi va linter.
+#
+# 6 843 satr Python uslubi shu faylgacha faqat intizom bilan ushlab turilgandi,
+# Dart va TypeScript tomonida esa bu allaqachon avtomatlashtirilgan edi — ya'ni
+# tekshiruv eng katta komponentni chetlab o'tardi.
+#
+# Qoidalar tanlovi ataylab tor: maqsad mavjud 6 843 satrni qayta yozish emas,
+# haqiqiy xatolarni ushlash. Birinchi yugurishdayoq ikkitasini topdi —
+# sqlalchemy'ning `delete` i mahalliy funksiya bilan soyalangani va istisno
+# zanjiri uzilgan 11 ta joy.
+
+line-length = 110
+target-version = "py312"
+extend-exclude = [
+    "server/.venv",
+    "server/migrations/versions",   # alembic shablonidan chiqadi, qo'lda yozilmaydi
+    "mobile-app",                   # eski Expo ilovasi, o'lik
+    "esp32-firmware",
+]
+
+[lint]
+select = [
+    "F",        # pyflakes — ishlatilmagan import, soyalangan nom, yo'q o'zgaruvchi
+    "I",        # import tartibi
+    "B",        # bugbear — haqiqiy xatolar sinfi
+    "SIM",      # keraksiz murakkablik
+    "E",        # pycodestyle xatolari
+    "W",
+]
+ignore = [
+    "E501",     # satr uzunligi formatlovchining ishi
+    "B008",     # FastAPI'ning Depends() aynan shunday yoziladi
+]

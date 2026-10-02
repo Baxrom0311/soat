@@ -9,7 +9,21 @@ from sqlalchemy import text
 from app.core import log_redaction
 from app.core.config import ENVIRONMENT
 from app.database import Base, SessionLocal, engine
-from app.routers import admin, auth, buttons, calls, clinic, contact, devices, meta, push_tokens, rooms, staff, unassigned, ws
+from app.routers import (
+    admin,
+    auth,
+    buttons,
+    calls,
+    clinic,
+    contact,
+    devices,
+    meta,
+    push_tokens,
+    rooms,
+    staff,
+    unassigned,
+    ws,
+)
 
 # Uvicorn only configures its own "uvicorn.*" loggers by default; without this, the
 # app-level logging (e.g. app.services.push_service's Expo push delivery logs) never

@@ -117,7 +117,7 @@ def register_device(
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="device_id already registered")
+        raise HTTPException(status_code=409, detail="device_id already registered") from None
     db.refresh(device)
     return device, plaintext_key
 

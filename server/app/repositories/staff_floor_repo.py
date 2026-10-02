@@ -5,7 +5,8 @@ see Staff.floors. get_visible_floors below is the single source of truth for tha
 rule so call_service and push_service can't drift out of sync on it.
 """
 
-from sqlalchemy import delete as sa_delete, or_, select
+from sqlalchemy import delete as sa_delete
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.enums import StaffRole

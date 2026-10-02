@@ -7,10 +7,8 @@ Safe to run repeatedly; old data (test-only) is intentionally discarded.
 
 import sys
 
-from sqlalchemy import text
-
-from app.database import Base, engine
 from app.core.config import DATABASE_URL
+from app.database import Base, engine
 from app.models import (  # noqa: F401
     Button,
     Call,
@@ -22,6 +20,7 @@ from app.models import (  # noqa: F401
     Staff,
     UnassignedSignal,
 )
+from sqlalchemy import text
 
 
 def main() -> None:

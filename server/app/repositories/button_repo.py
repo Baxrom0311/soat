@@ -1,6 +1,9 @@
 """DB access for the Button table."""
 
-from sqlalchemy import delete, select
+# `delete` import qilinmaydi: quyida shu nomli funksiya bor va uni soyalaydi.
+# Kelajakda shu faylga `delete(Button).where(...)` yozilsa, jimgina mahalliy
+# funksiya chaqirilardi.
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Button, Room

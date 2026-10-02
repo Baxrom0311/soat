@@ -25,7 +25,7 @@ async def create_button(db: Session, clinic_id: int, *, room_id: int, ev1527_cod
         button = button_repo.create(db, clinic_id, room_id=room.id, ev1527_code=ev1527_code)
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="ev1527_code already bound in this clinic")
+        raise HTTPException(status_code=409, detail="ev1527_code already bound in this clinic") from None
 
     # clear the pending "unknown signal" entry now that it's mapped to a room
     unassigned_repo.delete_by_code(db, clinic_id, ev1527_code)

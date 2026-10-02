@@ -96,7 +96,7 @@ def test_a_button_press_cannot_be_routed_through_another_clinics_receiver(client
     cheap 433MHz remotes with no global registry. A press is therefore only meaningful
     together with the receiver that heard it, and the receiver belongs to one clinic.
     """
-    a = make_clinic(ev1527_code=4242424, room_number="101")
+    make_clinic(ev1527_code=4242424, room_number="101")
     b = make_clinic(ev1527_code=4242424, room_number="202")
 
     # B's receiver reports A's code. Since both clinics own that code, the only correct
