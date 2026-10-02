@@ -141,11 +141,14 @@ rsync -rc --delete -e "ssh -i $SSH_KEY" web-dashboard/dist/ "$HOST:$REMOTE_DIR/d
 # directory protected the second kind and silently never deployed the first --
 # which is how an edited landing page sat in git for a day without reaching
 # production. Listing git's own files is what keeps the two apart.
+# `git ls-files` run from inside the directory already prints paths relative to
+# it, so no rewriting is needed. The first version of this piped through `sed -z`,
+# which exists in GNU sed and not in the BSD sed macOS ships -- it failed on the
+# machine that runs this script, which is the only machine that runs this script.
 say "static/ dagi versiyalangan fayllar"
-git -C "$REPO_ROOT" ls-files -z server/static \
-  | sed -z 's|^server/static/||' \
-  | rsync -rc --files-from=- --from0 -e "ssh -i $SSH_KEY" \
-      server/static/ "$HOST:$REMOTE_DIR/static/"
+( cd "$REPO_ROOT/server/static" && git ls-files ) \
+  | rsync -rc --files-from=- -e "ssh -i $SSH_KEY" \
+      "$REPO_ROOT/server/static/" "$HOST:$REMOTE_DIR/static/"
 
 say "Migratsiya va qayta ishga tushirish"
 if ! "${SSH[@]}" bash -se <<REMOTE
