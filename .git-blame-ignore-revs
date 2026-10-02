@@ -1,0 +1,6 @@
+# Faqat formatlash uchun qilingan commitlar. Bular `git blame` da ko'rinmasligi uchun:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+# GitHub bu faylni o'zi ham hisobga oladi.
+
+# Python uchun ruff format birinchi marta qo'llanilgani (41 fayl, xatti-harakat o'zgarmagan)
+ed065f8466a7f1ec66d11518ce19f6572953d882
