@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException
@@ -6,14 +7,16 @@ from sqlalchemy.orm import Session
 
 from app.core.config import DEVICE_ONLINE_WINDOW_SECONDS
 from app.core.rate_limit import SlidingWindowLimiter
-from app.core.security import generate_device_key, hash_secret, verify_secret
+from app.core.security import generate_device_key, hash_device_key, verify_device_key
 from app.models import Device
 from app.repositories import device_repo
 from app.schemas.device import DeviceOut
 
+logger = logging.getLogger(__name__)
+
 # Verified against when the device_id is unknown, so response timing can't be used to
 # discover which device_ids exist. Same trick as auth_service._DUMMY_HASH.
-_DUMMY_DEVICE_HASH = hash_secret("timing-equalizer-not-a-real-device-key")
+_DUMMY_DEVICE_HASH = hash_device_key("timing-equalizer-not-a-real-device-key")
 
 # Guards the CPU cost of device-key auth itself. Verifying a key is a deliberately slow
 # bcrypt (~230ms), and both callers are UNAUTHENTICATED, so without a check that runs
@@ -109,7 +112,7 @@ def register_device(
             db,
             clinic_id,
             device_id=device_id,
-            device_api_key_hash=hash_secret(plaintext_key),
+            device_api_key_hash=hash_device_key(plaintext_key),
             floor=floor,
             chip_id=chip_id,
             pending_key_plaintext=plaintext_key if chip_id else None,
@@ -126,20 +129,38 @@ def authenticate_device(db: Session, *, device_id: str, plaintext_key: str | Non
     """Looks up a device by its (globally unique) device_id and verifies its API key.
     Used only by the unauthenticated /calls ingestion and heartbeat endpoints.
 
-    Timing-equalized the same way login is (auth_service._DUMMY_HASH): the verify runs
-    against a real bcrypt hash even when the device_id is unknown. Short-circuiting
-    made an unknown id answer in a few ms and a known one in ~230ms -- a 50x gap that
-    is trivially measurable remotely, which turned device_id into an enumerable oracle
-    and gave an attacker the one input they need to aim a bcrypt-CPU flood at the
-    ingestion endpoint.
+    Timing-equalized: the verify runs against a real hash even when the device_id is
+    unknown. Short-circuiting made an unknown id answer in a few ms and a known one in
+    hundreds, a gap trivially measurable remotely, which turned device_id into an
+    enumerable oracle -- and the one input an attacker needs to aim a CPU flood at an
+    unauthenticated endpoint.
+
+    The gap that oracle revealed is also why this no longer uses bcrypt: on the
+    production box a single verification cost 648ms, which is 94% of everything a
+    patient's button press spends on the server. See app.core.security.
+
+    A device still carrying a bcrypt hash is upgraded here, in the one place its
+    plaintext key is ever available. The ESP32 heartbeats every minute, so the whole
+    fleet migrates within a minute of deploy -- with nothing re-issued and nobody
+    signed out.
     """
     device = device_repo.get_by_device_id(db, device_id)
     stored_hash = device.device_api_key_hash if device is not None else _DUMMY_DEVICE_HASH
     # `or ""` keeps the verify running for a missing header too, so a malformed request
     # costs the same as a wrong key rather than returning early.
-    key_ok = verify_secret(plaintext_key or "", stored_hash)
+    key_ok, should_rehash = verify_device_key(plaintext_key or "", stored_hash)
     if device is None or not plaintext_key or not key_ok:
         raise HTTPException(status_code=401, detail="Invalid device key")
+
+    if should_rehash:
+        # Best-effort: a failed upgrade must never fail the call it rode in on. The
+        # device simply pays the old cost again and the next heartbeat retries.
+        try:
+            device.device_api_key_hash = hash_device_key(plaintext_key)
+            db.commit()
+        except Exception:
+            db.rollback()
+            logger.exception("Qurilma kalitini yangilab bo'lmadi: %s", device_id)
     return device
 
 

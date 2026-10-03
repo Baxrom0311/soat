@@ -32,6 +32,12 @@ if not os.getenv("JWT_SECRET"):
 # never actually stops working, which is the thing the rotation was for.
 JWT_SECRET_OLD = os.getenv("JWT_SECRET_OLD", "")
 
+# Secret under which device API keys are HMAC'd. Independent of JWT_SECRET on
+# purpose: rotating the token-signing key must not invalidate every receiver in
+# every clinic. Empty means device keys keep using bcrypt, so a missing value
+# degrades to the old behaviour rather than locking the fleet out.
+DEVICE_KEY_SECRET = os.getenv("DEVICE_KEY_SECRET", "")
+
 JWT_ALGORITHM = "HS256"
 
 # Ninety days, down from a year. The shorter this is, the shorter a stolen phone stays
