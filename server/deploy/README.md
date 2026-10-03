@@ -204,3 +204,32 @@ parameter "transaction_timeout"`, because the dump is written by a newer `pg_dum
 the `psql` replaying it. Anything else in that list is worth reading.
 
 Run it monthly, and before any migration that is hard to reverse.
+
+## nursecall-latency-report.timer
+
+Runs `jobs/report_latency.py` daily at **06:00 UTC (11:00 Tashkent)** — after the
+night shift, so the report covers a full day.
+
+The system's whole value is one number: how long a patient waits between pressing
+the button and a nurse being told. Until this existed that number was recorded
+nowhere. It could be measured by hand, and was; nothing would ever have noticed it
+getting worse.
+
+`app.core.latency` keeps a 512-sample ring per route, in memory, for the alerting
+path only (`/api/v1/calls`, login, the websocket). This job reads the running API's
+own summary over `GET /api/v1/meta/latency` — superadmin only — and sends it to ntfy.
+
+It reports **p95**, not a mean. A mean hides the slow tail completely, and the slow
+tail is the entire question. The answer-time statistics learned the same lesson one
+layer up, where one clinic's mean read 435 minutes against a median of two.
+
+`LATENCY_P95_BUDGET_MS` (default 2000) is the declared service level: 95% of button
+presses become a recorded call within two seconds. Measured end to end over TLS the
+real figure sits near 1s, so the budget is a ceiling normal operation stays well
+under and a genuine regression breaks. Going over raises the alert's priority; the
+report is sent **every day either way**, because a number that only ever appears
+next to the word "problem" is one nobody develops a feel for.
+
+Needs `INTERNAL_METRICS_TOKEN` in `.env` — a superadmin token. Below 20 samples the
+budget is not applied: the p95 of six requests is noise, and alerting on it would
+teach the reader to ignore the message.

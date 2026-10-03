@@ -117,6 +117,13 @@ VENDOR_PHONE = os.getenv("VENDOR_PHONE", "+998935580311")
 # private key never sits in an env var that shows up in `systemctl show` or a crash dump.
 # How long a call may go unacknowledged before it starts re-announcing itself. The
 # first alert goes out at the button press; this is the gap before the second.
+# The service level this system is actually promising: 95% of button presses
+# turn into a recorded call within this long. Measured end to end from a laptop
+# over TLS the real figure sat around 1s with a worst case of 1.6s, so 2000ms is
+# a ceiling that normal operation stays well under and a genuine regression
+# breaks. Declaring it is the point -- an unstated target cannot be missed.
+LATENCY_P95_BUDGET_MS = int(os.getenv("LATENCY_P95_BUDGET_MS", "2000"))
+
 RENOTIFY_AFTER_SECONDS = int(os.getenv("RENOTIFY_AFTER_SECONDS", "60"))
 # After this many minutes the repeat slows down. A phone that has buzzed fifteen times
 # will not be answered by the sixteenth, and an alert that never relents is one people

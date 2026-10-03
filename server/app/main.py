@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
-from app.core import log_redaction
+from app.core import latency, log_redaction
 from app.core.config import ENVIRONMENT
 from app.database import Base, SessionLocal, engine
 from app.routers import (
@@ -52,6 +52,12 @@ app = FastAPI(
     redoc_url="/redoc" if _docs_enabled else None,
     openapi_url="/openapi.json" if _docs_enabled else None,
 )
+
+
+# Times the alerting path. Added after a review found that the one number this
+# whole system exists to keep small -- button press to nurse notified -- was
+# measured nowhere, so nothing would ever notice it getting worse.
+app.middleware("http")(latency.timing_middleware)
 
 
 @app.get("/health", include_in_schema=False)

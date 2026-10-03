@@ -1,0 +1,7 @@
+[Unit]
+Description=NurseCall: chaqiruv kechikishi haqida kunlik hisobot
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/nursecall_backend
+ExecStart=/root/nursecall_backend/.venv/bin/python -m jobs.report_latency

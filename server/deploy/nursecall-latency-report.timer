@@ -1,0 +1,12 @@
+[Unit]
+Description=Kechikish hisobotini kuniga bir marta yuboradi
+
+[Timer]
+# Kuniga bir marta, 06:00 UTC (11:00 Toshkent) — tungi smena tugagandan keyin,
+# ya'ni hisobotda to'liq bir sutkalik ish ko'rinadi.
+OnCalendar=*-*-* 06:00:00
+Persistent=true
+Unit=nursecall-latency-report.service
+
+[Install]
+WantedBy=timers.target
