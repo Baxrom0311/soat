@@ -60,7 +60,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest httpx
+          pip install pytest pytest-cov httpx
 
       - name: Lint
         working-directory: server
@@ -75,7 +75,14 @@ jobs:
 
       - name: Tests
         working-directory: server
-        run: python -m pytest -q
+        # --cov-fail-under is a ratchet, not a target. It is set just below where
+        # coverage actually stands, so the build fails when a change makes the
+        # tested fraction smaller -- and the number gets raised deliberately when
+        # it rises, never lowered to make a red build go green.
+        #
+        # Before this, 162 tests existed and nobody could say what fraction of the
+        # code they touched.
+        run: python -m pytest -q --cov=app --cov-report=term --cov-fail-under=57
 
       - name: Migrations apply to an empty database
         working-directory: server
