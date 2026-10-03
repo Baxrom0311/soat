@@ -150,6 +150,31 @@ Hammasi **ntfy** ga yozadi. Mavzu `.env` dagi `NTFY_TOPIC_URL` da — telefoning
 
 ---
 
+## 5a. `main` himoyasi
+
+Hozir yoqilgani — **admin uchun ham**:
+
+- `main` ni o'chirib bo'lmaydi
+- `main` ga force-push qilib bo'lmaydi (tarixni qayta yozish tasodifan sodir bo'lmaydi)
+
+**Majburiy CI tekshiruvi ataylab yoqilmagan.** U birinchi urinishda yoqilgandi va
+darhol o'zini qulflab qo'ydi: GitHub tekshiruvlarni push dan **keyin** yugurtiradi,
+himoya esa tekshiruvsiz pushni rad etadi — ya'ni to'g'ridan-to'g'ri `main` ga
+ishlaganda hech narsa push qilib bo'lmay qoladi. Bu mexanizm PR oqimi uchun
+mo'ljallangan. Ikkinchi odam qo'shilganda PR ga o'tiladi va o'shanda yoqiladi.
+
+Force-push kerak bo'lsa (masalan git tarixidagi DB dumpini tozalashda):
+
+```bash
+gh api -X PUT repos/Baxrom0311/soat/branches/main/protection \
+  -H "Accept: application/vnd.github+json" \
+  -f 'allow_force_pushes=true' -f 'enforce_admins=true' \
+  -f 'required_status_checks=' -f 'required_pull_request_reviews=' -f 'restrictions='
+# ... ish ...  keyin allow_force_pushes=false bilan qaytaring
+```
+
+---
+
 ## 6. Hali yopilmagan narsalar
 
 Bular ataylab ochiq — unutilgani uchun emas.
