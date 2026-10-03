@@ -67,7 +67,7 @@ object NurseCallTokens {
         val inkDark = Color(0xFFFFFFFFL)
         val slabLight = Color(0xFFFFFFFFL)
         val slabDark = Color(0xFFFFFFFFL)
-        val thresholdsSec = listOf(0, 30, 120)
+        val thresholdsSec = listOf(0, 120, 600)
     }
 
     object Size {
