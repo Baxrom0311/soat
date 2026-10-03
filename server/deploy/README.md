@@ -230,6 +230,10 @@ under and a genuine regression breaks. Going over raises the alert's priority; t
 report is sent **every day either way**, because a number that only ever appears
 next to the word "problem" is one nobody develops a feel for.
 
-Needs `INTERNAL_METRICS_TOKEN` in `.env` — a superadmin token. Below 20 samples the
-budget is not applied: the p95 of six requests is noise, and alerting on it would
-teach the reader to ignore the message.
+No stored credential. The job runs on the box that holds the signing key, so it
+mints a superadmin token for the length of the run and throws it away — an earlier
+version read one from `.env`, which meant a long-lived superadmin secret on disk
+purely so a local job could read a page of numbers.
+
+Below 20 samples the budget is not applied: the p95 of six requests is noise, and
+alerting on it would teach the reader to ignore the message.

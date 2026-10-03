@@ -26,6 +26,9 @@ from app.core.config import (  # noqa: E402
     LATENCY_P95_BUDGET_MS,
     NTFY_TOPIC_URL,
 )
+from app.core.security import create_access_token  # noqa: E402
+from app.database import SessionLocal  # noqa: E402
+from app.models import Staff  # noqa: E402
 
 logger = logging.getLogger("jobs.report_latency")
 
@@ -94,10 +97,39 @@ def send(message: str, *, urgent: bool) -> bool:
         return False
 
 
+def mint_token() -> str | None:
+    """A superadmin token, made here and thrown away.
+
+    The first version of this read one from .env. That meant storing a
+    long-lived superadmin credential on disk purely so a local job could read a
+    page of numbers -- a new secret to rotate, back up and eventually leak.
+
+    This job already runs on the box that holds the signing key and the
+    database, so it can simply mint one for the length of the run. Nothing is
+    stored, and an attacker who could read this token could read the signing key
+    beside it anyway.
+    """
+    db = SessionLocal()
+    try:
+        # clinic_id IS NULL is what makes an account platform-level.
+        admin = db.query(Staff).filter(Staff.clinic_id.is_(None)).first()
+        if admin is None:
+            return None
+        return create_access_token(
+            staff_id=admin.id,
+            clinic_id=None,
+            role=admin.role.value,
+            email=admin.email,
+            name=admin.name,
+        )
+    finally:
+        db.close()
+
+
 def run(dry_run: bool = False) -> int:
-    token = os.getenv("INTERNAL_METRICS_TOKEN", "")
+    token = mint_token()
     if not token:
-        logger.error("INTERNAL_METRICS_TOKEN sozlanmagan — superadmin tokeni kerak")
+        logger.error("Superadmin hisobi topilmadi — o'lchovni o'qib bo'lmaydi")
         return 1
 
     try:
