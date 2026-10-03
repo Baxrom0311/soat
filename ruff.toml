@@ -31,3 +31,9 @@ ignore = [
     "E501",     # satr uzunligi formatlovchining ishi
     "B008",     # FastAPI'ning Depends() aynan shunday yoziladi
 ]
+
+[lint.isort]
+# Belgilanmasa, ruff `app` ni birinchi tomonmi yoki uchinchi tomonmi deb, O'ZI
+# ishga tushirilgan katalogga qarab hal qiladi: repo ildizidan — uchinchi tomon,
+# server/ ichidan — birinchi tomon. Natijada lokalda toza, CI da esa 8 ta xato.
+known-first-party = ["app", "jobs", "tests"]

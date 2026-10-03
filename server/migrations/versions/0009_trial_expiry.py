@@ -26,9 +26,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "clinics", sa.Column("trial_ends_at", sa.DateTime(timezone=True), nullable=True)
-    )
+    op.add_column("clinics", sa.Column("trial_ends_at", sa.DateTime(timezone=True), nullable=True))
 
 
 def downgrade() -> None:

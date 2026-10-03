@@ -49,12 +49,13 @@ os.environ["FCM_SERVICE_ACCOUNT_FILE"] = ""
 os.environ["NTFY_TOPIC_URL"] = ""
 os.environ["TELEGRAM_BOT_TOKEN"] = ""
 
+from fastapi.testclient import TestClient  # noqa: E402
+
 from app.core.security import hash_password, hash_secret  # noqa: E402
 from app.database import Base, SessionLocal, engine  # noqa: E402
 from app.enums import StaffRole, SubscriptionStatus  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import Button, Clinic, Device, Room, Staff  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
 
 
 @pytest.fixture(scope="session", autouse=True)

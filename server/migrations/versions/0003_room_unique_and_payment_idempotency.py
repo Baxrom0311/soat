@@ -7,6 +7,7 @@ was verified clean, and the new payments column is nullable with a unique index 
 allows any number of NULLs (Postgres unique indexes treat NULL as distinct), so every
 existing payment row (which has no key) is unaffected.
 """
+
 from __future__ import annotations
 
 from typing import Sequence, Union
@@ -24,9 +25,7 @@ def upgrade() -> None:
     op.create_unique_constraint("uq_rooms_clinic_room_number", "rooms", ["clinic_id", "room_number"])
 
     op.add_column("payments", sa.Column("idempotency_key", sa.String(), nullable=True))
-    op.create_index(
-        "ix_payments_idempotency_key", "payments", ["idempotency_key"], unique=True
-    )
+    op.create_index("ix_payments_idempotency_key", "payments", ["idempotency_key"], unique=True)
 
 
 def downgrade() -> None:

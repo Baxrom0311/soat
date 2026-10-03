@@ -9,6 +9,7 @@ zero data transformation -- PROVIDED no row currently holds a value outside that
 The _guard() calls below verify that with an actionable error before any DDL runs; see
 migrationNotes for the exact pre-flight SQL a human should also run by hand first.
 """
+
 from __future__ import annotations
 
 from typing import Sequence, Union
@@ -80,12 +81,12 @@ def upgrade() -> None:
         "ALTER TABLE clinics ALTER COLUMN subscription_status "
         "TYPE subscription_status USING subscription_status::text::subscription_status"
     )
-    op.execute("ALTER TABLE clinics ALTER COLUMN subscription_status SET DEFAULT 'trial'::subscription_status")
+    op.execute(
+        "ALTER TABLE clinics ALTER COLUMN subscription_status SET DEFAULT 'trial'::subscription_status"
+    )
 
     op.execute("ALTER TABLE calls ALTER COLUMN status DROP DEFAULT")
-    op.execute(
-        "ALTER TABLE calls ALTER COLUMN status TYPE call_status USING status::text::call_status"
-    )
+    op.execute("ALTER TABLE calls ALTER COLUMN status TYPE call_status USING status::text::call_status")
     op.execute("ALTER TABLE calls ALTER COLUMN status SET DEFAULT 'active'::call_status")
 
 

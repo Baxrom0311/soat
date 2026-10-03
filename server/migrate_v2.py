@@ -14,8 +14,9 @@ Covers:
 Run once against DATABASE_URL after pulling new code:  python migrate_v2.py
 """
 
-from app.database import Base, engine
 from sqlalchemy import text
+
+from app.database import Base, engine
 
 
 def main() -> None:

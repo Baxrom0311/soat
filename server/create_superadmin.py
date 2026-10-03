@@ -8,12 +8,13 @@ Usage:
 
 import argparse
 
+from sqlalchemy import create_engine, select
+from sqlalchemy.orm import Session
+
 from app.core.config import DATABASE_URL
 from app.core.security import hash_password
 from app.enums import StaffRole
 from app.models import Staff
-from sqlalchemy import create_engine, select
-from sqlalchemy.orm import Session
 
 
 def main() -> None:

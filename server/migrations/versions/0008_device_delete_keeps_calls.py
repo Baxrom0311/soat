@@ -49,9 +49,7 @@ def upgrade() -> None:
         "calls_device_id_fkey", "calls", "devices", ["device_id"], ["id"], ondelete="SET NULL"
     )
 
-    op.drop_constraint(
-        "unassigned_signals_device_id_fkey", "unassigned_signals", type_="foreignkey"
-    )
+    op.drop_constraint("unassigned_signals_device_id_fkey", "unassigned_signals", type_="foreignkey")
     op.create_foreign_key(
         "unassigned_signals_device_id_fkey",
         "unassigned_signals",
@@ -61,9 +59,7 @@ def upgrade() -> None:
         ondelete="CASCADE",
     )
 
-    op.drop_constraint(
-        "discovered_devices_claimed_device_id_fkey", "discovered_devices", type_="foreignkey"
-    )
+    op.drop_constraint("discovered_devices_claimed_device_id_fkey", "discovered_devices", type_="foreignkey")
     op.create_foreign_key(
         "discovered_devices_claimed_device_id_fkey",
         "discovered_devices",
@@ -75,9 +71,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_constraint(
-        "discovered_devices_claimed_device_id_fkey", "discovered_devices", type_="foreignkey"
-    )
+    op.drop_constraint("discovered_devices_claimed_device_id_fkey", "discovered_devices", type_="foreignkey")
     op.create_foreign_key(
         "discovered_devices_claimed_device_id_fkey",
         "discovered_devices",
@@ -86,9 +80,7 @@ def downgrade() -> None:
         ["id"],
     )
 
-    op.drop_constraint(
-        "unassigned_signals_device_id_fkey", "unassigned_signals", type_="foreignkey"
-    )
+    op.drop_constraint("unassigned_signals_device_id_fkey", "unassigned_signals", type_="foreignkey")
     op.create_foreign_key(
         "unassigned_signals_device_id_fkey",
         "unassigned_signals",

@@ -3,6 +3,7 @@ row with zero rows here is unrestricted (sees/gets notified of every floor) -- t
 safe default so nothing silently stops alerting a nurse until an admin explicitly
 assigns floors. Purely additive; no existing table or column is touched.
 """
+
 from __future__ import annotations
 
 from typing import Sequence, Union
@@ -20,15 +21,11 @@ def upgrade() -> None:
     op.create_table(
         "staff_floor_assignments",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column(
-            "staff_id", sa.Integer(), sa.ForeignKey("staff.id", ondelete="CASCADE"), nullable=False
-        ),
+        sa.Column("staff_id", sa.Integer(), sa.ForeignKey("staff.id", ondelete="CASCADE"), nullable=False),
         sa.Column("floor", sa.Integer(), nullable=False),
         sa.UniqueConstraint("staff_id", "floor", name="uq_staff_floor_assignments_staff_floor"),
     )
-    op.create_index(
-        "ix_staff_floor_assignments_staff_id", "staff_floor_assignments", ["staff_id"]
-    )
+    op.create_index("ix_staff_floor_assignments_staff_id", "staff_floor_assignments", ["staff_id"])
 
 
 def downgrade() -> None:

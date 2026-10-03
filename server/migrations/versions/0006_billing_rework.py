@@ -12,6 +12,7 @@ Clinic columns are purely additive with defaults, so existing rows keep working:
 billing_period_months defaults to monthly, enforcement_enabled to true (a clinic whose
 enforcement was silently off would run unpaid for months before anyone noticed).
 """
+
 from __future__ import annotations
 
 from typing import Sequence, Union
@@ -47,9 +48,15 @@ def upgrade() -> None:
     )
 
     # ---- plans: single price -> per-device rates + floor, per period ----
-    op.add_column("plans", sa.Column("price_per_device_monthly", sa.BigInteger(), nullable=False, server_default="0"))
-    op.add_column("plans", sa.Column("price_per_device_annual", sa.BigInteger(), nullable=False, server_default="0"))
-    op.add_column("plans", sa.Column("min_price_monthly", sa.BigInteger(), nullable=False, server_default="0"))
+    op.add_column(
+        "plans", sa.Column("price_per_device_monthly", sa.BigInteger(), nullable=False, server_default="0")
+    )
+    op.add_column(
+        "plans", sa.Column("price_per_device_annual", sa.BigInteger(), nullable=False, server_default="0")
+    )
+    op.add_column(
+        "plans", sa.Column("min_price_monthly", sa.BigInteger(), nullable=False, server_default="0")
+    )
     op.add_column("plans", sa.Column("min_price_annual", sa.BigInteger(), nullable=False, server_default="0"))
     # The server_defaults exist only so the ALTER succeeds on a table that might not be
     # empty in some other environment; the application always supplies these explicitly.
@@ -72,9 +79,7 @@ def upgrade() -> None:
     )
     op.add_column("clinics", sa.Column("discount_percent", sa.Integer(), nullable=True))
     op.add_column("clinics", sa.Column("discount_months", sa.Integer(), nullable=True))
-    op.add_column(
-        "clinics", sa.Column("discount_started_at", sa.DateTime(timezone=True), nullable=True)
-    )
+    op.add_column("clinics", sa.Column("discount_started_at", sa.DateTime(timezone=True), nullable=True))
     op.add_column(
         "clinics",
         sa.Column("enforcement_enabled", sa.Boolean(), nullable=False, server_default=sa.true()),

@@ -18,6 +18,7 @@ String/VARCHAR -- the string-to-enum conversion happens in the next revision
 (0002_string_columns_to_native_enums), matching the real historical order of events
 (the app ran for a long time with plain strings before this rewrite).
 """
+
 from __future__ import annotations
 
 from typing import Sequence, Union
@@ -110,8 +111,12 @@ def upgrade() -> None:
         "discovered_devices",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("chip_id", sa.String(), nullable=False, unique=True),
-        sa.Column("first_seen_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("last_seen_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "first_seen_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False
+        ),
+        sa.Column(
+            "last_seen_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False
+        ),
         sa.Column("last_ip", sa.String(), nullable=True),
         sa.Column("claimed_device_id", sa.Integer(), sa.ForeignKey("devices.id"), nullable=True),
     )
@@ -133,8 +138,12 @@ def upgrade() -> None:
         sa.Column("clinic_id", sa.Integer(), sa.ForeignKey("clinics.id"), nullable=False),
         sa.Column("device_id", sa.Integer(), sa.ForeignKey("devices.id"), nullable=False),
         sa.Column("ev1527_code", sa.BigInteger(), nullable=False),
-        sa.Column("first_seen_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("last_seen_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "first_seen_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False
+        ),
+        sa.Column(
+            "last_seen_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False
+        ),
         sa.Column("seen_count", sa.Integer(), nullable=False, server_default="1"),
         sa.UniqueConstraint("clinic_id", "ev1527_code", name="uq_unassigned_clinic_code"),
     )

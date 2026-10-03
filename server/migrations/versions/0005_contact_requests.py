@@ -2,6 +2,7 @@
 row has no clinic_id -- the submitter is a prospective customer with no account yet.
 Purely additive; no existing table or column is touched.
 """
+
 from __future__ import annotations
 
 from typing import Sequence, Union
@@ -25,9 +26,7 @@ def upgrade() -> None:
         sa.Column("message", sa.String(), nullable=True),
         sa.Column("source_ip", sa.String(), nullable=True),
         sa.Column("handled", sa.Boolean(), nullable=False, server_default=sa.false()),
-        sa.Column(
-            "created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
     )
     op.create_index("ix_contact_requests_created_at", "contact_requests", ["created_at"])
 
