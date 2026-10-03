@@ -31,6 +31,7 @@ Chaqiruvning yo'li: **tugma → ESP32 → `POST /api/v1/calls` → baza → WebS
 | Firebase xizmat hisobi | `/root/nursecall_backend/firebase-service-account.json` | `0600`, root. Push uchun |
 | Android imzolash kaliti | `mobile-flutter/android/keystores/release.keystore` | `keystore.properties` bilan. **Gitda yo'q.** Yo'qolsa, ilovani yangilab bo'lmaydi — faqat yangi nom bilan qaytadan chiqariladi |
 | Postgres paroli | `.env` ichida va `/root/.pgpass` da | ikkalasi birga almashtiriladi |
+| `DEVICE_KEY_SECRET` | `.env` ichida | qurilma kalitlari shu bilan tekshiriladi. **Yo'qolsa qurilmalar kirolmay qoladi** va har biriga qaytadan kalit berish kerak bo'ladi — ya'ni har bir klinikaga borib ESP32 ni qayta sozlash |
 | DigitalOcean, GitHub, Firebase konsoli | Baxromning hisoblari | **zaxira kirish yo'q** |
 
 **Birinchi navbatdagi ish:** imzolash kalitini va `.env` ni boshqa joyga nusxalash. Server yo'qolsa `.env` tiklanadi; imzolash kaliti yo'qolsa — tiklanmaydi.
@@ -184,6 +185,7 @@ Bular ataylab ochiq — unutilgani uchun emas.
 - **Backupning ikkala nusxasi ham bitta DigitalOcean akkauntida.** Akkaunt yopilsa, ikkalasi birga ketadi.
 - **Server bitta jarayonda ishlaydi** — WebSocket ulanishlari xotirada saqlanadi, shuning uchun ikkinchi worker qo'shib bo'lmaydi.
 - **ESP32 proshivkasi testsiz** va masofadan yangilanmaydi — har bir qurilmaga borish kerak.
+- **Server bitta vCPU da.** Yuk o'lchangan paytda `load average` 2.5–4 edi. Ikkinchi yadro qo'shish DigitalOcean'da bir necha daqiqalik ish va eng arzon yaxshilanish.
 
 ---
 

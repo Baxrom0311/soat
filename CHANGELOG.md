@@ -71,6 +71,13 @@ ga yozadi.
 
 ## Serverda (klinikaga ko'rinadigan o'zgarishlar)
 
+### 2026-10-03 (ikkinchi)
+- **Chaqiruv ~4 barobar tez bo'ldi.** Tugma bosilishidan serverda chaqiruv
+  yaratilgunicha ketadigan vaqt 708 ms dan ~170 ms ga tushdi. Sabab: qurilma
+  kalitini tekshirish uchun parollar uchun mo'ljallangan sekin usul ishlatilardi,
+  va u butun vaqtning 94% ini olardi. Qurilmalar o'zi, hech narsa qilmasdan
+  yangi usulga o'tadi.
+
 ### 2026-10-03
 - Chaqiruvning rang bosqichlari hamma ekranda bir xil bo'ldi. Ilgari telefon va
   palata soati bitta chaqiruvni har xil shoshilinchlikda ko'rsatardi.
