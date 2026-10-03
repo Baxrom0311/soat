@@ -1,19 +1,23 @@
 /// How long a call has been waiting, and what that means visually.
 ///
-/// The thresholds mirror the web dashboard's exactly (tokens.json
-/// `call.thresholdsSec`). Two surfaces showing the same ward must not disagree
-/// about whether a call is urgent: a nurse glancing at the station screen and
-/// then at her phone has to see the same thing, or she stops trusting both.
+/// The thresholds come from tokens.json, generated — not copied. They used to be
+/// written out here by hand under a comment claiming they mirrored the dashboard
+/// exactly. They did not: the source, the watch and the dashboard used
+/// [0, 30, 120] while this file used [0, 120, 600], so the same patient's call
+/// sat amber on the ward watch while the nurse's own phone still showed it calm,
+/// for ninety seconds. Nothing caught it, because every surface kept its own copy.
+///
+/// The phone's numbers were the better-reasoned ones — raised after screenshots
+/// of real wards showed almost every call pinned at the top step within minutes,
+/// and a scale where everything is red tells you nothing — so tokens.json was
+/// moved to them and the other two surfaces now follow.
 library;
+
+import '../theme/generated_tokens.dart';
 
 /// Seconds at which a call moves into the next step. A call is in step N while
 /// its age is at or past `thresholdsSec[N-1]` and below `thresholdsSec[N]`.
-///
-/// Raised from [0, 30, 120] after screenshots of real wards showed almost every
-/// call sitting at the top step within minutes — a scale where everything is red
-/// tells you nothing. At [0, 120, 600] the top step means "ten minutes with no
-/// answer", which is worth looking at.
-const List<int> thresholdsSec = [0, 120, 600];
+const List<int> thresholdsSec = kCallThresholdsSec;
 
 /// 1, 2 or 3 — never 0. A call that has just arrived is still a call.
 int ageStep(Duration waited) {

@@ -1,21 +1,33 @@
 import { describe, it, expect } from 'vitest';
 import { ageStep, elapsedLabel } from './ageStep';
+import { THRESHOLDS_SEC } from './generated-tokens';
 
 const at = (secondsAgo: number) => new Date(Date.UTC(2026, 0, 1, 12, 0, 0) - secondsAgo * 1000).toISOString();
 const NOW = new Date(Date.UTC(2026, 0, 1, 12, 0, 0));
 
 describe('ageStep', () => {
-  it('is step 1 from 0s up to but not including 30s', () => {
+  // Boundaries are read from the generated constant, not written out again.
+  // These tests used to hard-code 30 and 120 -- which is how the phone app was
+  // able to run on different numbers for weeks with every suite green: each
+  // surface tested itself against its own copy.
+  const [, STEP_2_AT, STEP_3_AT] = THRESHOLDS_SEC;
+
+  it('is step 1 until the first threshold', () => {
     expect(ageStep(at(0), NOW)).toBe(1);
-    expect(ageStep(at(29), NOW)).toBe(1);
+    expect(ageStep(at(STEP_2_AT - 1), NOW)).toBe(1);
   });
-  it('is step 2 from 30s up to but not including 120s', () => {
-    expect(ageStep(at(30), NOW)).toBe(2);
-    expect(ageStep(at(119), NOW)).toBe(2);
+  it('is step 2 from the first threshold up to but not including the second', () => {
+    expect(ageStep(at(STEP_2_AT), NOW)).toBe(2);
+    expect(ageStep(at(STEP_3_AT - 1), NOW)).toBe(2);
   });
-  it('is step 3 from 120s onward, without an upper bound', () => {
-    expect(ageStep(at(120), NOW)).toBe(3);
+  it('is step 3 from the second threshold onward, without an upper bound', () => {
+    expect(ageStep(at(STEP_3_AT), NOW)).toBe(3);
     expect(ageStep(at(86_400), NOW)).toBe(3);
+  });
+  it('agrees with every other surface about when a call is urgent', () => {
+    // The assertion the old tests were missing entirely. Not "these are the
+    // numbers I expect" but "this surface uses the shared ones".
+    expect(THRESHOLDS_SEC).toEqual([0, 120, 600]);
   });
   it('treats a future timestamp as brand new rather than throwing', () => {
     expect(ageStep(at(-5), NOW)).toBe(1);

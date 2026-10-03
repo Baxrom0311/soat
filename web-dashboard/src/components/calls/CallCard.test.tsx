@@ -1,9 +1,15 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { CallCard } from './CallCard';
+import { THRESHOLDS_SEC } from '../../lib/generated-tokens';
 
 const NOW = new Date(Date.UTC(2026, 0, 1, 12, 0, 0));
 const ago = (s: number) => new Date(NOW.getTime() - s * 1000).toISOString();
+
+// Ages are derived from the shared thresholds rather than written out. These
+// tests used 60s and 300s, which meant "step 2" and "step 3" only under the
+// numbers this surface happened to carry at the time.
+const [, STEP_2_AT, STEP_3_AT] = THRESHOLDS_SEC;
 
 describe('CallCard', () => {
   it('shows the room number with no "Xona" prefix', () => {
@@ -22,12 +28,12 @@ describe('CallCard', () => {
     const { container, rerender } = render(<CallCard roomNumber="1" floor={1} createdAt={ago(5)} now={NOW} />);
     expect(container.querySelectorAll('[data-rail-slot]').length).toBe(3);
     expect(container.querySelectorAll('[data-rail-slot="on"]').length).toBe(1);
-    rerender(<CallCard roomNumber="1" floor={1} createdAt={ago(300)} now={NOW} />);
+    rerender(<CallCard roomNumber="1" floor={1} createdAt={ago(STEP_3_AT + 1)} now={NOW} />);
     expect(container.querySelectorAll('[data-rail-slot="on"]').length).toBe(3);
   });
 
   it('carries the age step as a data attribute so CSS selects the fill', () => {
-    const { container } = render(<CallCard roomNumber="1" floor={1} createdAt={ago(60)} now={NOW} />);
+    const { container } = render(<CallCard roomNumber="1" floor={1} createdAt={ago(STEP_2_AT)} now={NOW} />);
     expect(container.querySelector('[data-step="2"]')).toBeTruthy();
   });
 

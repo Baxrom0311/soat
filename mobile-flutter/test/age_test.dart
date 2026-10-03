@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nursecall/core/age.dart';
+import 'package:nursecall/theme/generated_tokens.dart';
 
 void main() {
   group('ageStep', () {
@@ -22,10 +23,15 @@ void main() {
       expect(ageStep(const Duration(hours: 9)), 3);
     });
 
-    test('the thresholds match the web dashboard exactly', () {
-      // Two surfaces showing the same ward must not disagree about whether a
-      // call is urgent. If tokens.json changes, this is the reminder.
-      expect(thresholdsSec, [0, 120, 600]);
+    test('the thresholds are the generated ones, not a second copy', () {
+      // This test used to assert the literal [0, 120, 600] under a comment
+      // saying it matched the web dashboard. It did not match: the dashboard
+      // and the watch were on [0, 30, 120]. The test asserted the phone agreed
+      // with itself and certified a claim that was false.
+      //
+      // Now it asserts the only thing worth asserting -- that this surface
+      // takes the value from tokens.json rather than keeping its own.
+      expect(thresholdsSec, same(kCallThresholdsSec));
     });
   });
 

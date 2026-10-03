@@ -1,7 +1,9 @@
-/** Mirrors call.thresholdsSec in tokens.json. The spec puts the thresholds there and
- *  nowhere else; this constant is the web target's copy and tokens.css carries the same
- *  numbers, so --check catches a divergence. */
-const THRESHOLDS_SEC = [0, 30, 120] as const;
+/** Generated from tokens.json, not copied.
+ *
+ *  This was a hand-written copy, under a comment asserting that --check would
+ *  catch a divergence. It would not have, and did not: the phone app carried its
+ *  own third copy with different numbers for weeks, unnoticed. */
+import { THRESHOLDS_SEC } from './generated-tokens';
 
 export type AgeStep = 1 | 2 | 3;
 
