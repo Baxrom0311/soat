@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { api, ApiError } from '../../api/client';
 import type {
@@ -11,7 +11,61 @@ import type {
   SubscriptionStatus,
   SuspensionReason,
 } from '../../api/types';
-import { PlusIcon } from '../Icons';
+import { ColumnsIcon, PlusIcon } from '../Icons';
+
+type ColumnKey =
+  | 'name'
+  | 'status'
+  | 'period'
+  | 'plan_price'
+  | 'devices'
+  | 'staff'
+  | 'rooms'
+  | 'active_calls'
+  | 'actions';
+
+interface ColumnDef {
+  key: ColumnKey;
+  label: string;
+}
+
+const ALL_COLUMNS: ColumnDef[] = [
+  { key: 'name', label: 'Nomi' },
+  { key: 'status', label: 'Obuna' },
+  { key: 'period', label: 'Muddat' },
+  { key: 'plan_price', label: 'Tarif / Narx' },
+  { key: 'devices', label: 'Qurilma' },
+  { key: 'staff', label: 'Xodim' },
+  { key: 'rooms', label: 'Xona' },
+  { key: 'active_calls', label: 'Faol' },
+  { key: 'actions', label: 'Amallar' },
+];
+
+const COLUMNS_STORAGE_KEY = 'nursecall.admin.clinics.visible_columns';
+
+const DEFAULT_VISIBLE_COLUMNS: Record<ColumnKey, boolean> = {
+  name: true,
+  status: true,
+  period: true,
+  plan_price: true,
+  devices: true,
+  staff: true,
+  rooms: true,
+  active_calls: true,
+  actions: true,
+};
+
+function loadSavedColumns(): Record<ColumnKey, boolean> {
+  try {
+    const raw = localStorage.getItem(COLUMNS_STORAGE_KEY);
+    if (!raw) return DEFAULT_VISIBLE_COLUMNS;
+    const parsed = JSON.parse(raw);
+    return { ...DEFAULT_VISIBLE_COLUMNS, ...parsed };
+  } catch {
+    return DEFAULT_VISIBLE_COLUMNS;
+  }
+}
+
 
 const STATUS_LABEL: Record<EffectiveStatus, string> = {
   trial: 'Sinov',
@@ -399,6 +453,48 @@ export function AdminClinicsTab() {
   const [createError, setCreateError] = useState('');
   const [creating, setCreating] = useState(false);
 
+  const [visibleCols, setVisibleCols] = useState<Record<ColumnKey, boolean>>(loadSavedColumns);
+  const [showColPicker, setShowColPicker] = useState(false);
+  const [search, setSearch] = useState('');
+  const colPickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (colPickerRef.current && !colPickerRef.current.contains(e.target as Node)) {
+        setShowColPicker(false);
+      }
+    }
+    if (showColPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showColPicker]);
+
+  function toggleColumn(key: ColumnKey) {
+    setVisibleCols((prev) => {
+      const currentActive = Object.values(prev).filter(Boolean).length;
+      if (prev[key] && currentActive <= 1) return prev;
+      const next = { ...prev, [key]: !prev[key] };
+      try {
+        localStorage.setItem(COLUMNS_STORAGE_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }
+
+  function resetColumns() {
+    setVisibleCols(DEFAULT_VISIBLE_COLUMNS);
+    try {
+      localStorage.setItem(COLUMNS_STORAGE_KEY, JSON.stringify(DEFAULT_VISIBLE_COLUMNS));
+    } catch {}
+  }
+
+  const activeColCount = ALL_COLUMNS.filter((col) => visibleCols[col.key]).length;
+
+  const filteredClinics = search.trim()
+    ? clinics.filter((c) => c.name.toLowerCase().includes(search.trim().toLowerCase()))
+    : clinics;
+
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [editStatus, setEditStatus] = useState<SubscriptionStatus>('trial');
@@ -417,6 +513,7 @@ export function AdminClinicsTab() {
   const [loadError, setLoadError] = useState('');
   const [rowError, setRowError] = useState('');
   const [rowBusyId, setRowBusyId] = useState<number | null>(null);
+
 
   async function load() {
     try {
@@ -570,29 +667,91 @@ export function AdminClinicsTab() {
       {rowError && <p className="form-error">{rowError}</p>}
 
       <div className="table-wrap glass">
+        <div className="table-toolbar">
+          <input
+            type="text"
+            className="table-search-input"
+            placeholder="Klinikalarni qidirish..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span className="table-count-meta">
+              {filteredClinics.length} ta klinika · {activeColCount}/{ALL_COLUMNS.length} ustun
+            </span>
+            <div className="col-picker-wrap" ref={colPickerRef}>
+              <button
+                type="button"
+                className={`col-picker-btn ${showColPicker ? 'is-active' : ''}`}
+                onClick={() => setShowColPicker((v) => !v)}
+                title="Jadval ustunlarini ko'rsatish/yashirish"
+              >
+                <ColumnsIcon />
+                <span>Ustunlar</span>
+              </button>
+
+              {showColPicker && (
+                <div className="col-picker-popover">
+                  <div className="col-picker-header">
+                    <span>Ustunlar ({activeColCount}/{ALL_COLUMNS.length})</span>
+                    <button type="button" className="col-picker-reset" onClick={resetColumns}>
+                      Hammasi
+                    </button>
+                  </div>
+                  <div className="col-picker-list">
+                    {ALL_COLUMNS.map((col) => (
+                      <label key={col.key} className="col-picker-item">
+                        <input
+                          type="checkbox"
+                          checked={!!visibleCols[col.key]}
+                          onChange={() => toggleColumn(col.key)}
+                          disabled={visibleCols[col.key] && activeColCount <= 1}
+                        />
+                        <span>{col.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         <table>
           <thead>
             <tr>
-              <th>Nomi</th>
-              <th>Obuna</th>
-              <th>Muddat</th>
-              <th>Tarif / Narx</th>
-              <th>Qurilma</th>
-              <th>Xodim</th>
-              <th>Xona</th>
-              <th>Faol</th>
-              <th>Amallar</th>
+              {visibleCols.name && <th>Nomi</th>}
+              {visibleCols.status && <th>Obuna</th>}
+              {visibleCols.period && <th>Muddat</th>}
+              {visibleCols.plan_price && <th>Tarif / Narx</th>}
+              {visibleCols.devices && <th>Qurilma</th>}
+              {visibleCols.staff && <th>Xodim</th>}
+              {visibleCols.rooms && <th>Xona</th>}
+              {visibleCols.active_calls && <th>Faol</th>}
+              {visibleCols.actions && <th>Amallar</th>}
             </tr>
           </thead>
           <tbody>
-            {clinics.map((c) =>
+            {filteredClinics.map((c) =>
               editingId === c.id ? (
                 <tr key={c.id}>
-                  <td data-label="Nomi">
-                    <input type="text" className="table-input" value={editName} onChange={(e) => setEditName(e.target.value)} />
-                  </td>
-                  <td data-label="Obuna / To'lov sozlamalari" colSpan={7}>
+                  {visibleCols.name && (
+                    <td data-label="Nomi">
+                      <input type="text" className="table-input" value={editName} onChange={(e) => setEditName(e.target.value)} />
+                    </td>
+                  )}
+                  <td
+                    data-label="Obuna / To'lov sozlamalari"
+                    colSpan={Math.max(1, activeColCount - (visibleCols.name ? 1 : 0) - (visibleCols.actions ? 1 : 0))}
+                  >
                     <div className="edit-grid">
+                      {!visibleCols.name && (
+                        <label className="edit-field">
+                          <span className="edit-field__label">Klinika nomi</span>
+                          <input type="text" className="table-input" value={editName} onChange={(e) => setEditName(e.target.value)} />
+                        </label>
+                      )}
+
                       <label className="edit-field">
                         <span className="edit-field__label">Holat</span>
                         <select className="bind-select" value={editStatus} onChange={(e) => setEditStatus(e.target.value as SubscriptionStatus)}>
@@ -686,115 +845,136 @@ export function AdminClinicsTab() {
                       boshidan sanaladi. Mavjud chegirmani olib tashlash uchun jadvaldagi
                       "Chegirmani olib tashlash" tugmasidan foydalaning.
                     </p>
+                    {!visibleCols.actions && (
+                      <div className="row-actions" style={{ marginTop: '10px' }}>
+                        <button className="btn btn-primary btn-sm" onClick={() => saveEdit(c.id)} disabled={editBusy} type="button">
+                          Saqlash
+                        </button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)} type="button">
+                          Bekor
+                        </button>
+                        {editError && <p className="form-error">{editError}</p>}
+                      </div>
+                    )}
                   </td>
-                  <td data-label="Amallar">
-                    <div className="row-actions">
-                      <button className="btn btn-primary btn-sm" onClick={() => saveEdit(c.id)} disabled={editBusy} type="button">
-                        Saqlash
-                      </button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)} type="button">
-                        Bekor
-                      </button>
-                    </div>
-                    {editError && <p className="form-error">{editError}</p>}
-                  </td>
+                  {visibleCols.actions && (
+                    <td data-label="Amallar">
+                      <div className="row-actions">
+                        <button className="btn btn-primary btn-sm" onClick={() => saveEdit(c.id)} disabled={editBusy} type="button">
+                          Saqlash
+                        </button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)} type="button">
+                          Bekor
+                        </button>
+                      </div>
+                      {editError && <p className="form-error">{editError}</p>}
+                    </td>
+                  )}
                 </tr>
               ) : (
                 <tr key={c.id}>
-                  <td data-label="Nomi">{c.name}</td>
-                  <td data-label="Obuna">
-                    <div className="billing-cell">
-                      <span className={`sub-pill ${c.billing.effective_status}`}>
-                        {STATUS_LABEL[c.billing.effective_status]}
-                      </span>
-                      {c.billing.effective_status === 'suspended' && (
+                  {visibleCols.name && <td data-label="Nomi">{c.name}</td>}
+                  {visibleCols.status && (
+                    <td data-label="Obuna">
+                      <div className="billing-cell">
+                        <span className={`sub-pill ${c.billing.effective_status}`}>
+                          {STATUS_LABEL[c.billing.effective_status]}
+                        </span>
+                        {c.billing.effective_status === 'suspended' && (
+                          <span className="muted">
+                            {c.billing.suspension_reason
+                              ? SUSPENSION_LABEL[c.billing.suspension_reason]
+                              : 'sababi belgilanmagan'}
+                          </span>
+                        )}
+                        {!c.billing.enforcement_enabled && (
+                          <span className="sub-pill off">Nazorat o'chirilgan</span>
+                        )}
+                      </div>
+                    </td>
+                  )}
+                  {visibleCols.period && (
+                    <td data-label="Muddat">
+                      <div className="billing-cell">
+                        <span>To'langan: {fmtDate(c.billing.paid_until)}</span>
+                        <span
+                          className={
+                            c.billing.days_until_expiry !== null && c.billing.days_until_expiry <= 7
+                              ? 'days-left days-left--urgent'
+                              : 'days-left'
+                          }
+                        >
+                          {daysLabel(c.billing.days_until_expiry)}
+                        </span>
+                        <span className="muted">Bloklanadi: {fmtDate(c.billing.blocked_at)}</span>
+                      </div>
+                    </td>
+                  )}
+                  {visibleCols.plan_price && (
+                    <td data-label="Tarif / Narx">
+                      <div className="billing-cell">
+                        <span className="price">{fmtMoney(c.billing.effective_price, c.billing.currency)}</span>
                         <span className="muted">
-                          {c.billing.suspension_reason
-                            ? SUSPENSION_LABEL[c.billing.suspension_reason]
-                            : 'sababi belgilanmagan'}
+                          {c.billing.plan_name ?? 'Tarifsiz'} · {periodLabel(c.billing.billing_period_months)}
+                          {c.billing.custom_price_amount !== null && <span className="price-override"> · alohida narx</span>}
                         </span>
-                      )}
-                      {!c.billing.enforcement_enabled && (
-                        <span className="sub-pill off">Nazorat o'chirilgan</span>
-                      )}
-                    </div>
-                  </td>
-                  <td data-label="Muddat">
-                    <div className="billing-cell">
-                      <span>To'langan: {fmtDate(c.billing.paid_until)}</span>
-                      <span
-                        className={
-                          c.billing.days_until_expiry !== null && c.billing.days_until_expiry <= 7
-                            ? 'days-left days-left--urgent'
-                            : 'days-left'
-                        }
-                      >
-                        {daysLabel(c.billing.days_until_expiry)}
-                      </span>
-                      <span className="muted">Bloklanadi: {fmtDate(c.billing.blocked_at)}</span>
-                    </div>
-                  </td>
-                  <td data-label="Tarif / Narx">
-                    <div className="billing-cell">
-                      <span className="price">{fmtMoney(c.billing.effective_price, c.billing.currency)}</span>
-                      <span className="muted">
-                        {c.billing.plan_name ?? 'Tarifsiz'} · {periodLabel(c.billing.billing_period_months)}
-                        {c.billing.custom_price_amount !== null && <span className="price-override"> · alohida narx</span>}
-                      </span>
-                      {c.billing.discount_percent !== null && c.billing.discount_percent > 0 && (
-                        <span className="price-override">
-                          −{c.billing.discount_percent}%
-                          {c.billing.discount_ends_at
-                            ? ` · ${fmtDate(c.billing.discount_ends_at)} gacha`
-                            : ''}
-                          {c.billing.list_price !== null
-                            ? ` · chegirmasiz ${fmtMoney(c.billing.list_price, c.billing.currency)}`
-                            : ''}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td data-label="Qurilma">{c.billing.device_count}</td>
-                  <td data-label="Xodim">{c.staff_count}</td>
-                  <td data-label="Xona">{c.room_count}</td>
-                  <td data-label="Faol">{c.active_calls}</td>
-                  <td data-label="Amallar">
-                    <div className="row-actions">
-                      <button className="btn btn-ghost btn-sm" onClick={() => startEdit(c)} type="button">
-                        Tahrirlash
-                      </button>
-                      {c.billing.effective_status === 'trial' && (
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={() => startBilling(c)}
-                          disabled={rowBusyId === c.id}
-                          type="button"
-                          title="Sinovni tugatib, to'lov muddatini boshlash"
-                        >
-                          Sinovni tugatish
+                        {c.billing.discount_percent !== null && c.billing.discount_percent > 0 && (
+                          <span className="price-override">
+                            −{c.billing.discount_percent}%
+                            {c.billing.discount_ends_at
+                              ? ` · ${fmtDate(c.billing.discount_ends_at)} gacha`
+                              : ''}
+                            {c.billing.list_price !== null
+                              ? ` · chegirmasiz ${fmtMoney(c.billing.list_price, c.billing.currency)}`
+                              : ''}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  )}
+                  {visibleCols.devices && <td data-label="Qurilma">{c.billing.device_count}</td>}
+                  {visibleCols.staff && <td data-label="Xodim">{c.staff_count}</td>}
+                  {visibleCols.rooms && <td data-label="Xona">{c.room_count}</td>}
+                  {visibleCols.active_calls && <td data-label="Faol">{c.active_calls}</td>}
+                  {visibleCols.actions && (
+                    <td data-label="Amallar">
+                      <div className="row-actions">
+                        <button className="btn btn-ghost btn-sm" onClick={() => startEdit(c)} type="button">
+                          Tahrirlash
                         </button>
-                      )}
-                      <button className="btn btn-ghost btn-sm" onClick={() => setPayModal(c)} type="button">
-                        To'lov
-                      </button>
-                      {c.billing.discount_percent !== null && c.billing.discount_percent > 0 && (
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => clearDiscount(c)}
-                          disabled={rowBusyId === c.id}
-                          type="button"
-                        >
-                          Chegirmani olib tashlash
+                        {c.billing.effective_status === 'trial' && (
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => startBilling(c)}
+                            disabled={rowBusyId === c.id}
+                            type="button"
+                            title="Sinovni tugatib, to'lov muddatini boshlash"
+                          >
+                            Sinovni tugatish
+                          </button>
+                        )}
+                        <button className="btn btn-ghost btn-sm" onClick={() => setPayModal(c)} type="button">
+                          To'lov
                         </button>
-                      )}
-                      <button className="btn btn-ghost btn-sm" onClick={() => setAdminModal(c)} type="button">
-                        Admin
-                      </button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => setStaffModal(c)} type="button">
-                        Xodimlar
-                      </button>
-                    </div>
-                  </td>
+                        {c.billing.discount_percent !== null && c.billing.discount_percent > 0 && (
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => clearDiscount(c)}
+                            disabled={rowBusyId === c.id}
+                            type="button"
+                          >
+                            Chegirmani olib tashlash
+                          </button>
+                        )}
+                        <button className="btn btn-ghost btn-sm" onClick={() => setAdminModal(c)} type="button">
+                          Admin
+                        </button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setStaffModal(c)} type="button">
+                          Xodimlar
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               )
             )}

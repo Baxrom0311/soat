@@ -199,3 +199,14 @@ export function WarningIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function ColumnsIcon(props: IconProps) {
+  return (
+    <svg {...base} className={props.className}>
+      <rect x="3" y="4" width="6" height="16" rx="1.5" />
+      <rect x="11" y="4" width="4.5" height="16" rx="1.5" />
+      <rect x="17.5" y="4" width="3.5" height="16" rx="1" />
+    </svg>
+  );
+}
+
