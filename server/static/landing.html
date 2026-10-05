@@ -45,15 +45,14 @@
   --text2: #334155;
   --text3: #64748B;
   --primary: #0A6AFA;
-  --primary-glow: rgba(10, 106, 250, 0.3);
-  --cyan: #00E5FF;
-  --cyan-glow: rgba(0, 229, 255, 0.25);
+  --primary-glow: rgba(10, 106, 250, 0.28);
+  --cyan: #00B4D8;
+  --cyan-glow: rgba(0, 180, 216, 0.25);
   --red: #EF4444;
-  --red-glow: rgba(239, 68, 68, 0.35);
   --emerald: #10B981;
-  --emerald-glow: rgba(16, 185, 129, 0.25);
-  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-body: 'Inter', system-ui, sans-serif;
+  --amber: #F59E0B;
+  --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
   --radius-sm: 8px;
   --radius-md: 14px;
@@ -61,7 +60,7 @@
   --radius-xl: 28px;
   --radius-full: 9999px;
   --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
-  --shadow-glass: 0 20px 40px -15px rgba(10, 106, 250, 0.1);
+  --shadow-glow: 0 20px 40px -15px rgba(10, 106, 250, 0.12);
 }
 
 [data-theme="dark"] {
@@ -79,7 +78,7 @@
   --cyan: #00E5FF;
   --cyan-glow: rgba(0, 229, 255, 0.4);
   --shadow-card: 0 16px 40px -12px rgba(0, 0, 0, 0.5);
-  --shadow-glass: 0 20px 50px -15px rgba(0, 229, 255, 0.12);
+  --shadow-glow: 0 20px 50px -15px rgba(0, 229, 255, 0.14);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -117,11 +116,11 @@ body {
 }
 [data-theme="dark"] .ambient-blob { opacity: 0.12; }
 .blob-1 { top: -100px; left: 50%; transform: translateX(-50%); width: 700px; height: 450px; background: #0A6AFA; }
-.blob-2 { top: 30%; left: -100px; width: 500px; height: 500px; background: #00E5FF; }
-.blob-3 { top: 65%; right: -150px; width: 600px; height: 600px; background: #38BDF8; }
+.blob-2 { top: 35%; left: -100px; width: 500px; height: 500px; background: #00E5FF; }
+.blob-3 { top: 70%; right: -150px; width: 600px; height: 600px; background: #38BDF8; }
 
 /* Typography */
-h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height: 1.25; color: var(--text1); }
+h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height: 1.22; color: var(--text1); }
 .gradient-text {
   background: linear-gradient(135deg, #0A6AFA 0%, #00B4D8 60%, #00E5FF 100%);
   -webkit-background-clip: text;
@@ -180,12 +179,12 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
   border: 1px solid var(--border);
 }
 .btn-outline:hover {
-  border-color: var(--cyan);
+  border-color: var(--primary);
   color: var(--primary);
   transform: translateY(-2px);
 }
 .btn-lg {
-  padding: 16px 32px;
+  padding: 15px 30px;
   font-size: 16px;
   border-radius: var(--radius-md);
 }
@@ -243,7 +242,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 26px;
 }
 .nav-link {
   color: var(--text2);
@@ -286,16 +285,83 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
   justify-content: center;
 }
 
-/* Hero Section */
+/* ================= HERO WITH NURSE VISUAL ================= */
 .hero {
-  padding: 64px 0 84px;
+  padding: 60px 0 80px;
   position: relative;
 }
 .hero-grid {
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 48px;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 52px;
   align-items: center;
+}
+.hero-visual-card {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.hero-visual-frame {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  border-radius: var(--radius-xl);
+  overflow: visible;
+}
+.hero-nurse-img {
+  width: 100%;
+  max-height: 480px;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 20px 40px rgba(10, 106, 250, 0.22));
+  transition: transform 0.3s ease;
+}
+.hero-nurse-img:hover {
+  transform: scale(1.02);
+}
+
+/* Floating Trust Cards near the Nurse */
+.float-card {
+  position: absolute;
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.15);
+  animation: floatSlow 4s ease-in-out infinite alternate;
+}
+.float-card-top {
+  top: 20px;
+  right: -10px;
+}
+.float-card-bottom {
+  bottom: 25px;
+  left: -10px;
+  animation-delay: 2s;
+}
+@keyframes floatSlow {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-8px); }
+}
+.float-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.float-icon-blue { background: rgba(10, 106, 250, 0.12); color: var(--primary); }
+.float-icon-emerald { background: rgba(16, 185, 129, 0.12); color: var(--emerald); }
+.float-text h5 { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+.float-text p { font-size: 11px; color: var(--text3); margin: 0; }
+
+.hero-content {
+  display: flex;
+  flex-direction: column;
 }
 .hero-tag {
   display: inline-flex;
@@ -309,6 +375,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
   font-weight: 600;
   color: var(--primary);
   margin-bottom: 20px;
+  align-self: flex-start;
 }
 [data-theme="dark"] .hero-tag {
   background: rgba(0, 229, 255, 0.08);
@@ -329,14 +396,14 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 }
 
 .hero h1 {
-  font-size: 44px;
+  font-size: 42px;
   letter-spacing: -0.03em;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 .hero-sub {
   font-size: 17px;
   color: var(--text2);
-  margin-bottom: 32px;
+  margin-bottom: 30px;
   line-height: 1.65;
 }
 .hero-ctas {
@@ -344,181 +411,36 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 36px;
+  margin-bottom: 34px;
 }
-.stats-strip {
+.trust-strip {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  padding-top: 28px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  padding-top: 24px;
   border-top: 1px solid var(--border);
 }
-.stat-card {
-  display: flex;
-  flex-direction: column;
-}
-.stat-num {
-  font-family: var(--font-display);
-  font-size: 26px;
-  font-weight: 800;
-  color: var(--primary);
-  letter-spacing: -0.02em;
-}
-.stat-label {
-  font-size: 12px;
-  color: var(--text3);
-  font-weight: 500;
-}
-
-/* Interactive Live Simulator */
-.simulator-box {
-  position: relative;
-}
-.simulator-card {
-  padding: 24px;
-  border: 1px solid var(--border);
-  position: relative;
-  overflow: hidden;
-}
-.sim-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 18px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
-}
-.sim-title {
+.trust-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text1);
-}
-.live-beacon {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--emerald);
-  background: rgba(16, 185, 129, 0.1);
-  padding: 3px 10px;
-  border-radius: var(--radius-full);
-}
-.live-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--emerald);
-  animation: pulse 1.5s infinite;
-}
-
-.sim-alert-card {
-  background: linear-gradient(135deg, #C4241A 0%, #8A100A 100%);
-  color: #FFF;
-  border-radius: var(--radius-md);
-  padding: 20px;
-  margin-bottom: 18px;
-  box-shadow: 0 12px 30px var(--red-glow);
-  position: relative;
-  overflow: hidden;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.sim-alert-card.is-acked {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  box-shadow: 0 12px 30px rgba(16, 185, 129, 0.3);
-  border-color: rgba(255, 255, 255, 0.4);
-}
-.sim-alert-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-.sim-room {
-  font-family: var(--font-display);
-  font-size: 36px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.03em;
-}
-.sim-time {
-  font-family: var(--font-mono);
-  font-size: 17px;
-  font-weight: 700;
-  background: rgba(0, 0, 0, 0.25);
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
-}
-.sim-sub {
   font-size: 13px;
-  opacity: 0.95;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  font-weight: 600;
+  color: var(--text2);
 }
-.sim-ack-btn {
-  width: 100%;
-  background: #FFFFFF;
-  color: #C4241A;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 15px;
-  padding: 12px;
-  border-radius: var(--radius-sm);
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  transition: transform 0.15s, background-color 0.2s;
-}
-.sim-ack-btn:active { transform: scale(0.98); }
-.sim-alert-card.is-acked .sim-ack-btn {
-  color: #059669;
-}
-
-.sim-devices-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-.sim-device-pill {
-  padding: 12px;
-  background: var(--bg-alt);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.sim-device-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: rgba(10, 106, 250, 0.1);
-  color: var(--primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.trust-check {
+  color: var(--emerald);
+  font-size: 16px;
   flex-shrink: 0;
 }
-.sim-device-text h5 { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
-.sim-device-text p { font-size: 11px; color: var(--text3); }
 
 /* Common Sections */
-.section { padding: 84px 0; }
+.section { padding: 80px 0; }
 .section-alt { background: var(--bg-alt); }
 .section-head {
   text-align: center;
-  max-width: 760px;
-  margin: 0 auto 52px;
+  max-width: 740px;
+  margin: 0 auto 48px;
 }
 .section-head .sec-tag {
   display: inline-block;
@@ -540,7 +462,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
   line-height: 1.6;
 }
 
-/* Comparison / Pain Points Section */
+/* Comparison / Problem & Solution */
 .comparison-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -616,7 +538,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 }
 .role-card:hover {
   transform: translateY(-4px);
-  border-color: var(--cyan);
+  border-color: var(--primary);
 }
 .role-badge {
   font-size: 11px;
@@ -640,7 +562,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 .role-card h3 { font-size: 18px; margin-bottom: 10px; }
 .role-card p { font-size: 13px; color: var(--text2); line-height: 1.55; }
 
-/* What We Sell / Complete Packages */
+/* Complete Hardware & Solution Package */
 .products-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -654,7 +576,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 }
 .product-card:hover {
   transform: translateY(-4px);
-  border-color: var(--cyan);
+  border-color: var(--primary);
 }
 .product-badge {
   font-size: 11px;
@@ -988,7 +910,11 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 
 /* Responsive */
 @media (max-width: 1024px) {
-  .hero-grid { grid-template-columns: 1fr; }
+  .hero-grid { grid-template-columns: 1fr; gap: 36px; text-align: center; }
+  .hero-visual-card { order: -1; }
+  .hero-content { align-items: center; }
+  .hero-ctas { justify-content: center; }
+  .trust-strip { justify-content: center; }
   .roles-grid, .products-grid, .pricing-grid, .results-grid { grid-template-columns: 1fr 1fr; }
   .comparison-grid, .calc-card, .contact-grid { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr 1fr; }
@@ -996,8 +922,10 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 @media (max-width: 680px) {
   .nav-links, .header-actions .btn { display: none; }
   .menu-btn { display: flex; }
-  .hero h1 { font-size: 32px; }
-  .stats-strip { grid-template-columns: 1fr 1fr; }
+  .hero h1 { font-size: 30px; }
+  .hero-nurse-img { max-height: 340px; }
+  .float-card { display: none; }
+  .trust-strip { grid-template-columns: 1fr; text-align: left; }
   .roles-grid, .products-grid, .pricing-grid, .results-grid, .comparison-grid { grid-template-columns: 1fr; }
   .calc-card { padding: 24px; }
   .form-card { padding: 24px; }
@@ -1067,8 +995,8 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 
     <nav class="nav-links">
       <a href="#muammo" class="nav-link">Muammo & Yechim</a>
-      <a href="#qulayliklar" class="nav-link">Imkoniyatlar</a>
-      <a href="#mahsulotlar" class="nav-link">Nima sotamiz?</a>
+      <a href="#qulayliklar" class="nav-link">Qulayliklar</a>
+      <a href="#mahsulotlar" class="nav-link">Komplekt</a>
       <a href="#natija" class="nav-link">Natijalar</a>
       <a href="#kalkulyator" class="nav-link">Kalkulyator</a>
       <a href="#narxlar" class="nav-link">Tariflar</a>
@@ -1099,8 +1027,8 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
     </div>
     <div class="mobile-drawer-links">
       <a href="#muammo" onclick="closeDrawer()">Muammo & Yechim</a>
-      <a href="#qulayliklar" onclick="closeDrawer()">Imkoniyatlar</a>
-      <a href="#mahsulotlar" onclick="closeDrawer()">Nima sotamiz?</a>
+      <a href="#qulayliklar" onclick="closeDrawer()">Qulayliklar</a>
+      <a href="#mahsulotlar" onclick="closeDrawer()">Komplekt</a>
       <a href="#natija" onclick="closeDrawer()">Natijalar</a>
       <a href="#kalkulyator" onclick="closeDrawer()">Kalkulyator</a>
       <a href="#narxlar" onclick="closeDrawer()">Tariflar</a>
@@ -1114,96 +1042,68 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 <!-- ================= HERO ================= -->
 <section class="hero">
   <div class="wrap hero-grid">
+    <!-- Nurse Creative Visual with Floating Trust Highlights -->
+    <div class="hero-visual-card">
+      <div class="hero-visual-frame">
+        <img src="/static/nurse_pic.png" alt="NurseCall Hamshira va Tibbiy Xizmat" class="hero-nurse-img" />
+
+        <div class="glass float-card float-card-top">
+          <div class="float-icon float-icon-blue">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/><path d="M12 5V2M12 22v-3"/></svg>
+          </div>
+          <div class="float-text">
+            <h5>Bilakda 1 soniyada</h5>
+            <p>Aqlli soatda tebranish</p>
+          </div>
+        </div>
+
+        <div class="glass float-card float-card-bottom">
+          <div class="float-icon float-icon-emerald">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="float-text">
+            <h5>0 ta o'tkazilgan chaqiruv</h5>
+            <p>100% nazorat va xotirjamlik</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hero Value Proposition Text -->
     <div class="hero-content">
       <div class="hero-tag">
         <span class="hero-tag-dot"></span>
-        <span>Kasalxonalar va Klinikalar Uchun #1 Simsiz Chaqiruv Tizimi</span>
+        <span>Klinikangiz Uchun Zamonaviy Hamshira Chaqiruv Tizimi</span>
       </div>
 
-      <h1>Bemor tugmani bosadi — hamshira soatida <span class="gradient-text">1 soniyada</span> biladi</h1>
+      <h1>Klinikangiz uchun <span class="gradient-text">simsiz va aqlli</span> hamshira chaqiruv tizimi</h1>
       <p class="hero-sub">
-        Sim tortilmaydi, mavjud xonalarga 1 kunda o'rnatiladi. Bemorlar rozi va xotirjam, hamshiralar chaqiruvni o'tkazib yubormaydi, bosh shifokor uchun esa to'liq va shaffof nazorat.
+        Bemor yotog'i yonidagi tugmani bosadi — hamshira bilagidagi soatida va telefonda darhol xabar oladi. Sim tortilmaydi, 1 kunda o'rnatiladi, bemorlar xotirjam va bosh shifokor uchun to'liq nazorat.
       </p>
 
       <div class="hero-ctas">
         <a href="#aloqa" class="btn btn-primary btn-lg">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          14 Kunlik Bepul Sinov Olish
+          14 Kun Bepul Sinab Ko'rish
         </a>
-        <a href="#muammo" class="btn btn-outline btn-lg">
+        <a href="#qulayliklar" class="btn btn-outline btn-lg">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           Qanday Yengillik Beradi?
         </a>
       </div>
 
-      <div class="stats-strip">
-        <div class="stat-card">
-          <span class="stat-num">&lt; 1 soniya</span>
-          <span class="stat-label">Hamshiraga yetib borish</span>
+      <div class="trust-strip">
+        <div class="trust-item">
+          <span class="trust-check">✓</span>
+          <span>Simsiz o'rnatish (1 kunda)</span>
         </div>
-        <div class="stat-card">
-          <span class="stat-num">0 ta</span>
-          <span class="stat-label">Yo'qotilgan chaqiruv</span>
+        <div class="trust-item">
+          <span class="trust-check">✓</span>
+          <span>Aqlli soat va telefon</span>
         </div>
-        <div class="stat-card">
-          <span class="stat-num">1 kunda</span>
-          <span class="stat-label">Tezkor o'rnatib berish</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-num">100%</span>
-          <span class="stat-label">Rahbariyat nazorati</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Live Interactive Simulator -->
-    <div class="simulator-box">
-      <div class="glass simulator-card">
-        <div class="sim-header">
-          <div class="sim-title">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Tizim Ishlashini Sinab Ko'ring
-          </div>
-          <div class="live-beacon">
-            <span class="live-dot"></span>
-            TIZIM FAOL
-          </div>
-        </div>
-
-        <div class="sim-alert-card" id="simCard">
-          <div class="sim-alert-head">
-            <span class="sim-room" id="simRoom">304-XONA</span>
-            <span class="sim-time" id="simTimer">00:03</span>
-          </div>
-          <div class="sim-sub">
-            <span>3-qavat • 2-koyka (Bemor chaqirmoqda)</span>
-            <span id="simStatusBadge" style="background:rgba(255,255,255,0.2); padding:2px 8px; border-radius:4px; font-weight:700;">FAOL CHAQIRUV</span>
-          </div>
-          <button type="button" class="sim-ack-btn" id="simAckBtn" onclick="toggleSimAck()">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-            <span id="simAckText">Soatda Qabul Qilish (1 bosish)</span>
-          </button>
-        </div>
-
-        <div class="sim-devices-row">
-          <div class="sim-device-pill">
-            <div class="sim-device-icon">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/><path d="M12 5V2M12 22v-3"/></svg>
-            </div>
-            <div class="sim-device-text">
-              <h5>Aqlli Hamshira Soati</h5>
-              <p>Bilakda kuchli tebranish</p>
-            </div>
-          </div>
-          <div class="sim-device-pill">
-            <div class="sim-device-icon">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            </div>
-            <div class="sim-device-text">
-              <h5>Postdagi Katta Ekran</h5>
-              <p>Qizil yonib turuvchi xona</p>
-            </div>
-          </div>
+        <div class="trust-item">
+          <span class="trust-check">✓</span>
+          <span>To'liq vaqt hisoboti</span>
         </div>
       </div>
     </div>
@@ -1731,8 +1631,8 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
       <h4>Tizim</h4>
       <ul class="footer-links">
         <li><a href="#muammo">Muammo va Yechim</a></li>
-        <li><a href="#qulayliklar">Imkoniyatlar</a></li>
-        <li><a href="#mahsulotlar">Nima sotamiz?</a></li>
+        <li><a href="#qulayliklar">Qulayliklar</a></li>
+        <li><a href="#mahsulotlar">Komplekt tarkibi</a></li>
         <li><a href="#kalkulyator">Kalkulyator</a></li>
       </ul>
     </div>
@@ -1790,37 +1690,6 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
   function toggleFaq(el) {
     var item = el.parentElement;
     item.classList.toggle('open');
-  }
-
-  // Live Simulator Logic
-  var simAcked = false;
-  var simSeconds = 3;
-  var simTimerInterval = setInterval(function () {
-    if (!simAcked) {
-      simSeconds++;
-      var m = Math.floor(simSeconds / 60).toString().padStart(2, '0');
-      var s = (simSeconds % 60).toString().padStart(2, '0');
-      var timerEl = document.getElementById('simTimer');
-      if (timerEl) timerEl.textContent = m + ':' + s;
-    }
-  }, 1000);
-
-  function toggleSimAck() {
-    var card = document.getElementById('simCard');
-    var text = document.getElementById('simAckText');
-    var badge = document.getElementById('simStatusBadge');
-    simAcked = !simAcked;
-
-    if (simAcked) {
-      card?.classList.add('is-acked');
-      if (text) text.textContent = "Qabul qilindi (Hamshira yo'lda)";
-      if (badge) badge.textContent = "QABUL QILINDI";
-    } else {
-      card?.classList.remove('is-acked');
-      if (text) text.textContent = "Soatda Qabul Qilish (1 bosish)";
-      if (badge) badge.textContent = "FAOL CHAQIRUV";
-      simSeconds = 0;
-    }
   }
 
   // Pricing Calculator Logic
