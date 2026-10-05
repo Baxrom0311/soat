@@ -12,8 +12,21 @@ const base = {
 
 export function LogoIcon(props: IconProps) {
   return (
-    <svg {...base} strokeWidth={2} className={props.className}>
-      <path d="M3 12h4l2 6 4-14 2 8h6" />
+    <svg viewBox="0 0 24 24" fill="none" className={props.className} aria-hidden="true">
+      <rect width="24" height="24" rx="6" fill="currentColor" fillOpacity="0.12" />
+      <path
+        d="M10 5h4v4h4v4h-4v4h-4v-4H6V9h4V5z"
+        fill="currentColor"
+        fillOpacity="0.22"
+      />
+      <path
+        d="M4 12.5h3.5l1.5-4 2.5 8 2-5 1.5 1h5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="15" cy="12.5" r="1.2" fill="currentColor" />
     </svg>
   );
 }
