@@ -191,6 +191,7 @@ function ClaimRow({
 }) {
   const [clinicId, setClinicId] = useState<string>(clinics[0] ? String(clinics[0].id) : '');
   const [deviceId, setDeviceId] = useState('');
+  const [pairingCode, setPairingCode] = useState('');
   const [floor, setFloor] = useState('1');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -199,17 +200,14 @@ function ClaimRow({
     if (!clinicId && clinics[0]) setClinicId(String(clinics[0].id));
   }, [clinics, clinicId]);
 
-  useEffect(() => {
-    if (!deviceId) setDeviceId(`esp32-${discovered.chip_id.slice(-6)}`);
-  }, [discovered.chip_id, deviceId]);
-
   async function claim() {
     setError('');
     setBusy(true);
     try {
       await api.claimDiscoveredDevice(discovered.chip_id, {
         clinic_id: Number(clinicId),
-        device_id: deviceId.trim(),
+        device_id: deviceId.trim() || undefined,
+        pairing_code: pairingCode.trim().toLowerCase(),
         floor: Number(floor),
       });
       onClaimed();
@@ -240,7 +238,8 @@ function ClaimRow({
             type="text"
             className="table-input"
             style={{ width: 140 }}
-            placeholder="device_id"
+            maxLength={29}
+            placeholder="Nomi (ixtiyoriy)"
             value={deviceId}
             onChange={(e) => setDeviceId(e.target.value)}
           />
@@ -253,10 +252,13 @@ function ClaimRow({
             value={floor}
             onChange={(e) => setFloor(e.target.value)}
           />
+          <input aria-label="Qurilmadagi tasdiqlash kodi" className="table-input"
+            placeholder="Tasdiqlash kodi" maxLength={12} value={pairingCode}
+            onChange={(e) => setPairingCode(e.target.value)} />
           <button
             className="btn btn-primary btn-sm"
             onClick={claim}
-            disabled={busy || !clinicId || !deviceId}
+            disabled={busy || !clinicId || !/^[0-9a-fA-F]{12}$/.test(pairingCode)}
             type="button"
           >
             {busy ? '...' : "Klinikaga biriktirish"}

@@ -117,15 +117,13 @@ def test_an_event_with_no_floor_reaches_everyone():
     assert len(restricted.sent) == 1
 
 
-def test_an_unregistered_socket_fails_open():
-    """A connection missing from the metadata receives everything rather than
-    nothing. Both are bugs, but one of them is a nurse silently not being told."""
+def test_an_unregistered_socket_cannot_receive_clinic_data():
+    """A revoked or incomplete registration must not inherit unrestricted access."""
     m = ConnectionManager()
     ws = FakeSocket()
-    m.active[1] = [ws]  # registered in the list, absent from meta
-
+    m.active[1] = [ws]
     run(m.broadcast(1, {"type": "new_call"}, floor=4))
-    assert len(ws.sent) == 1
+    assert ws.sent == []
 
 
 # ------------------------------------------------------------- resilience

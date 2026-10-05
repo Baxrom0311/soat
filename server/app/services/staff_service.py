@@ -6,6 +6,7 @@ from app.core.security import hash_password
 from app.enums import StaffRole
 from app.models import Staff
 from app.repositories import push_token_repo, staff_floor_repo, staff_repo
+from app.services.session_service import revoke_staff_sessions
 
 
 def list_staff(db: Session, clinic_id: int) -> list[Staff]:
@@ -80,6 +81,7 @@ def update_staff(
         if len(password) < 8:
             raise HTTPException(status_code=422, detail="Password must be at least 8 characters")
         staff.password_hash = hash_password(password)
+        revoke_staff_sessions(db, staff.id)
     if floors is not None:
         staff_floor_repo.set_floors(db, staff.id, floors)
 

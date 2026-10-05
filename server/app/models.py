@@ -129,7 +129,7 @@ class Payment(Base):
     # lost -- returns the ALREADY-recorded payment instead of recording a second one
     # and double-extending paid_until. NULL is allowed (unique still permits multiple
     # NULLs) for any caller that doesn't send one.
-    idempotency_key: Mapped[str | None] = mapped_column(String, nullable=True, unique=True)
+    idempotency_key: Mapped[str | None] = mapped_column(String, nullable=True, unique=True, index=True)
     paid_until_after: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     paid_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -138,12 +138,14 @@ class Payment(Base):
 
 class Staff(Base):
     __tablename__ = "staff"
+    __table_args__ = (UniqueConstraint("email", name="staff_email_key"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     # NULL clinic_id == platform-level account (superadmin); every clinic staff row has one.
     clinic_id: Mapped[int | None] = mapped_column(ForeignKey("clinics.id"), nullable=True)
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
     password_hash: Mapped[str] = mapped_column(String, nullable=False)
+    session_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     role: Mapped[StaffRole] = mapped_column(
         SAEnum(
             StaffRole,
@@ -204,6 +206,10 @@ class Room(Base):
 
 class Device(Base):
     __tablename__ = "devices"
+    __table_args__ = (
+        UniqueConstraint("device_id", name="devices_device_id_key"),
+        UniqueConstraint("chip_id", name="devices_chip_id_key"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     clinic_id: Mapped[int] = mapped_column(ForeignKey("clinics.id"), nullable=False, index=True)
@@ -240,6 +246,7 @@ class DiscoveredDevice(Base):
     IS NULL + a recent last_seen_at."""
 
     __tablename__ = "discovered_devices"
+    __table_args__ = (UniqueConstraint("chip_id", name="discovered_devices_chip_id_key"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     chip_id: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
@@ -250,7 +257,10 @@ class DiscoveredDevice(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     last_ip: Mapped[str | None] = mapped_column(String, nullable=True)
-    claimed_device_id: Mapped[int | None] = mapped_column(ForeignKey("devices.id"), nullable=True)
+    provisioning_secret_hash: Mapped[str | None] = mapped_column(String, nullable=True)
+    claimed_device_id: Mapped[int | None] = mapped_column(
+        ForeignKey("devices.id", ondelete="SET NULL"), nullable=True
+    )
 
 
 class Button(Base):
@@ -271,7 +281,7 @@ class UnassignedSignal(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     clinic_id: Mapped[int] = mapped_column(ForeignKey("clinics.id"), nullable=False, index=True)
-    device_id: Mapped[int] = mapped_column(ForeignKey("devices.id"), nullable=False)
+    device_id: Mapped[int] = mapped_column(ForeignKey("devices.id", ondelete="CASCADE"), nullable=False)
     ev1527_code: Mapped[int] = mapped_column(BigInteger, nullable=False)
     first_seen_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -284,6 +294,7 @@ class UnassignedSignal(Base):
 
 class PushToken(Base):
     __tablename__ = "push_tokens"
+    __table_args__ = (UniqueConstraint("expo_push_token", name="push_tokens_expo_push_token_key"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     clinic_id: Mapped[int] = mapped_column(ForeignKey("clinics.id"), nullable=False, index=True)

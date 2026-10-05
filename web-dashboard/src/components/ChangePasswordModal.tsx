@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { api, ApiError } from '../api/client';
+import { api, ApiError, triggerUnauthorized } from '../api/client';
 
 export function ChangePasswordModal({ onClose }: { onClose: () => void }) {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -25,6 +25,7 @@ export function ChangePasswordModal({ onClose }: { onClose: () => void }) {
     try {
       await api.changePassword(currentPassword, newPassword);
       setSuccess(true);
+      triggerUnauthorized();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Server bilan aloqa xato');
     } finally {

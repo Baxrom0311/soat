@@ -1,12 +1,4 @@
-"""Tokens: who they let in, for how long, and how the signing key gets replaced.
-
-The rotation tests exist because of a real incident. The production .env -- signing key
-and database password -- was committed to git on 2026-09-08 and both were still the live
-values when it was found. Replacing the key naively logs out every nurse in every clinic
-at whatever moment the service restarts, which on a ward is not an acceptable way to fix
-a security problem. So the server accepts the previous key for verification while signing
-only with the new one, and these tests are what keep that property from being tidied away.
-"""
+"""Token identity, expiry, and rejection of retired signing keys."""
 
 import importlib
 
@@ -78,7 +70,7 @@ def test_a_token_signed_with_the_wrong_key_is_rejected(monkeypatch):
 # --------------------------------------------------------------- key rotation
 
 
-def test_tokens_from_the_previous_key_keep_working_during_rotation(monkeypatch):
+def test_previous_key_is_rejected_even_if_still_configured(monkeypatch):
     old = _reload_with(monkeypatch, JWT_SECRET="eski-kalit-0123456789abcdef", JWT_SECRET_OLD="")
     token = old.create_access_token(staff_id=1, clinic_id=1, role="nurse", email="a@b.uz", name="A")
 
@@ -87,7 +79,8 @@ def test_tokens_from_the_previous_key_keep_working_during_rotation(monkeypatch):
         JWT_SECRET="yangi-kalit-0123456789abcdef",
         JWT_SECRET_OLD="eski-kalit-0123456789abcdef",
     )
-    assert rotated.decode_token(token)["sub"] == "1", "kalit almashtirilganda hamshira tizimdan chiqib ketdi"
+    with pytest.raises(jwt.InvalidSignatureError):
+        rotated.decode_token(token)
 
 
 def test_new_tokens_are_signed_with_the_new_key_only(monkeypatch):

@@ -14,10 +14,14 @@ file, above every app import.
 
 import os
 import subprocess
+import sys
 import uuid
+from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 TEST_DB = os.getenv("TEST_DB_NAME", "nursecall_test")
 PG_ADMIN_URL = os.getenv("TEST_PG_ADMIN_URL", "postgresql://localhost/postgres")
@@ -48,6 +52,13 @@ os.environ.setdefault("JWT_SECRET", "test-secret-not-a-real-one")
 os.environ["FCM_SERVICE_ACCOUNT_FILE"] = ""
 os.environ["NTFY_TOPIC_URL"] = ""
 os.environ["TELEGRAM_BOT_TOKEN"] = ""
+# Exercise the same schema path as deployment, before importing the app.
+subprocess.run(
+    [sys.executable, "-m", "alembic", "upgrade", "head"],
+    cwd=Path(__file__).resolve().parents[1],
+    check=True,
+    capture_output=True,
+)
 
 from fastapi.testclient import TestClient  # noqa: E402
 
@@ -60,10 +71,7 @@ from app.models import Button, Clinic, Device, Room, Staff  # noqa: E402
 
 @pytest.fixture(scope="session", autouse=True)
 def schema():
-    # create_all, not alembic upgrade: these tests assert on behaviour, and the models
-    # are the definition of the schema the code is written against. Whether a migration
-    # reproduces them is a separate question, checked against a copy of production.
-    Base.metadata.create_all(engine)
+    # Migrated before app import above, matching production schema and FK behavior.
     yield
     Base.metadata.drop_all(engine)
 

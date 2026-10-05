@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import delete, select
+from sqlalchemy import and_, delete, or_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
@@ -13,7 +13,9 @@ def get_by_chip_id(db: Session, chip_id: str) -> DiscoveredDevice | None:
     return db.scalar(select(DiscoveredDevice).where(DiscoveredDevice.chip_id == chip_id))
 
 
-def upsert_seen(db: Session, *, chip_id: str, last_ip: str | None, now: datetime) -> DiscoveredDevice:
+def upsert_seen(
+    db: Session, *, chip_id: str, last_ip: str | None, now: datetime, secret_hash: str
+) -> DiscoveredDevice | None:
     """Insert a new sighting, or bump last_seen_at/last_ip if this chip has been seen
     before (whether or not it has since been claimed).
 
@@ -29,14 +31,27 @@ def upsert_seen(db: Session, *, chip_id: str, last_ip: str | None, now: datetime
     """
     stmt = (
         pg_insert(DiscoveredDevice)
-        .values(chip_id=chip_id, first_seen_at=now, last_seen_at=now, last_ip=last_ip)
+        .values(
+            chip_id=chip_id,
+            first_seen_at=now,
+            last_seen_at=now,
+            last_ip=last_ip,
+            provisioning_secret_hash=secret_hash,
+        )
         .on_conflict_do_update(
             index_elements=[DiscoveredDevice.chip_id],
-            set_={"last_seen_at": now, "last_ip": last_ip},
+            set_={"last_seen_at": now, "last_ip": last_ip, "provisioning_secret_hash": secret_hash},
+            where=or_(
+                DiscoveredDevice.provisioning_secret_hash == secret_hash,
+                and_(
+                    DiscoveredDevice.provisioning_secret_hash.is_(None),
+                    DiscoveredDevice.claimed_device_id.is_(None),
+                ),
+            ),
         )
         .returning(DiscoveredDevice)
     )
-    return db.execute(stmt).scalar_one()
+    return db.execute(stmt).scalar_one_or_none()
 
 
 def list_unclaimed_online(db: Session, cutoff: datetime) -> list[DiscoveredDevice]:

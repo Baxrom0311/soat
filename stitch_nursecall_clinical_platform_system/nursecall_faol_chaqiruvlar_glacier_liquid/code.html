@@ -1,0 +1,399 @@
+<!DOCTYPE html><html lang="uz" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+<meta content="mobile_tab" name="shell-type">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+    @layer base {
+      html, body {
+        width: 100vw;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        overscroll-behavior: none;
+      }
+      .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+      .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+    }
+    ::-webkit-scrollbar { display: none; }
+
+    /* Liquid Glass & Specular highlight utilities */
+    .glass-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.72) 0%, rgba(240, 246, 255, 0.45) 100%);
+      backdrop-filter: blur(24px) saturate(160%);
+      -webkit-backdrop-filter: blur(24px) saturate(160%);
+      border: 1px solid rgba(255, 255, 255, 0.75);
+      box-shadow: 
+        0 8px 32px 0 rgba(0, 97, 148, 0.08),
+        inset 0 1px 2px 0 rgba(255, 255, 255, 0.9),
+        inset 0 -1px 2px 0 rgba(147, 204, 255, 0.2);
+    }
+
+    .glass-amber {
+      background: linear-gradient(135deg, rgba(254, 243, 199, 0.8) 0%, rgba(253, 230, 138, 0.45) 100%);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(253, 230, 138, 0.65);
+      box-shadow: 0 4px 18px rgba(217, 119, 6, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+    }
+
+    .glass-red-badge {
+      background: linear-gradient(135deg, rgba(254, 226, 226, 0.85) 0%, rgba(254, 202, 202, 0.55) 100%);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(252, 165, 165, 0.6);
+      box-shadow: 0 2px 8px rgba(220, 38, 38, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .liquid-crimson-btn {
+      background: linear-gradient(180deg, #d32028 0%, #b3141f 50%, #980e18 100%);
+      box-shadow: 
+        0 6px 20px -2px rgba(182, 23, 34, 0.45),
+        inset 0 1px 2px rgba(255, 255, 255, 0.45),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .liquid-crimson-btn:active {
+      transform: scale(0.985);
+      box-shadow: 0 2px 10px rgba(182, 23, 34, 0.4);
+    }
+
+    .liquid-dock {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0%, rgba(238, 244, 255, 0.88) 100%);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 
+        0 12px 40px rgba(0, 75, 115, 0.12),
+        inset 0 1px 2px rgba(255, 255, 255, 0.95);
+    }
+  </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface": "#f3f7fd",
+            "primary": "#006194",
+            "primary-container": "#007bb9",
+            "tertiary": "#b61722",
+            "on-surface": "#101d2d",
+            "on-surface-variant": "#495768",
+            "outline": "#707881",
+            "outline-variant": "#cbd6e5",
+            "error": "#b61722",
+            "error-container": "#ffebee"
+          },
+          fontFamily: {
+            headline: ["Plus Jakarta Sans", "sans-serif"],
+            body: ["Inter", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-[#edf4fc] font-body text-on-surface min-h-screen flex flex-col relative overflow-x-hidden selection:bg-cyan-200">
+<!-- Ambient Fluid Glacier Ice Orbs Background -->
+<div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+<!-- Ice Blue Orb Top Right -->
+<div class="absolute -top-24 -right-20 w-96 h-96 rounded-full bg-gradient-to-br from-cyan-200/50 via-sky-300/40 to-blue-400/25 blur-3xl transform rotate-12"></div>
+<!-- Soft Glacial Cyan Blob Middle Left -->
+<div class="absolute top-[32%] -left-28 w-80 h-80 rounded-full bg-gradient-to-tr from-sky-200/45 via-teal-100/35 to-blue-200/20 blur-3xl"></div>
+<!-- Crystalline Pool Bottom Right -->
+<div class="absolute top-[68%] -right-24 w-88 h-88 rounded-full bg-gradient-to-bl from-blue-300/35 via-cyan-100/45 to-sky-200/20 blur-3xl"></div>
+<!-- Subtle Ice Sheet Noise Overlay -->
+<div class="absolute inset-0 bg-[radial-gradient(#a5d8ff_1px,transparent_1px)] [background-size:24px_24px] opacity-15"></div>
+</div>
+<!-- Floating Liquid Glass Header -->
+<header class="fixed top-0 inset-x-0 z-50 pt-safe">
+<div class="mx-3 mt-2 px-4 h-16 rounded-2xl glass-card flex items-center justify-between shadow-[0_8px_25px_rgba(0,80,130,0.07)] border-white/80">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-white/70 shadow-inner flex items-center justify-center border border-white/90">
+<img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCiy_wYZk6XxTY2HZQ52mi8iudmd3Nu-vFutayGkIJNcu0qpc9EQTJ1lf9Dxu3TaKJhurcGhD2a_HcxbZyeabokRJjJHPQV-DH287yVKFtVO2_yyHtEbyj671cAGfuu-YCumqPpI4szBKK_iu_1Gb1VG7w61AcKEn4VI5M3t9htUpcvPssVy_pOK1kylfGOrKISc4EmEGcIE17B3d5TmiNyOlIV79tnVO0E6QbIiVKos4W7bKA_2rc-kBT2QLG_pbGNlZI" alt="NurseCall Logo" class="w-8 h-8 object-contain">
+</div>
+<div class="flex flex-col">
+<h1 class="font-headline font-bold text-[18px] text-[#0d2238] tracking-tight leading-tight">Chaqiruvlar</h1>
+<div class="flex items-center gap-1.5">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 ring-2 ring-white"></span>
+</span>
+<span class="font-headline text-[11px] text-[#4b6078] font-semibold tracking-wide">Onlayn • Bo'lim 3</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button aria-label="Favqulodda xabar" class="w-10 h-10 rounded-xl bg-white/60 hover:bg-white/90 border border-white/70 flex items-center justify-center relative text-[#2a4563] shadow-sm transition-all active:scale-95">
+<span class="material-symbols-outlined text-[22px]">notifications_active</span>
+<span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+</button>
+<div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-sky-500 p-[1.5px] shadow-sm">
+<div class="w-full h-full rounded-[10px] bg-white/20 backdrop-blur-sm flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[19px]">person</span>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Container -->
+<main class="flex-1 flex flex-col relative z-10 w-full px-3.5 pt-24 pb-28">
+<div class="flex flex-col w-full gap-3.5 max-w-lg mx-auto">
+<!-- Liquid Amber Notice Banner -->
+<div class="w-full glass-amber rounded-2xl p-3 flex items-center justify-between gap-2.5 transition-all">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-8 h-8 rounded-xl bg-amber-400/25 border border-amber-300/60 flex items-center justify-center flex-shrink-0 text-amber-800">
+<span class="material-symbols-outlined text-[19px]">warning</span>
+</div>
+<p class="font-body text-[13px] text-amber-950 truncate">
+<span class="font-headline font-bold text-amber-900">Obuna:</span> 5 kun qoldi. Iltimos ma'muriyatga xabar bering.
+          </p>
+</div>
+<span class="material-symbols-outlined text-amber-800/70 text-[18px] flex-shrink-0">chevron_right</span>
+</div>
+<!-- Nurse Persona & Fluid Telemetry -->
+<div class="w-full glass-card rounded-2xl p-3.5 flex items-center justify-between border-white/80">
+<div class="flex items-center gap-3 min-w-0">
+<div class="relative flex-shrink-0">
+<div class="w-13 h-13 rounded-2xl p-0.5 bg-gradient-to-tr from-cyan-300 via-white to-sky-400 shadow-md">
+<img class="w-12 h-12 rounded-[14px] object-cover ring-1 ring-white/80" data-alt="Warm and confident Uzbek female nurse wearing modern medical scrub in a bright, clean hospital corridor, soft daylighting, high key clinical environment, friendly micro-smile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDo7YDBKD7ffZpnFcfohbs5DJkpkQSD7f0sVmIyqboBfusMf-i3m5_5YLqsWl0uOBuqnAjiD6WeNBYAbrSBV_MPg9ulGayaeKeIq_t_n3dDfU1es6EYCukSMmHRFfPpxDpPQRelcJ4x5pOmoVJmVZNs9Ck70rB5lb96-Uq81s_9z6CiOC0m8gEHwRZ4A-_lVodhuyFLobtn68jVXGCUwDut20bsf3htIaPzM8MAQcDZcYWSMvVyp-cMLA">
+</div>
+<span class="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white shadow-sm"></span>
+</div>
+<div class="flex flex-col min-w-0">
+<h2 class="font-headline font-bold text-[16px] text-[#0d2238] truncate">Salom, Nigora Saidova!</h2>
+<p class="font-body text-[12.5px] text-[#4b6078] truncate font-medium">Palata hamshirasi • 1-navbatchilik</p>
+</div>
+</div>
+<!-- Audio Alarm Toggle -->
+<button aria-label="Ovozli signal holati" class="w-11 h-11 rounded-2xl bg-white/70 border border-white/90 text-primary flex items-center justify-center shadow-sm active:scale-95 transition-transform flex-shrink-0 hover:bg-white/90" id="soundToggle">
+<span class="material-symbols-outlined text-[22px]" id="soundIcon">volume_up</span>
+</button>
+</div>
+<!-- Quick Filter Pills: Translucent Ice Glass -->
+<div class="w-full flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+<button class="filter-chip px-4 py-2 rounded-full bg-gradient-to-r from-[#006ea8] to-[#0089d0] text-white font-headline text-[12.5px] font-bold shadow-[0_4px_14px_rgba(0,110,168,0.25)] border border-cyan-300/40 whitespace-nowrap active:scale-95 transition-all">
+          Barchasi (3)
+        </button>
+<button class="filter-chip px-3.5 py-2 rounded-full bg-white/60 hover:bg-white/80 border border-white/80 text-[#3d546e] font-headline text-[12.5px] font-semibold shadow-sm whitespace-nowrap active:scale-95 transition-all">
+          Shoshilinch (3)
+        </button>
+<button class="filter-chip px-3.5 py-2 rounded-full bg-white/60 hover:bg-white/80 border border-white/80 text-[#3d546e] font-headline text-[12.5px] font-semibold shadow-sm whitespace-nowrap active:scale-95 transition-all">
+          1-qavat (1)
+        </button>
+<button class="filter-chip px-3.5 py-2 rounded-full bg-white/60 hover:bg-white/80 border border-white/80 text-[#3d546e] font-headline text-[12.5px] font-semibold shadow-sm whitespace-nowrap active:scale-95 transition-all">
+          2-qavat (1)
+        </button>
+<button class="filter-chip px-3.5 py-2 rounded-full bg-white/60 hover:bg-white/80 border border-white/80 text-[#3d546e] font-headline text-[12.5px] font-semibold shadow-sm whitespace-nowrap active:scale-95 transition-all">
+          3-qavat (1)
+        </button>
+</div>
+<!-- Active Calls Feed -->
+<div class="flex flex-col w-full gap-3.5" id="callsList">
+<!-- Call Card 1: Room 204 -->
+<div class="call-card relative overflow-hidden w-full glass-card rounded-3xl p-4 flex flex-col gap-3.5 transition-all duration-200 border border-white/85 shadow-[0_12px_36px_rgba(0,78,124,0.08)]" style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0%, rgba(240, 246, 255, 0.35) 100%); backdrop-filter: blur(24px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.85); box-shadow: rgba(2, 132, 199, 0.06) 0px 8px 32px, rgba(255, 255, 255, 0.9) 0px 1px 1px inset;">
+<!-- Translucent Ruby Edge Beacon -->
+<div class="absolute left-0 top-0 bottom-0 w-2.5 bg-gradient-to-b from-red-500 via-rose-600 to-red-600 shadow-[2px_0_12px_rgba(220,38,38,0.4)]"></div>
+<!-- Inner Frosted Specular Sheen Glow -->
+<div class="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-rose-400/10 blur-2xl pointer-events-none"></div>
+<!-- Top Row: Tags & Timer -->
+<div class="flex items-center justify-between pl-2">
+<div class="flex items-center gap-2">
+<span class="glass-red-badge px-2.5 py-1 rounded-full text-red-700 font-headline text-[11px] font-extrabold tracking-wide uppercase">
+                O'ta Shoshilinch
+              </span>
+<span class="font-body text-[12px] text-[#556980] font-medium">Vaqt: 14:32</span>
+</div>
+<div class="glass-red-badge flex items-center gap-1.5 px-3 py-1 rounded-full text-red-700 shadow-sm">
+<span class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+<span class="font-headline text-[12px] font-extrabold tracking-tight">Kutilmoqda 02:34</span>
+</div>
+</div>
+<!-- Room Title -->
+<div class="flex flex-col pl-2">
+<div class="flex items-baseline gap-2">
+<span class="font-headline text-[50px] leading-none font-extrabold text-[#0c2035] tracking-tight drop-shadow-sm">
+                204
+              </span>
+<span class="font-headline text-[14px] text-cyan-800 font-bold px-2 py-0.5 rounded-lg bg-sky-100/70 border border-sky-200/60">
+                Palata
+              </span>
+</div>
+
+</div>
+<!-- Glossy Liquid Crimson Button -->
+<button class="ack-button w-full h-[52px] rounded-2xl liquid-crimson-btn text-white font-headline text-[15.5px] font-bold flex items-center justify-center gap-2 transition-all" style="background: linear-gradient(rgb(219, 36, 44) 0%, rgb(184, 22, 34) 52%, rgb(153, 15, 25) 100%); box-shadow: rgba(182, 23, 34, 0.45) 0px 6px 20px -2px, rgba(255, 255, 255, 0.5) 0px 1px 2px inset, rgba(0, 0, 0, 0.25) 0px -2px 4px inset;">
+<span class="material-symbols-outlined text-[23px]">check_circle</span>
+<span class="">Tasdiqlash</span>
+</button>
+</div>
+<!-- Call Card 2: Room 118 -->
+<div class="call-card relative overflow-hidden w-full glass-card rounded-3xl p-4 flex flex-col gap-3.5 transition-all duration-200 border border-white/85 shadow-[0_12px_36px_rgba(0,78,124,0.08)]" style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0%, rgba(240, 246, 255, 0.35) 100%); backdrop-filter: blur(24px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.85); box-shadow: rgba(2, 132, 199, 0.06) 0px 8px 32px, rgba(255, 255, 255, 0.9) 0px 1px 1px inset;">
+<div class="absolute left-0 top-0 bottom-0 w-2.5 bg-gradient-to-b from-red-500 via-rose-600 to-red-600 shadow-[2px_0_12px_rgba(220,38,38,0.4)]"></div>
+<div class="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-rose-400/10 blur-2xl pointer-events-none"></div>
+<div class="flex items-center justify-between pl-2">
+<div class="flex items-center gap-2">
+<span class="glass-red-badge px-2.5 py-1 rounded-full text-red-700 font-headline text-[11px] font-extrabold tracking-wide uppercase">
+                Shoshilinch
+              </span>
+<span class="font-body text-[12px] text-[#556980] font-medium">Vaqt: 14:33</span>
+</div>
+<div class="glass-red-badge flex items-center gap-1.5 px-3 py-1 rounded-full text-red-700 shadow-sm">
+<span class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+<span class="font-headline text-[12px] font-extrabold tracking-tight">Kutilmoqda 01:42</span>
+</div>
+</div>
+<div class="flex flex-col pl-2">
+<div class="flex items-baseline gap-2">
+<span class="font-headline text-[50px] leading-none font-extrabold text-[#0c2035] tracking-tight drop-shadow-sm">
+                118
+              </span>
+<span class="font-headline text-[14px] text-cyan-800 font-bold px-2 py-0.5 rounded-lg bg-sky-100/70 border border-sky-200/60">
+                Palata
+              </span>
+</div>
+
+</div>
+<button class="ack-button w-full h-[52px] rounded-2xl liquid-crimson-btn text-white font-headline text-[15.5px] font-bold flex items-center justify-center gap-2 transition-all" style="background: linear-gradient(rgb(219, 36, 44) 0%, rgb(184, 22, 34) 52%, rgb(153, 15, 25) 100%); box-shadow: rgba(182, 23, 34, 0.45) 0px 6px 20px -2px, rgba(255, 255, 255, 0.5) 0px 1px 2px inset, rgba(0, 0, 0, 0.25) 0px -2px 4px inset;">
+<span class="material-symbols-outlined text-[23px]">check_circle</span>
+<span class="">Tasdiqlash</span>
+</button>
+</div>
+<!-- Call Card 3: Room 307 -->
+<div class="call-card relative overflow-hidden w-full glass-card rounded-3xl p-4 flex flex-col gap-3.5 transition-all duration-200 border border-white/85 shadow-[0_12px_36px_rgba(0,78,124,0.08)]" style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0%, rgba(240, 246, 255, 0.35) 100%); backdrop-filter: blur(24px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.85); box-shadow: rgba(2, 132, 199, 0.06) 0px 8px 32px, rgba(255, 255, 255, 0.9) 0px 1px 1px inset;">
+<div class="absolute left-0 top-0 bottom-0 w-2.5 bg-gradient-to-b from-red-500 via-rose-600 to-red-600 shadow-[2px_0_12px_rgba(220,38,38,0.4)]"></div>
+<div class="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-rose-400/10 blur-2xl pointer-events-none"></div>
+<div class="flex items-center justify-between pl-2">
+<div class="flex items-center gap-2">
+<span class="glass-red-badge px-2.5 py-1 rounded-full text-red-700 font-headline text-[11px] font-extrabold tracking-wide uppercase">
+                Palata Chaqiruvi
+              </span>
+<span class="font-body text-[12px] text-[#556980] font-medium">Vaqt: 14:34</span>
+</div>
+<div class="glass-red-badge flex items-center gap-1.5 px-3 py-1 rounded-full text-red-700 shadow-sm">
+<span class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+<span class="font-headline text-[12px] font-extrabold tracking-tight">Kutilmoqda 00:48</span>
+</div>
+</div>
+<div class="flex flex-col pl-2">
+<div class="flex items-baseline gap-2">
+<span class="font-headline text-[50px] leading-none font-extrabold text-[#0c2035] tracking-tight drop-shadow-sm">
+                307
+              </span>
+<span class="font-headline text-[14px] text-cyan-800 font-bold px-2 py-0.5 rounded-lg bg-sky-100/70 border border-sky-200/60">
+                Palata
+              </span>
+</div>
+
+</div>
+<button class="ack-button w-full h-[52px] rounded-2xl liquid-crimson-btn text-white font-headline text-[15.5px] font-bold flex items-center justify-center gap-2 transition-all" style="background: linear-gradient(rgb(219, 36, 44) 0%, rgb(184, 22, 34) 52%, rgb(153, 15, 25) 100%); box-shadow: rgba(182, 23, 34, 0.45) 0px 6px 20px -2px, rgba(255, 255, 255, 0.5) 0px 1px 2px inset, rgba(0, 0, 0, 0.25) 0px -2px 4px inset;">
+<span class="material-symbols-outlined text-[23px]">check_circle</span>
+<span class="">Tasdiqlash</span>
+</button>
+</div>
+</div>
+<!-- Medical Shift Summary Metric Strip -->
+<div class="w-full grid grid-cols-2 gap-3 pt-1">
+<div class="glass-card rounded-2xl p-3.5 flex items-center gap-3 border-white/80">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-400/20 to-cyan-300/20 border border-sky-300/40 flex items-center justify-center flex-shrink-0 text-cyan-700 shadow-sm">
+<span class="material-symbols-outlined text-[22px]">timer</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-body text-[12px] text-[#556980] truncate font-medium">O'rtacha javob</span>
+<span class="font-headline text-[17px] text-[#0d2238] font-bold truncate">1m 15s</span>
+</div>
+</div>
+<div class="glass-card rounded-2xl p-3.5 flex items-center gap-3 border-white/80">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-400/20 to-sky-300/20 border border-blue-300/40 flex items-center justify-center flex-shrink-0 text-primary shadow-sm">
+<span class="material-symbols-outlined text-[22px]">task_alt</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-body text-[12px] text-[#556980] truncate font-medium">Navbatchilik</span>
+<span class="font-headline text-[17px] text-[#0d2238] font-bold truncate">28 qabul</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Liquid Glass Dock (Bottom Navigation) -->
+<nav class="fixed bottom-3 inset-x-0 z-50 px-4 pb-safe flex justify-center pointer-events-none">
+<div class="w-full max-w-sm h-16 rounded-3xl liquid-dock flex items-center justify-around px-3 pointer-events-auto shadow-[0_16px_38px_rgba(0,68,110,0.14)]">
+<!-- Active Tab: Chaqiruvlar with Ice Pill Halo -->
+<a aria-current="page" class="flex flex-col items-center justify-center min-w-[96px] h-12 rounded-2xl bg-gradient-to-b from-white/90 to-sky-50/80 text-primary border border-white/90 shadow-[0_4px_12px_rgba(0,105,160,0.12)] relative transition-all" data-path="chaqiruvlar" href="#">
+<div class="relative flex items-center justify-center"><span class="material-symbols-outlined text-[23px]">notifications_active</span><span class="absolute -top-1 -right-2 px-1.5 min-w-[17px] h-[17px] bg-red-600 text-white font-headline text-[10px] font-extrabold rounded-full flex items-center justify-center ring-2 ring-white shadow-sm">3</span></div>
+<span class="font-headline text-[11.5px] font-bold tracking-tight">Chaqiruvlar</span>
+</a>
+<!-- Inactive Tab: Profil -->
+<a class="flex flex-col items-center justify-center min-w-[96px] h-12 rounded-2xl text-[#516780] hover:text-primary transition-all active:scale-95" data-path="profil" href="#">
+<span class="material-symbols-outlined text-[23px]">person</span>
+<span class="font-headline text-[11.5px] font-semibold tracking-tight">Profil</span>
+</a>
+</div>
+</nav>
+<script>
+    (function() {
+      // Sound Toggle State
+      const soundToggle = document.getElementById('soundToggle');
+      const soundIcon = document.getElementById('soundIcon');
+      let isSoundOn = true;
+
+      if (soundToggle && soundIcon) {
+        soundToggle.addEventListener('click', function() {
+          isSoundOn = !isSoundOn;
+          if (isSoundOn) {
+            soundIcon.textContent = 'volume_up';
+            soundToggle.classList.remove('text-[#707881]', 'opacity-60');
+            soundToggle.classList.add('text-primary');
+          } else {
+            soundIcon.textContent = 'volume_off';
+            soundToggle.classList.remove('text-primary');
+            soundToggle.classList.add('text-[#707881]', 'opacity-60');
+          }
+        });
+      }
+
+      // Acknowledge Action Behavior with liquid success transition
+      const ackButtons = document.querySelectorAll('.ack-button');
+      ackButtons.forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const card = btn.closest('.call-card');
+          if (!card) return;
+
+          // Liquid green confirmation state
+          btn.innerHTML = '<span class="material-symbols-outlined text-[23px]">done_all</span><span>Qabul qilindi</span>';
+          btn.style.background = 'linear-gradient(180deg, #10b981 0%, #059669 100%)';
+          btn.style.boxShadow = '0 6px 20px -2px rgba(16, 185, 129, 0.45)';
+          
+          setTimeout(function() {
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.96) translateY(-8px)';
+            setTimeout(function() {
+              card.remove();
+            }, 250);
+          }, 600);
+        });
+      });
+
+      // Filter Chips Selection State
+      const filterChips = document.querySelectorAll('.filter-chip');
+      filterChips.forEach(function(chip) {
+        chip.addEventListener('click', function() {
+          filterChips.forEach(function(c) {
+            c.className = "filter-chip px-3.5 py-2 rounded-full bg-white/60 hover:bg-white/80 border border-white/80 text-[#3d546e] font-headline text-[12.5px] font-semibold shadow-sm whitespace-nowrap active:scale-95 transition-all";
+          });
+          chip.className = "filter-chip px-4 py-2 rounded-full bg-gradient-to-r from-[#006ea8] to-[#0089d0] text-white font-headline text-[12.5px] font-bold shadow-[0_4px_14px_rgba(0,110,168,0.25)] border border-cyan-300/40 whitespace-nowrap active:scale-95 transition-all";
+        });
+      });
+    })();
+  </script>
+
+
+
+
+
+
+</body></html>

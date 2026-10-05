@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -28,6 +29,15 @@ class SessionStore extends ChangeNotifier {
 
   Session? _session;
   bool _restored = false;
+  int _generation = 0;
+  Future<void>? _signingOut;
+  Future<void> _storageQueue = Future.value();
+  Future<void> Function()? beforeSignOut;
+
+  Future<void> _store(Future<void> Function() action) {
+    _storageQueue = _storageQueue.catchError((_) {}).then((_) => action());
+    return _storageQueue;
+  }
 
   Session? get session => _session;
   bool get isSignedIn => _session != null;
@@ -56,8 +66,10 @@ class SessionStore extends ChangeNotifier {
   }
 
   Future<Session> signIn(String email, String password) async {
+    await _signingOut;
+    final generation = ++_generation;
     final s = await _api.login(email, password);
-    await _persist(s);
+    if (generation == _generation) await _persist(s, generation);
     return s;
   }
 
@@ -74,26 +86,30 @@ class SessionStore extends ChangeNotifier {
   /// exception is 401, which the caller's own unauthorized handling covers
   /// anyway; here it simply means the stored session is already dead.
   Future<void> renew() async {
-    if (_session == null) return;
+    if (_session == null || _signingOut != null) return;
+    final generation = _generation;
     try {
       final s = await _api.refresh();
-      await _persist(s);
+      if (generation == _generation) await _persist(s, generation);
     } catch (_) {}
   }
 
-  Future<void> _persist(Session s) async {
+  Future<void> _persist(Session s, int generation) async {
+    if (generation != _generation) return;
     _session = s;
     _api.setToken(s.accessToken);
-    await _storage.write(
-      key: _key,
-      value: jsonEncode({
-        'access_token': s.accessToken,
-        'role': s.role,
-        'name': s.name,
-        'clinic_id': s.clinicId,
-      }),
+    await _store(
+      () => _storage.write(
+        key: _key,
+        value: jsonEncode({
+          'access_token': s.accessToken,
+          'role': s.role,
+          'name': s.name,
+          'clinic_id': s.clinicId,
+        }),
+      ),
     );
-    notifyListeners();
+    if (generation == _generation) notifyListeners();
   }
 
   /// Clears the session locally.
@@ -102,12 +118,26 @@ class SessionStore extends ChangeNotifier {
   /// in-memory session is still dropped and the token still cleared from the
   /// client, because the thing that matters is that this phone stops acting as
   /// the previous nurse.
-  Future<void> signOut() async {
-    _session = null;
-    _api.setToken(null);
-    notifyListeners();
-    try {
-      await _storage.delete(key: _key);
-    } catch (_) {}
+  Future<void> signOut() {
+    if (_signingOut != null) return _signingOut!;
+    final completion = Completer<void>();
+    _signingOut = completion.future;
+    ++_generation;
+    () async {
+      try {
+        // Unregister with the current credential before clearing the HTTP client.
+        await beforeSignOut?.call();
+      } finally {
+        _session = null;
+        _api.setToken(null);
+        try {
+          await _store(() => _storage.delete(key: _key));
+        } catch (_) {}
+        _signingOut = null;
+        notifyListeners();
+        completion.complete();
+      }
+    }().catchError((_) {});
+    return completion.future;
   }
 }

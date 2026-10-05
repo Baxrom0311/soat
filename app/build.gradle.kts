@@ -5,8 +5,9 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+val phoneSigningRoot = rootProject.file("mobile-flutter/android")
 val keystoreProperties = Properties().apply {
-    val file = rootProject.file("keystore.properties")
+    val file = phoneSigningRoot.resolve("keystore.properties")
     if (file.exists()) file.inputStream().use { load(it) }
 }
 
@@ -15,22 +16,20 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "uz.soat.reminder"
+        applicationId = "uz.boos.nursecall"
         minSdk = 30
         targetSdk = 34
-        versionCode = 7
-        versionName = "1.6.0"
+        versionCode = 8
+        versionName = "1.7.0"
     }
 
     signingConfigs {
         create("release") {
             if (keystoreProperties.containsKey("storeFile")) {
-                storeFile = rootProject.file(keystoreProperties["storeFile"] as String)
+                storeFile = phoneSigningRoot.resolve(keystoreProperties["storeFile"] as String)
                 storePassword = keystoreProperties["storePassword"] as String
                 keyAlias = keystoreProperties["keyAlias"] as String
                 keyPassword = keystoreProperties["keyPassword"] as String
-            } else {
-                initWith(getByName("debug"))
             }
         }
     }

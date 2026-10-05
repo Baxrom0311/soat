@@ -30,6 +30,7 @@ class ApiClient {
 
   final http.Client _http;
   String? _token;
+  String? get accessToken => _token;
 
   /// Called by the session store on login, restore and logout (with null).
   void setToken(String? token) => _token = token;
@@ -184,11 +185,14 @@ class ApiClient {
     _decode(r);
   }
 
-  Future<void> unregisterPushToken(String token) async {
+  Future<void> unregisterPushToken(String token, {String? accessToken}) async {
     final r = await _http
         .delete(
           _uri('/api/v1/push-tokens'),
-          headers: _headers(json: true),
+          headers: {
+            ..._headers(json: true),
+            if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+          },
           body: jsonEncode({'expo_push_token': token}),
         )
         .timeout(_timeout);

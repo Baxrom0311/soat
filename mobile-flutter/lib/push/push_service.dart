@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -65,13 +67,41 @@ NotificationDetails _callDetails() => NotificationDetails(
   ),
 );
 
+/// Reject delayed notifications for a signed-out or different nurse, even offline.
+Future<bool> _belongsToSession(Map<String, dynamic> data) async {
+  try {
+    const storage = FlutterSecureStorage();
+    if (await storage.read(key: 'nursecall.push') == 'off') return false;
+    final raw = await storage.read(key: 'nursecall.session');
+    if (raw == null) return false;
+    final session = jsonDecode(raw) as Map<String, dynamic>;
+    if (data['clinic_id'] != null &&
+        data['clinic_id'].toString() != session['clinic_id'].toString())
+      return false;
+    final token = session['access_token'] as String;
+    final claims =
+        jsonDecode(
+              utf8.decode(
+                base64Url.decode(base64Url.normalize(token.split('.')[1])),
+              ),
+            )
+            as Map;
+    if (data['staff_id'] != null &&
+        data['staff_id'].toString() != claims['sub'].toString())
+      return false;
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 /// Runs in its own isolate when a message arrives and the app is not in the
 /// foreground. Must be a top-level function — Android looks it up by name.
 @pragma('vm:entry-point')
 Future<void> handleBackgroundMessage(RemoteMessage message) async {
+  if (!await _belongsToSession(message.data)) return;
   final room = message.data['room_number'];
   final floor = message.data['floor'];
-  if (room == null) return;
 
   final local = FlutterLocalNotificationsPlugin();
   await local.initialize(
@@ -88,12 +118,18 @@ Future<void> handleBackgroundMessage(RemoteMessage message) async {
       >()
       ?.createNotificationChannel(_callsChannel);
 
+  if (message.data['type'] == 'ack') {
+    final id = int.tryParse(message.data['call_id'] ?? '');
+    if (id != null) await local.cancel(id: id);
+    return;
+  }
+  if (room == null) return;
   await local.show(
     id:
         int.tryParse(message.data['call_id']?.toString() ?? '') ??
         room.hashCode,
-    title: 'Xona $room chaqirdi!',
-    body: floor == null ? null : '$floor-qavat',
+    title: message.data['title'] ?? 'Xona $room chaqirdi!',
+    body: message.data['body'] ?? (floor == null ? null : '$floor-qavat'),
     notificationDetails: _callDetails(),
     payload: message.data['call_id']?.toString(),
   );
@@ -116,12 +152,21 @@ class PushService {
   void Function(int callId)? onCallTapped;
 
   bool _ready = false;
+  bool _wanted = false;
+  int _generation = 0;
+  Timer? _retry;
+  Future<void>? _registration;
+  Future<void>? _initializing;
+  StreamSubscription<RemoteMessage>? _openedSub;
 
   /// True once a token has been handed to the server. Exposed so the UI can say
   /// "this phone will not ring" rather than letting a nurse assume it will.
   bool get registered => _token != null;
 
-  Future<void> init() async {
+  Future<void> init() =>
+      _initializing ??= _init().whenComplete(() => _initializing = null);
+
+  Future<void> _init() async {
     if (_ready) return;
     try {
       await Firebase.initializeApp();
@@ -155,7 +200,7 @@ class PushService {
 
     FirebaseMessaging.onBackgroundMessage(handleBackgroundMessage);
     _foregroundSub = FirebaseMessaging.onMessage.listen(_showForeground);
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageTap);
+    _openedSub = FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageTap);
 
     // The notification that launched a terminated app is delivered once, here,
     // and nowhere else.
@@ -168,41 +213,89 @@ class PushService {
   /// Sends this phone's token to the server. Safe to call on every sign-in: the
   /// backend upserts, so a nurse signing in on a phone she has used before does
   /// not accumulate duplicate registrations.
-  Future<void> register() async {
-    if (!_ready) return;
-    try {
-      final token = await FirebaseMessaging.instance.getToken();
-      if (token == null) return;
-      await _api.registerPushToken(token);
-      _token = token;
-
-      // FCM rotates tokens on its own schedule. A rotation that is not reported
-      // means this phone stops ringing, with nothing on screen to say so.
-      _refreshSub?.cancel();
-      _refreshSub = FirebaseMessaging.instance.onTokenRefresh.listen((t) async {
-        try {
-          await _api.registerPushToken(t);
-          _token = t;
-        } catch (_) {}
-      });
-    } catch (e) {
-      debugPrint('Push tokenini ro\'yxatdan o\'tkazib bo\'lmadi: $e');
+  void setWanted(bool wanted) {
+    if (_wanted == wanted) return;
+    _wanted = wanted;
+    ++_generation;
+    _retry?.cancel();
+    if (wanted) {
+      _retry = Timer.periodic(const Duration(minutes: 1), (_) => _register());
+      _register();
+    } else {
+      unregister();
     }
   }
 
-  /// Removes this phone's registration on sign-out.
-  ///
-  /// Matters more here than in most apps: these are shared ward phones, and a
-  /// token left behind means the next nurse's calls keep waking the previous
-  /// one's session — or the phone rings for a clinic it no longer belongs to.
-  Future<void> unregister() async {
-    final token = _token;
-    _refreshSub?.cancel();
-    _refreshSub = null;
-    _token = null;
-    if (token == null) return;
+  Future<void> register() {
+    setWanted(true);
+    return _register();
+  }
+
+  Future<void> _register() {
+    if (!_wanted || _token != null) return Future.value();
+    return _registration ??= _registerOnce().whenComplete(
+      () => _registration = null,
+    );
+  }
+
+  Future<void> _registerOnce() async {
+    final generation = _generation;
+    final credential = _api.accessToken;
+    if (credential == null) return;
     try {
-      await _api.unregisterPushToken(token);
+      await init();
+      if (!_ready || !_wanted || generation != _generation) return;
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token == null || !_wanted || generation != _generation) return;
+      await _api.registerPushToken(token);
+      if (!_wanted || generation != _generation) {
+        await _api.unregisterPushToken(token, accessToken: credential);
+        return;
+      }
+      _token = token;
+      await _refreshSub?.cancel();
+      _refreshSub = FirebaseMessaging.instance.onTokenRefresh.listen((_) {
+        _token = null;
+        _register();
+      });
+    } catch (e) {
+      debugPrint('Push ro‘yxati yangilanmadi: $e');
+      // A timer retries while this session still wants notifications.
+    }
+  }
+
+  Future<void> unregister() async {
+    _wanted = false;
+    ++_generation;
+    _retry?.cancel();
+    _retry = null;
+    await _refreshSub?.cancel();
+    _refreshSub = null;
+    await _registration;
+    final token = _token;
+    _token = null;
+    if (token != null) {
+      try {
+        await _api.unregisterPushToken(token);
+      } catch (_) {
+        // Retire the FCM address as well if the API is unavailable.
+        try {
+          await FirebaseMessaging.instance.deleteToken();
+        } catch (_) {}
+      }
+    }
+    try {
+      await _local.cancelAll();
+    } catch (_) {}
+  }
+
+  Future<void> reconcile(Set<int> activeIds) async {
+    if (!_ready || !_wanted) return;
+    try {
+      for (final notification in await _local.getActiveNotifications()) {
+        final id = notification.id;
+        if (id != null && !activeIds.contains(id)) await _local.cancel(id: id);
+      }
     } catch (_) {}
   }
 
@@ -210,13 +303,19 @@ class PushService {
   /// foreground, so it is posted by hand. Without this, a nurse looking at
   /// another screen in this same app would get nothing at all.
   Future<void> _showForeground(RemoteMessage m) async {
+    if (!_wanted || !await _belongsToSession(m.data)) return;
+    if (m.data['type'] == 'ack') {
+      final id = int.tryParse(m.data['call_id'] ?? '');
+      if (id != null) await clearCall(id);
+      return;
+    }
     final room = m.data['room_number'];
     if (room == null) return;
     final floor = m.data['floor'];
     await _local.show(
       id: int.tryParse(m.data['call_id']?.toString() ?? '') ?? m.hashCode,
-      title: 'Xona $room chaqirdi!',
-      body: floor == null ? null : '$floor-qavat',
+      title: m.data['title'] ?? 'Xona $room chaqirdi!',
+      body: m.data['body'] ?? (floor == null ? null : '$floor-qavat'),
       notificationDetails: _callDetails(),
       payload: m.data['call_id']?.toString(),
     );
@@ -270,6 +369,10 @@ class PushService {
   }
 
   void dispose() {
+    _wanted = false;
+    ++_generation;
+    _retry?.cancel();
+    _openedSub?.cancel();
     _refreshSub?.cancel();
     _foregroundSub?.cancel();
   }

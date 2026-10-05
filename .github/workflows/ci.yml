@@ -95,6 +95,7 @@ jobs:
         run: |
           psql "$TEST_PG_ADMIN_URL" -q -c 'CREATE DATABASE migration_check'
           alembic upgrade head
+          alembic check
 
   web:
     name: Dashboard (vitest + tsc)

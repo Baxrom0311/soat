@@ -73,4 +73,6 @@ def announce(body: AnnounceIn, request: Request, db: Session = Depends(get_db)):
     # Deliberately UNAUTHENTICATED: a fresh-off-the-flash ESP32 has no device key yet,
     # only its own hardware chip id. Rate-limited per IP inside the service instead.
     client_ip = request.client.host if request.client else "unknown"
-    return discovered_device_service.announce(db, chip_id=body.chip_id, client_ip=client_ip)
+    return discovered_device_service.announce(
+        db, chip_id=body.chip_id, client_ip=client_ip, provisioning_secret=body.provisioning_secret
+    )

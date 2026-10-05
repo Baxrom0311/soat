@@ -25,7 +25,7 @@ HOST="${NURSECALL_HOST:-root@67.205.171.93}"
 SSH_KEY="${NURSECALL_SSH_KEY:-$HOME/docean}"
 REMOTE_DIR=/root/nursecall_backend
 SNAPSHOT_DIR=/root/nursecall_releases
-HEALTH_URL="${NURSECALL_HEALTH_URL:-https://nurcecall.boos.uz/api/v1/calls/active}"
+HEALTH_URL="${NURSECALL_HEALTH_URL:-https://nurcecall.boos.uz/health}"
 KEEP_SNAPSHOTS=5
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -55,13 +55,17 @@ rollback_to_latest() {
   say "Oldingi versiyaga qaytarilmoqda"
   "${SSH[@]}" bash -se <<REMOTE
 set -euo pipefail
-latest=\$(ls -1d "$SNAPSHOT_DIR"/*/ 2>/dev/null | sort | tail -1 || true)
-[ -n "\$latest" ] || { echo "snapshot topilmadi"; exit 1; }
+latest=\$(find "$SNAPSHOT_DIR" -mindepth 2 -maxdepth 2 -name .snapshot-complete -print 2>/dev/null | sort | tail -1 || true)
+latest=\${latest%/.snapshot-complete}/
+[ "\$latest" != "/" ] || { echo "snapshot topilmadi"; exit 1; }
+[ -f "\${latest}.snapshot-complete" ] || { echo "snapshot tugallanmagan"; exit 1; }
 echo "qaytarilmoqda: \$latest"
 rsync -a --delete \
-  --exclude='.venv/' --exclude='.env' --exclude='static/' \
+  --exclude='.venv/' --exclude='.env' --exclude='static/' --exclude='db.sql.gz' --exclude='.snapshot-complete' --exclude='.static-files' \
   --exclude='firebase-service-account.json' \
   "\$latest" "$REMOTE_DIR/"
+# Restore static assets without deleting APKs uploaded after the snapshot.
+rsync -a --files-from="\${latest}.static-files" "\${latest}static/" "$REMOTE_DIR/static/"
 systemctl restart nursecall-api
 REMOTE
   sleep 3
@@ -70,12 +74,10 @@ REMOTE
 }
 
 check_health() {
-  # 401 is the right answer from an alerting route with no token: it proves the app is
-  # up, routing, and talking to the database. A 502 or a timeout is what failure
-  # actually looks like here.
+  # /health executes SELECT 1; authentication failures cannot prove DB health.
   local code
   code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$HEALTH_URL" || echo 000)
-  [[ "$code" == "401" || "$code" == "403" || "$code" == "200" ]]
+  [[ "$code" == "200" ]]
 }
 
 if [[ "${1:-}" == "--rollback" ]]; then
@@ -102,7 +104,7 @@ echo "commit: $GIT_SHA"
 if [[ -d server/.venv ]]; then
   ( cd server && .venv/bin/python -m pytest -q ) || fail "server testlari o'tmadi"
 else
-  echo "ogohlantirish: server/.venv yo'q, testlar o'tkazib yuborildi"
+  fail "server/.venv yo‘q — testlarsiz deploy qilinmaydi"
 fi
 
 say "Dashboard yig'ilmoqda"
@@ -128,7 +130,24 @@ PGPASSFILE=/root/.pgpass pg_dump -h 127.0.0.1 -U nursecall nursecall_db \
 ls -1d "$SNAPSHOT_DIR"/*/ | sort | head -n -$KEEP_SNAPSHOTS | xargs -r rm -rf
 REMOTE
 
+# Only source-controlled assets are restored; uploaded APKs are never overwritten.
+( cd "$REPO_ROOT/server/static" && git ls-files ) \
+  | "${SSH[@]}" "cat > '$SNAPSHOT_DIR/$STAMP/.static-files'"
+"${SSH[@]}" "touch '$SNAPSHOT_DIR/$STAMP/.snapshot-complete'"
+
 # ---------------------------------------------------------------- deploy
+
+# Covers rsync and static uploads as well as migration/restart failures. The DB
+# is never restored automatically: doing so would erase calls arriving meanwhile.
+deploy_failed() {
+  local code="$1"
+  trap - ERR INT TERM
+  rollback_to_latest
+  fail "deploy xato ($code): kod qaytarildi; baza migratsiyalari saqlanadi"
+}
+trap 'deploy_failed $?' ERR
+trap 'deploy_failed 130' INT
+trap 'deploy_failed 143' TERM
 
 say "Kod yuborilmoqda"
 rsync -rc --delete "${RSYNC_EXCLUDES[@]}" -e "ssh -i $SSH_KEY" server/ "$HOST:$REMOTE_DIR/"
@@ -158,8 +177,7 @@ cd "$REMOTE_DIR"
 systemctl restart nursecall-api
 REMOTE
 then
-  rollback_to_latest
-  fail "migratsiya yoki restart muvaffaqiyatsiz — eski versiya qaytarildi"
+  deploy_failed 1
 fi
 
 say "Sog'lik tekshiruvi"
@@ -168,10 +186,10 @@ for attempt in 1 2 3 4 5; do
   if check_health; then
     say "Tayyor — $GIT_SHA ishlayapti"
     "${SSH[@]}" "echo '$(date -Iseconds) $GIT_SHA' >> $SNAPSHOT_DIR/deployed.log"
+    trap - ERR INT TERM
     exit 0
   fi
   echo "  urinish $attempt: hali javob yo'q"
 done
 
-rollback_to_latest
-fail "yangi versiya javob bermadi — eski versiya qaytarildi"
+deploy_failed 1

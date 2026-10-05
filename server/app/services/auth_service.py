@@ -10,6 +10,7 @@ from app.core.security import create_access_token, hash_password, verify_passwor
 from app.enums import SubscriptionStatus
 from app.repositories import clinic_repo, staff_repo
 from app.schemas.auth import LoginOut
+from app.services.session_service import revoke_staff_sessions
 
 # Verified against a real bcrypt hash even when the email is unknown, so response
 # timing can't be used to enumerate which emails have accounts.
@@ -48,6 +49,7 @@ def login(db: Session, *, email: str, password: str, client_ip: str = "unknown")
         role=staff.role.value,
         email=staff.email,
         name=staff.name,
+        session_version=staff.session_version,
     )
     return LoginOut(access_token=token, role=staff.role, name=staff.name, clinic_id=staff.clinic_id)
 
@@ -63,7 +65,12 @@ def refresh(db: Session, *, user: CurrentUser) -> LoginOut:
             raise HTTPException(status_code=403, detail="subscription_suspended")
 
     token = create_access_token(
-        staff_id=user.staff_id, clinic_id=user.clinic_id, role=user.role, email=user.email, name=user.name
+        staff_id=user.staff_id,
+        clinic_id=user.clinic_id,
+        role=user.role,
+        email=user.email,
+        name=user.name,
+        session_version=user.session_version,
     )
     return LoginOut(access_token=token, role=user.role, name=user.name, clinic_id=user.clinic_id)
 
@@ -75,4 +82,5 @@ def change_own_password(db: Session, *, staff_id: int, current_password: str, ne
     if len(new_password) < 8:
         raise HTTPException(status_code=422, detail="Password must be at least 8 characters")
     staff.password_hash = hash_password(new_password)
+    revoke_staff_sessions(db, staff.id)
     db.commit()

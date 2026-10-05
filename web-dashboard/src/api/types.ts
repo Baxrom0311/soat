@@ -256,6 +256,7 @@ export interface DiscoveredDevice {
 }
 
 export interface ClaimDeviceInput {
+  pairing_code: string;
   clinic_id: number;
   floor: number;
   device_id?: string;

@@ -71,3 +71,5 @@ server/dashboard/
 design-stitch/*.png
 # Manba ikonka va undan chiqarilgan 512px — bular ishchi skrinshot emas, saqlanadi.
 !design-stitch/icon-source/
+backups_from_server/
+*.psd

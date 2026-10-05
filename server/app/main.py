@@ -8,7 +8,7 @@ from sqlalchemy import text
 
 from app.core import latency, log_redaction
 from app.core.config import ENVIRONMENT
-from app.database import Base, SessionLocal, engine
+from app.database import SessionLocal
 from app.routers import (
     admin,
     auth,
@@ -35,15 +35,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 # this is enforced centrally instead of per call site.
 log_redaction.install()
 
-# Idempotent (checkfirst) for tables and, on Postgres, for the native ENUM types
-# registered on Base.metadata too -- harmlessly no-ops against types/tables an
-# Alembic migration already created with matching names. app.models is imported
-# transitively above (app.routers -> app.services -> app.models), so all
-# enum-typed columns (subscription_status, staff_role, call_status) are already
-# registered on Base.metadata by the time this call runs. Operationally, still
-# run the Alembic migration before deploying this code: migrate-then-deploy is
-# the safer default even though either order is safe here.
-Base.metadata.create_all(bind=engine)
+# Schema changes are applied by Alembic before starting the service.
 
 _docs_enabled = ENVIRONMENT != "production"
 app = FastAPI(

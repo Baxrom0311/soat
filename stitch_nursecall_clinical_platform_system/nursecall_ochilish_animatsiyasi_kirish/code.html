@@ -1,0 +1,563 @@
+<!DOCTYPE html><html lang="uz" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+<meta content="mobile_blank" name="shell-type">
+<title>NurseCall Pro - Kirish</title>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "primary": "#006194",
+          "primary-container": "#007bb9",
+          "secondary": "#0284c7",
+          "surface": "#f0f6fc",
+          "on-surface": "#0f172a",
+          "on-surface-variant": "#475569"
+        },
+        fontFamily: {
+          "headline": ["Plus Jakarta Sans", "sans-serif"],
+          "body": ["Inter", "sans-serif"]
+        }
+      }
+    }
+  };
+</script>
+<style>
+  @layer base {
+    html, body {
+      width: 100vw;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    body {
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pb-safe {
+      padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+    }
+    .pt-safe {
+      padding-top: max(1rem, env(safe-area-inset-top));
+    }
+  }
+
+  /* Liquid Glassmorphism Core */
+  .glacier-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.82) 0%, rgba(240, 249, 255, 0.68) 100%);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 
+      0 24px 50px -12px rgba(2, 132, 199, 0.16),
+      0 1px 2px 0 rgba(255, 255, 255, 1) inset,
+      0 -1px 3px 0 rgba(2, 132, 199, 0.08) inset;
+  }
+
+  .ice-input-box {
+    background: rgba(255, 255, 255, 0.58);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1.5px solid rgba(255, 255, 255, 0.95);
+    box-shadow: 
+      inset 0 2px 4px 0 rgba(2, 97, 148, 0.04),
+      0 2px 6px -1px rgba(0, 0, 0, 0.02);
+    transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .ice-input-box:focus-within {
+    background: rgba(255, 255, 255, 0.92);
+    border-color: #38bdf8;
+    box-shadow: 
+      0 0 0 3.5px rgba(56, 189, 248, 0.25),
+      inset 0 1px 2px 0 rgba(2, 97, 148, 0.03);
+  }
+
+  .ice-badge-pill {
+    background: rgba(255, 255, 255, 0.68);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 4px 14px -3px rgba(2, 132, 199, 0.1);
+  }
+
+  .cta-liquid {
+    background: linear-gradient(135deg, #0284c7 0%, #006194 50%, #0369a1 100%);
+    box-shadow: 
+      0 12px 28px -6px rgba(0, 97, 148, 0.42),
+      inset 0 1px 1.5px rgba(255, 255, 255, 0.5),
+      inset 0 -1.5px 2px rgba(0, 30, 60, 0.25);
+  }
+
+  /* Shimmer Light Sweep on CTA */
+  .shimmer-layer::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -150%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      60deg, 
+      transparent 20%, 
+      rgba(255, 255, 255, 0.35) 50%, 
+      transparent 80%
+    );
+    animation: shimmerSweep 3.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    pointer-events: none;
+  }
+
+  @keyframes shimmerSweep {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(120%); }
+    100% { transform: translateX(120%); }
+  }
+
+  /* Floating Liquid Orbs */
+  @keyframes floatSlow1 {
+    0%, 100% { transform: translate(0px, 0px) scale(1); }
+    50% { transform: translate(25px, 20px) scale(1.08); }
+  }
+  @keyframes floatSlow2 {
+    0%, 100% { transform: translate(0px, 0px) scale(1); }
+    50% { transform: translate(-30px, -25px) scale(1.12); }
+  }
+  @keyframes floatSlow3 {
+    0%, 100% { transform: translate(0px, 0px) scale(1); }
+    50% { transform: translate(20px, -30px) scale(0.94); }
+  }
+  .animate-float-1 { animation: floatSlow1 9s ease-in-out infinite; }
+  .animate-float-2 { animation: floatSlow2 12s ease-in-out infinite; }
+  .animate-float-3 { animation: floatSlow3 10s ease-in-out infinite; }
+
+  /* Logo Glow & Pulse */
+  @keyframes breathingGlow {
+    0%, 100% {
+      transform: scale(1);
+      filter: drop-shadow(0 8px 24px rgba(56, 189, 248, 0.38));
+    }
+    50% {
+      transform: scale(1.04);
+      filter: drop-shadow(0 14px 34px rgba(2, 132, 199, 0.6));
+    }
+  }
+  .animate-breathing-logo {
+    animation: breathingGlow 4.5s ease-in-out infinite;
+  }
+
+  /* Ripple Waves in Splash */
+  @keyframes medicalWave {
+    0% {
+      transform: scale(0.85);
+      opacity: 0.85;
+    }
+    100% {
+      transform: scale(2.4);
+      opacity: 0;
+    }
+  }
+  .animate-wave-1 {
+    animation: medicalWave 2.4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+  }
+  .animate-wave-2 {
+    animation: medicalWave 2.4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite 0.75s;
+  }
+  .animate-wave-3 {
+    animation: medicalWave 2.4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite 1.5s;
+  }
+
+  /* Splash Logo Scale Entry */
+  @keyframes logoReveal {
+    0% {
+      transform: scale(0.65);
+      opacity: 0;
+      filter: blur(8px);
+    }
+    60% {
+      transform: scale(1.06);
+      opacity: 1;
+      filter: blur(0px);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+      filter: blur(0px);
+    }
+  }
+  .animate-logo-reveal {
+    animation: logoReveal 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Staggered Reveal Items in Main View */
+  .reveal-item {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal-item.revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Splash Screen Fade Out Classes */
+  .splash-container {
+    transition: opacity 0.65s cubic-bezier(0.4, 0, 0.2, 1), transform 0.65s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.65s;
+  }
+  .splash-hidden {
+    opacity: 0;
+    transform: scale(1.08) translateY(-14px);
+    visibility: hidden;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body class="bg-gradient-to-b from-[#eaf4fd] via-[#f1f7fc] to-[#e6f1fa] font-body text-slate-800 pt-safe pb-safe min-h-screen flex flex-col justify-between relative selection:bg-cyan-200 overflow-hidden">
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- GLACIER LIQUID INTRO / SPLASH SCREEN OVERLAY              -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="splash-container fixed inset-0 z-50 flex flex-col items-center justify-between p-6 bg-gradient-to-b from-[#edf6fe]/95 via-[#f3f9fe]/90 to-[#e4f1fc]/95 backdrop-blur-3xl overflow-hidden splash-hidden" id="splashScreen" style="display: none;">
+<!-- Dynamic Liquid Glow Spheres inside Splash -->
+<div class="absolute -top-24 -left-20 w-80 h-80 rounded-full bg-cyan-300/40 blur-3xl animate-float-1 pointer-events-none"></div>
+<div class="absolute top-1/2 -right-24 w-96 h-96 rounded-full bg-sky-300/35 blur-3xl animate-float-2 pointer-events-none"></div>
+<div class="absolute -bottom-20 left-10 w-88 h-88 rounded-full bg-teal-200/35 blur-3xl animate-float-3 pointer-events-none"></div>
+<!-- Top Skip Button -->
+<div class="w-full flex justify-end pt-2 z-20">
+<button class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full ice-badge-pill text-[12px] font-headline font-semibold text-sky-800 active:scale-95 transition-transform hover:bg-white/80 cursor-pointer shadow-sm" onclick="dismissSplash()" type="button">
+<span class="">O'tkazib yuborish</span>
+<span class="material-symbols-outlined text-[15px]">fast_forward</span>
+</button>
+</div>
+<!-- Central Visual Section: Logo with Pulsing Halo and Liquid Sound Waves -->
+<div class="flex-1 flex flex-col items-center justify-center relative z-10 w-full max-w-xs text-center my-auto">
+<div class="relative w-44 h-44 flex items-center justify-center mb-6">
+<!-- Expanding ripple waves -->
+<div class="absolute inset-0 rounded-full border border-sky-400/45 animate-wave-1 pointer-events-none"></div>
+<div class="absolute inset-0 rounded-full border border-cyan-400/35 animate-wave-2 pointer-events-none"></div>
+<div class="absolute inset-0 rounded-full border border-blue-400/25 animate-wave-3 pointer-events-none"></div>
+<!-- Core Soft Glowing Halo -->
+<div class="absolute w-32 h-32 rounded-full bg-gradient-to-tr from-sky-400/35 via-cyan-300/40 to-blue-500/20 blur-xl animate-pulse"></div>
+<!-- Official NurseCall Logo -->
+<div class="relative z-10 w-28 h-28 rounded-3xl p-3 bg-white/70 backdrop-blur-xl border border-white/90 shadow-[0_20px_45px_-12px_rgba(2,132,199,0.35)] flex items-center justify-center animate-logo-reveal">
+<img alt="NurseCall Logo" class="w-full h-full object-contain filter drop-shadow-md" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGcRrfHBNb-h8KJNbP1stneeWj078Mnu7rMOTXhJ3mVzoxeGE0YM9K2FxtTbSkpeBNMjZnEtynVih6WM_GXVaN62loUYhnfO5phQFDn6TyhbK5uf6eCXkFMeqRdnQqvzcVARU9qWpYjqxYbu9chhmDfMNfg9H67AP34cZkvxmQDb9Sust1gQ29DkbE6xp_66yfqlH73ZJLngHt4xNFtD3yiIeWO9kXccFqhxjzGYgkyiufAtuy5-YZGt-osfYl38YyzfE">
+</div>
+</div>
+<!-- App Title & Motto -->
+<div class="space-y-1.5 animate-fade-in-up" style="animation-delay: 200ms;">
+<div class="flex items-center justify-center gap-2">
+<h1 class="font-headline text-[32px] font-extrabold text-slate-900 tracking-tight">NurseCall</h1>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-gradient-to-r from-sky-500/20 to-cyan-500/30 border border-sky-400/40 text-sky-700 font-headline text-[11px] uppercase font-bold tracking-wider shadow-sm">PRO</span>
+</div>
+<p class="font-headline text-slate-600 text-[14px] font-medium tracking-tight">
+        Tezkor yordam, xavfsiz parvarish
+      </p>
+</div>
+</div>
+<!-- Bottom Loading & Clinical Status Indicator -->
+<div class="w-full max-w-xs flex flex-col items-center gap-3 pb-4 z-10 animate-fade-in-up" style="animation-delay: 350ms;">
+<!-- Liquid Progress Bar -->
+<div class="w-full h-1.5 bg-slate-200/60 rounded-full overflow-hidden backdrop-blur-sm border border-white/70 p-[1px]">
+<div class="h-full bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-600 rounded-full w-0 transition-all duration-300 ease-out shadow-[0_0_12px_rgba(56,189,248,0.7)]" id="splashProgressBar" style="width: 6%;"></div>
+</div>
+<!-- Status Text & Encrypted Badge -->
+<div class="flex items-center justify-between w-full text-[11px] font-medium text-slate-500 px-1">
+<div class="flex items-center gap-1.5">
+<div class="w-1.5 h-1.5 rounded-full bg-teal-500 animate-ping"></div>
+<span class="text-slate-600" id="splashStatusText">Tizim tayyorlandi</span>
+</div>
+<span class="text-sky-700 font-semibold flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[13px]">lock</span> TLS 1.3
+      </span>
+</div>
+</div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- MAIN APP SCREEN (LOGIN & ROLE SELECTOR)                    -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Atmospheric Floating Liquid Orbs (Glacier Cyan, Sky Blue, Pure Frost) -->
+<div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+<div class="absolute -top-24 -left-20 w-88 h-88 rounded-full bg-gradient-to-br from-cyan-300/45 via-sky-200/50 to-blue-200/30 blur-3xl animate-float-1"></div>
+<div class="absolute top-1/3 -right-28 w-96 h-96 rounded-full bg-gradient-to-bl from-sky-300/40 via-teal-200/35 to-blue-300/30 blur-3xl animate-float-2"></div>
+<div class="absolute -bottom-24 left-6 w-96 h-96 rounded-full bg-gradient-to-tr from-cyan-200/50 via-sky-100/60 to-blue-200/40 blur-3xl animate-float-3"></div>
+<!-- Subtle crystalline refraction grid -->
+<div class="absolute inset-0 opacity-[0.032] bg-[radial-gradient(#0284c7_1px,transparent_1px)] [background-size:24px_24px]"></div>
+</div>
+<main class="flex-1 flex flex-col relative z-10 w-full px-4 sm:px-6 max-w-md mx-auto justify-between py-4" id="mainContent">
+<!-- 1. Top Branding Section with Replay Splash Trigger -->
+<div class="reveal-item flex flex-col items-center text-center mt-2 mb-3 revealed" style="transition-delay: 50ms;">
+<!-- Top toolbar: Replay splash intro button & status -->
+<div class="w-full flex items-center justify-between mb-1 px-1">
+<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-800/80 bg-sky-100/60 border border-sky-200/70 px-2 py-0.5 rounded-full">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+        Onlayn
+      </span>
+<button class="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-sky-700 bg-white/50 hover:bg-white/90 border border-white/80 rounded-full px-2.5 py-0.5 shadow-xs transition-all active:scale-95 cursor-pointer" onclick="replaySplash()" title="Animatsiyani qayta ko'rish">
+<span class="material-symbols-outlined text-[13px]">replay</span>
+<span class="">Kirish animatsiyasi</span>
+</button>
+</div>
+<!-- Official NurseCall Logo with Glacier Halo -->
+<div class="relative mb-2 flex items-center justify-center">
+<div class="absolute w-24 h-24 rounded-full bg-sky-400/25 blur-xl"></div>
+<img alt="NurseCall Logo" class="w-20 h-20 object-contain relative z-10 animate-breathing-logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbQrKPVWqafMYy4QDnGlkfOFR5FRGYboiPKKJOxHr-9cUTIJ-gaHv6bCfYt-gicgvQjHc1BrlJcMDbcXF5M-07dmZa-k1byNw5XxsMhTeQE3jr6X2svBp_O5SlPpL0QTJTkHMnzeGpU8acNDn3mHRbUZX2JfwVqgTUJQtIbUWPDT6xKZ8MlTk-qW-ih9wPeTGVpgTgr3J6Bfblx24KReOIk4jNTsqoI189JtHvG0u7tI7tpkmanJXr0XpUO47kIE1DwXI">
+</div>
+<!-- Title & Pro Tag -->
+<div class="flex items-center gap-2">
+<h1 class="font-headline text-[27px] leading-tight text-slate-900 font-extrabold tracking-tight drop-shadow-sm">NurseCall</h1>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-gradient-to-r from-sky-500/15 to-cyan-500/25 border border-sky-400/35 text-sky-700 font-headline text-[10px] uppercase font-bold tracking-wider shadow-sm backdrop-blur-md">PRO</span>
+</div>
+<!-- Frosted Security Pill Badge with Pulse Indicator -->
+<div class="mt-2.5 inline-flex items-center gap-2 py-1.5 px-4 rounded-full ice-badge-pill text-slate-700 text-[12px] font-medium shadow-sm">
+<div class="relative flex items-center justify-center w-2 h-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-sky-600" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<span class="font-semibold text-slate-700 tracking-tight">Tibbiy server himoyalangan</span>
+</div>
+</div>
+<!-- 2. Central Frosted Glass Card Container -->
+<div class="reveal-item w-full glacier-card rounded-3xl p-6 sm:p-7 relative overflow-hidden transition-all revealed" style="transition-delay: 150ms;">
+<!-- Internal Top Border Reflection Highlight -->
+<div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent pointer-events-none"></div>
+<!-- Header Inside Card -->
+<div class="mb-4 text-left">
+<h2 class="font-headline text-[22px] text-slate-800 font-bold tracking-tight">Hisobingizga kiring</h2>
+</div>
+<!-- Role Switcher Tabs -->
+<div class="mb-5 p-1 rounded-2xl bg-slate-200/40 backdrop-blur-md border border-white/60 flex items-center gap-1" id="roleTabs"></div>
+<!-- Form Section -->
+<form class="flex flex-col gap-4" id="loginForm" onsubmit="event.preventDefault(); handleAuth();">
+<!-- Login / ID Field -->
+<div class="flex flex-col gap-1.5 text-left">
+<label class="font-headline text-xs text-slate-700 font-semibold flex items-center justify-between" for="usernameInput">
+<span class="">Login yoki ID</span>
+
+</label>
+<div class="relative flex items-center rounded-2xl ice-input-box" id="userInputWrap">
+<span class="material-symbols-outlined absolute left-3.5 text-slate-400 text-xl pointer-events-none transition-colors" id="emailIcon">badge</span>
+<input class="w-full pl-11 pr-4 py-3 rounded-2xl bg-transparent text-slate-800 font-body text-[14px] placeholder-slate-400 focus:outline-none transition-all" id="usernameInput" onblur="document.getElementById('emailIcon').classList.remove('text-sky-600')" onfocus="document.getElementById('emailIcon').classList.add('text-sky-600')" placeholder="admin@clinic.uz yoki ID-1001" required="" type="text" value="nurse@clinic.uz">
+</div>
+</div>
+<!-- Password Field -->
+<div class="flex flex-col gap-1.5 text-left">
+<label class="font-headline text-xs text-slate-700 font-semibold" for="passwordInput">Parol</label>
+<div class="relative flex items-center rounded-2xl ice-input-box" id="pwdInputWrap">
+<span class="material-symbols-outlined absolute left-3.5 text-slate-400 text-xl pointer-events-none transition-colors" id="lockIcon">lock</span>
+<input class="w-full pl-11 pr-12 py-3 rounded-2xl bg-transparent text-slate-800 font-body text-[14px] placeholder-slate-400 focus:outline-none transition-all tracking-wider" id="passwordInput" onblur="document.getElementById('lockIcon').classList.remove('text-sky-600')" onfocus="document.getElementById('lockIcon').classList.add('text-sky-600')" placeholder="••••••••••••" required="" type="password" value="medSecPass2025">
+<button aria-label="Parolni ko'rsatish" class="absolute right-2.5 p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-white/60 active:scale-95 flex items-center justify-center transition-all cursor-pointer" id="togglePassword" onclick="togglePasswordVisibility()" type="button">
+<span class="material-symbols-outlined text-[20px]" id="eyeIcon">visibility</span>
+</button>
+</div>
+</div>
+<!-- Remember me & Forgot Password -->
+<div class="flex items-center justify-between pt-0.5">
+<label class="flex items-center gap-2 cursor-pointer select-none group">
+<input checked="" class="w-4 h-4 rounded-[6px] border-slate-300 text-sky-600 focus:ring-sky-400/40 focus:ring-offset-0 bg-white/80 cursor-pointer transition" type="checkbox">
+<span class="text-xs text-slate-600 font-medium group-hover:text-slate-900 transition-colors">Meni eslab qolish</span>
+</label>
+<a class="text-xs text-sky-600 font-semibold hover:text-sky-700 hover:underline transition-colors" href="#forgot" onclick="event.preventDefault(); alert('Klinika IT xizmatiga so\'rov yuborildi');">
+          Parolni unutdingizmi?
+        </a>
+</div>
+<!-- 3. Primary CTA Button with Shimmer Sweep -->
+<button class="shimmer-layer relative overflow-hidden w-full mt-2 py-3.5 px-5 rounded-2xl text-white font-headline text-[15px] font-bold active:scale-[0.98] transition-transform duration-150 flex items-center justify-center gap-2 shadow-lg cursor-pointer group cta-liquid" id="submitButton" type="submit">
+<span class="relative z-10 tracking-wide font-semibold" id="buttonText">Tizimga kirish</span>
+<span class="material-symbols-outlined text-xl relative z-10 group-hover:translate-x-1 transition-transform" id="buttonIcon">arrow_forward</span>
+</button>
+<!-- Biometric Quick Auth Option -->
+
+</form>
+</div>
+<!-- 4. Footer & Technical Support -->
+<div class="reveal-item mt-4 mb-1 flex flex-col items-center gap-2 text-center revealed" style="transition-delay: 250ms;">
+<!-- Help & Support -->
+<a class="inline-flex items-center gap-1.5 py-1 px-3 rounded-full hover:bg-white/60 text-slate-600 hover:text-slate-900 transition-all text-[12px] font-medium" href="#support" onclick="event.preventDefault(); alert('Klinika IT xizmati aloqa raqami: +998 71 200-00-11');">
+<span class="material-symbols-outlined text-[16px] text-sky-600">support_agent</span>
+<span class="">Yordam kerakmi? <strong class="text-sky-700 hover:underline">Texnik xizmat</strong></span>
+</a>
+<!-- Version Badge & Clinical Network Status -->
+<p class="font-body text-[11px] text-slate-400 tracking-tight font-medium">
+      NurseCall v2.4 • Shifoxona xavfsiz tarmog'i
+    </p>
+</div>
+</main>
+<script>
+  let splashTimeout = null;
+  let progressInterval = null;
+
+  // Staggered trigger for Login Form components
+  function revealLoginElements() {
+    const items = document.querySelectorAll('.reveal-item');
+    items.forEach((item, index) => {
+      setTimeout(() => {
+        item.classList.add('revealed');
+      }, index * 120);
+    });
+  }
+
+  function hideLoginElements() {
+    const items = document.querySelectorAll('.reveal-item');
+    items.forEach(item => {
+      item.classList.remove('revealed');
+    });
+  }
+
+  // Dismiss Splash and transition smoothly to Login View
+  function dismissSplash() {
+    if (splashTimeout) clearTimeout(splashTimeout);
+    if (progressInterval) clearInterval(progressInterval);
+
+    const splash = document.getElementById('splashScreen');
+    const bar = document.getElementById('splashProgressBar');
+    if (bar) bar.style.width = '100%';
+
+    splash.classList.add('splash-hidden');
+    setTimeout(() => {
+      splash.style.display = 'none';
+      revealLoginElements();
+    }, 550);
+  }
+
+  // Run or replay Splash presentation
+  function startSplashFlow() {
+    const splash = document.getElementById('splashScreen');
+    const bar = document.getElementById('splashProgressBar');
+    const statusText = document.getElementById('splashStatusText');
+
+    hideLoginElements();
+    splash.style.display = 'flex';
+    splash.classList.remove('splash-hidden');
+    bar.style.width = '0%';
+    statusText.textContent = "Klinika tarmog'i ulanmoqda...";
+
+    let progress = 0;
+    if (progressInterval) clearInterval(progressInterval);
+    progressInterval = setInterval(() => {
+      progress += 6;
+      if (progress > 100) progress = 100;
+      bar.style.width = progress + '%';
+
+      if (progress > 45 && progress < 85) {
+        statusText.textContent = "Shifrlangan sessiya o'rnatilmoqda...";
+      } else if (progress >= 85) {
+        statusText.textContent = "Tizim tayyorlandi";
+      }
+
+      if (progress >= 100) {
+        clearInterval(progressInterval);
+      }
+    }, 85);
+
+    if (splashTimeout) clearTimeout(splashTimeout);
+    splashTimeout = setTimeout(() => {
+      dismissSplash();
+    }, 1850);
+  }
+
+  function replaySplash() {
+    startSplashFlow();
+  }
+
+  // On page load start the Glacier Splash Screen
+  window.addEventListener('DOMContentLoaded', () => {
+    startSplashFlow();
+  });
+
+  // Role Switcher
+  function setRole(button, roleName) {
+    document.querySelectorAll('.role-btn').forEach(btn => {
+      btn.classList.remove('bg-white', 'text-sky-800', 'shadow-sm', 'font-bold');
+      btn.classList.add('text-slate-600', 'font-medium');
+    });
+    button.classList.add('bg-white', 'text-sky-800', 'shadow-sm', 'font-bold');
+    button.classList.remove('text-slate-600', 'font-medium');
+
+    const roleBadge = document.getElementById('roleBadge');
+    roleBadge.textContent = roleName + ' profili';
+
+    const usernameInput = document.getElementById('usernameInput');
+    if (roleName === 'Hamshira') {
+      usernameInput.placeholder = 'nurse@clinic.uz yoki ID-7842';
+    } else if (roleName === 'Shifokor') {
+      usernameInput.placeholder = 'doctor@clinic.uz yoki ID-3310';
+    } else {
+      usernameInput.placeholder = 'admin@clinic.uz yoki ID-1001';
+    }
+  }
+
+  // Password Visibility Toggle
+  function togglePasswordVisibility() {
+    const pwdInput = document.getElementById('passwordInput');
+    const eyeIcon = document.getElementById('eyeIcon');
+    if (pwdInput.type === 'password') {
+      pwdInput.type = 'text';
+      eyeIcon.textContent = 'visibility_off';
+    } else {
+      pwdInput.type = 'password';
+      eyeIcon.textContent = 'visibility';
+    }
+  }
+
+  // Biometric Quick Authentication
+  function triggerBiometric() {
+    const btn = document.getElementById('submitButton');
+    const text = document.getElementById('buttonText');
+    const icon = document.getElementById('buttonIcon');
+    
+    text.textContent = 'Biometrik tekshirilmoqda...';
+    icon.textContent = 'fingerprint';
+    btn.disabled = true;
+
+    setTimeout(() => {
+      text.textContent = 'Identifikatsiya qilindi';
+      icon.textContent = 'verified';
+      btn.classList.remove('cta-liquid');
+      btn.classList.add('bg-emerald-600', 'shadow-emerald-600/30');
+
+      setTimeout(() => {
+        text.textContent = 'Tizimga kirish';
+        icon.textContent = 'arrow_forward';
+        btn.classList.remove('bg-emerald-600', 'shadow-emerald-600/30');
+        btn.classList.add('cta-liquid');
+        btn.disabled = false;
+      }, 1400);
+    }, 1100);
+  }
+
+  // Form Submission
+  function handleAuth() {
+    const btn = document.getElementById('submitButton');
+    const text = document.getElementById('buttonText');
+    const icon = document.getElementById('buttonIcon');
+    
+    text.textContent = 'Tekshirilmoqda...';
+    icon.textContent = 'sync';
+    icon.classList.add('animate-spin');
+    btn.disabled = true;
+
+    setTimeout(() => {
+      text.textContent = 'Muvaffaqiyatli';
+      icon.classList.remove('animate-spin');
+      icon.textContent = 'check_circle';
+      btn.classList.remove('cta-liquid');
+      btn.classList.add('bg-emerald-600', 'shadow-emerald-600/30');
+      
+      setTimeout(() => {
+        text.textContent = 'Tizimga kirish';
+        icon.textContent = 'arrow_forward';
+        btn.classList.remove('bg-emerald-600', 'shadow-emerald-600/30');
+        btn.classList.add('cta-liquid');
+        btn.disabled = false;
+      }, 1600);
+    }, 1000);
+  }
+</script>
+
+
+</body></html>

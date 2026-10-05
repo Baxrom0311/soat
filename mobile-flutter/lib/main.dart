@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -34,7 +35,8 @@ class _NurseCallAppState extends State<NurseCallApp> {
   late final PushService _push;
   late final SettingsStore _settings;
   late final WearService _wear;
-  bool _pushWanted = false;
+  String? _watchToken;
+  Timer? _watchRetry;
 
   @override
   void initState() {
@@ -52,7 +54,17 @@ class _NurseCallAppState extends State<NurseCallApp> {
       _api,
       onUnauthorized: _sessions.signOut,
       onAcknowledged: _push.clearCall,
+      onSnapshot: _push.reconcile,
     );
+    _sessions.beforeSignOut = () async {
+      _watchToken = null;
+      _feed.reset();
+      await Future.wait([_push.unregister(), _wear.signOutWatch()]);
+    };
+    _watchRetry = Timer.periodic(const Duration(minutes: 1), (_) {
+      final token = _sessions.session?.accessToken;
+      if (token != null && !_wear.state.tokenSent) _wear.sendToken(token);
+    });
     _push.onCallTapped = (_) => _feed.refresh();
     _sessions.addListener(_onSession);
     _sessions.restore();
@@ -62,6 +74,7 @@ class _NurseCallAppState extends State<NurseCallApp> {
   void dispose() {
     _sessions.removeListener(_onSession);
     _settings.removeListener(_onSession);
+    _watchRetry?.cancel();
     _push.dispose();
     _feed.dispose();
     _api.close();
@@ -75,28 +88,12 @@ class _NurseCallAppState extends State<NurseCallApp> {
   /// ringing for the nurse who used it before. Both run without awaiting, so a
   /// slow network never delays the screen the nurse is waiting for.
   void _onSession() {
-    final signedIn = _sessions.isSignedIn;
-    if (signedIn && !_pushWanted) {
-      _pushWanted = true;
-      // Hand the session to the ward watch, if one is paired. Without awaiting:
-      // a watch asleep in a drawer must never delay the screen a nurse is
-      // waiting for, and a failure here is reported on the profile screen
-      // rather than thrown at somebody mid-shift.
-      final token = _sessions.session?.accessToken;
+    final token = _sessions.session?.accessToken;
+    if (token != _watchToken) {
+      _watchToken = token;
       if (token != null) _wear.sendToken(token);
-      // Honours the nurse's own switch: a phone she has silenced for her shift
-      // must not quietly re-register itself on the next sign-in.
-      _push.init().then((_) {
-        if (_settings.pushEnabled) _push.register();
-      });
-    } else if (!signedIn && _pushWanted) {
-      _pushWanted = false;
-      _push.unregister();
-      // And sign the watch out with her. A ward watch left holding the previous
-      // nurse's session keeps answering calls in her name, which is exactly how
-      // one clinic's entire history ended up attributed to one account.
-      _wear.signOutWatch();
     }
+    _push.setWanted(token != null && _settings.loaded && _settings.pushEnabled);
     if (mounted) setState(() {});
   }
 

@@ -23,19 +23,23 @@ def get_db():
 
 
 class CurrentUser:
-    def __init__(self, staff_id: int, clinic_id: int | None, role: str, email: str, name: str):
+    def __init__(
+        self, staff_id: int, clinic_id: int | None, role: str, email: str, name: str, session_version: int = 0
+    ):
         self.staff_id = staff_id
         self.clinic_id = clinic_id
         self.role = role
         self.email = email
         self.name = name
+        self.session_version = session_version
 
 
 def _user_from_payload(payload: dict) -> CurrentUser:
     try:
         role = StaffRole(payload["role"]).value
         staff_id = int(payload["sub"])
-    except (KeyError, ValueError):
+        session_version = int(payload.get("ver", 0))
+    except (KeyError, ValueError, TypeError):
         raise HTTPException(status_code=401, detail="invalid token") from None
     return CurrentUser(
         staff_id=staff_id,
@@ -43,6 +47,7 @@ def _user_from_payload(payload: dict) -> CurrentUser:
         role=role,
         email=payload.get("email", ""),
         name=payload.get("name", ""),
+        session_version=session_version,
     )
 
 
@@ -62,7 +67,7 @@ def revalidate_against_db(db: Session, user: CurrentUser) -> CurrentUser:
     clinic-scoped dependencies already do.
     """
     staff = staff_repo.get_by_id(db, user.staff_id)
-    if staff is None:
+    if staff is None or staff.session_version != user.session_version:
         raise HTTPException(status_code=401, detail="Account no longer exists")
     return CurrentUser(
         staff_id=staff.id,
@@ -70,6 +75,7 @@ def revalidate_against_db(db: Session, user: CurrentUser) -> CurrentUser:
         role=staff.role.value,
         email=staff.email,
         name=staff.name,
+        session_version=staff.session_version,
     )
 
 
@@ -168,10 +174,10 @@ def get_current_user_ws(token: str | None, db: Session | None = None) -> Current
         payload = decode_token(token)
     except jwt.PyJWTError:
         return None
-    user = _user_from_payload(payload)
-    if db is None:
-        return user
     try:
+        user = _user_from_payload(payload)
+        if db is None:
+            return user
         return revalidate_against_db(db, user)
     except HTTPException:
         return None

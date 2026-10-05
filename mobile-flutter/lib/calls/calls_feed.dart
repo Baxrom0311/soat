@@ -30,7 +30,21 @@ import 'shift_stats.dart';
 /// changed; the list is always re-read over HTTP. A dropped or duplicated event
 /// therefore cannot leave the screen disagreeing with the server.
 class CallsFeed extends ChangeNotifier {
-  CallsFeed(this._api, {required this.onUnauthorized, this.onAcknowledged});
+  CallsFeed(
+    this._api, {
+    required this.onUnauthorized,
+    this.onAcknowledged,
+    this.onSnapshot,
+    this.socketFactory,
+  });
+
+  final LiveSocket Function(void Function(LiveEvent), void Function(bool))?
+  socketFactory;
+  final void Function(Set<int>)? onSnapshot;
+  int _generation = 0;
+  int _refreshSequence = 0;
+  bool _stopped = false;
+  final Set<int> _pendingAcks = {};
 
   final ApiClient _api;
 
@@ -84,11 +98,12 @@ class CallsFeed extends ChangeNotifier {
 
   void start({String? token}) {
     stop();
+    _stopped = false;
     _tick = Timer.periodic(const Duration(seconds: 1), (_) {
       _now = DateTime.now();
       notifyListeners();
     });
-    _startPolling(pollInterval);
+    _startPolling(fallbackPollInterval);
     if (token != null) _connectSocket(token);
     refresh();
     _refreshNotice();
@@ -109,25 +124,33 @@ class CallsFeed extends ChangeNotifier {
   }
 
   void _connectSocket(String token) {
-    _socket = LiveSocket(
-      onEvent: (_) => refresh(),
-      onStateChanged: (connected) {
-        _live = connected;
-        // Falling back to the old five-second poll the moment the socket drops
-        // is what makes this safe to depend on: the worst case is exactly the
-        // behaviour the app had before, never a screen that has stopped moving.
-        _startPolling(connected ? pollInterval : fallbackPollInterval);
-        if (connected) refresh();
-        notifyListeners();
-      },
-    )..connect(token);
+    final generation = _generation;
+    void event(LiveEvent _) {
+      if (!_stopped && generation == _generation) refresh();
+    }
+
+    void state(bool connected) {
+      if (_stopped || generation != _generation) return;
+      _live = connected;
+      _startPolling(connected ? pollInterval : fallbackPollInterval);
+      if (connected) refresh();
+      notifyListeners();
+    }
+
+    _socket =
+        socketFactory?.call(event, state) ??
+        LiveSocket(onEvent: event, onStateChanged: state);
+    _socket!.connect(token);
   }
 
   void stop() {
+    _stopped = true;
+    ++_generation;
+    ++_refreshSequence;
+    _socket?.dispose();
     _poll?.cancel();
     _tick?.cancel();
     _stats2?.cancel();
-    _socket?.dispose();
     _poll = null;
     _tick = null;
     _stats2 = null;
@@ -135,18 +158,43 @@ class CallsFeed extends ChangeNotifier {
     _live = false;
   }
 
+  /// Never carry a previous nurse's cached clinic or calls into another session.
+  void reset() {
+    stop();
+    _calls = const [];
+    _pendingAcks.clear();
+    _clinicName = null;
+    _notice = null;
+    _stats = ShiftStats.empty;
+    _loading = true;
+    _reachable = true;
+    notifyListeners();
+  }
+
   Future<void> refresh() async {
+    if (_stopped) return;
+    final generation = _generation;
+    final sequence = ++_refreshSequence;
+    bool current() =>
+        !_stopped && generation == _generation && sequence == _refreshSequence;
     try {
       final list = await _api.activeCalls();
+      if (!current()) return;
       // Oldest first, always. The nurse should not have to scan for the person
       // who has been waiting longest — and an arrival-ordered list buries them
       // as the ward gets busy, which is exactly when it matters.
       list.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-      _calls = list;
+      final activeIds = list.map((c) => c.callId).toSet();
+      for (final old in _calls) {
+        if (!activeIds.contains(old.callId)) onAcknowledged?.call(old.callId);
+      }
+      onSnapshot?.call(activeIds);
+      _calls = list.where((c) => !_pendingAcks.contains(c.callId)).toList();
       _reachable = true;
       _loading = false;
       notifyListeners();
     } on ApiException catch (e) {
+      if (!current()) return;
       if (e.isUnauthorized) {
         stop();
         onUnauthorized();
@@ -156,6 +204,7 @@ class CallsFeed extends ChangeNotifier {
       _loading = false;
       notifyListeners();
     } catch (_) {
+      if (!current()) return;
       _reachable = false;
       _loading = false;
       notifyListeners();
@@ -163,15 +212,21 @@ class CallsFeed extends ChangeNotifier {
   }
 
   Future<void> _refreshClinic() async {
+    final generation = _generation;
     try {
-      _clinicName = (await _api.clinic()).name;
+      final value = (await _api.clinic()).name;
+      if (_stopped || generation != _generation) return;
+      _clinicName = value;
       notifyListeners();
     } catch (_) {}
   }
 
   Future<void> _refreshStats() async {
+    final generation = _generation;
     try {
-      _stats = ShiftStats.from(await _api.history(), DateTime.now());
+      final value = ShiftStats.from(await _api.history(), DateTime.now());
+      if (_stopped || generation != _generation) return;
+      _stats = value;
       notifyListeners();
     } catch (_) {
       // Billing-gated and non-essential. A blocked clinic simply loses the
@@ -180,8 +235,11 @@ class CallsFeed extends ChangeNotifier {
   }
 
   Future<void> _refreshNotice() async {
+    final generation = _generation;
     try {
-      _notice = await _api.billingNotice();
+      final value = await _api.billingNotice();
+      if (_stopped || generation != _generation) return;
+      _notice = value;
       notifyListeners();
     } catch (_) {
       // The subscription banner is the least important thing on this screen;
@@ -193,28 +251,32 @@ class CallsFeed extends ChangeNotifier {
   /// poll. Five seconds of a card that is already answered still sitting there
   /// invites a second nurse to walk to the same room.
   Future<void> acknowledge(int callId) async {
-    final before = _calls;
-    _calls = _calls.where((c) => c.callId != callId).toList(growable: false);
+    if (_stopped || !_pendingAcks.add(callId)) return;
+    final generation = _generation;
+    ++_refreshSequence;
+    final removed = _calls.where((c) => c.callId == callId).toList();
+    _calls = _calls.where((c) => c.callId != callId).toList();
     notifyListeners();
     try {
       await _api.acknowledge(callId);
+      if (_stopped || generation != _generation) return;
+      ++_refreshSequence;
+      _pendingAcks.remove(callId);
       onAcknowledged?.call(callId);
       _refreshStats();
-    } on ApiException catch (e) {
-      if (e.isUnauthorized) {
+    } catch (e) {
+      if (_stopped || generation != _generation) return;
+      _pendingAcks.remove(callId);
+      if (e is ApiException && e.isUnauthorized) {
         stop();
         onUnauthorized();
         return;
       }
-      // Anything else and we genuinely do not know whether it landed, so put the
-      // card back: showing a call that was in fact answered costs a wasted walk,
-      // hiding one that was not costs a patient waiting with nobody coming.
-      _calls = before;
+      // Restore only this call, preserving unrelated arrivals.
+      if (!_calls.any((c) => c.callId == callId))
+        _calls = [..._calls, ...removed];
       notifyListeners();
-      rethrow;
-    } catch (_) {
-      _calls = before;
-      notifyListeners();
+      await refresh();
       rethrow;
     }
   }

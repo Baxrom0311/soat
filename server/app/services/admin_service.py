@@ -35,6 +35,7 @@ from app.schemas.admin import (
     PlanOut,
 )
 from app.services import audit_service, device_service, staff_service
+from app.services.session_service import revoke_staff_sessions
 
 
 def overview(db: Session) -> AdminOverviewOut:
@@ -482,6 +483,7 @@ def reset_staff_password(
         raise HTTPException(status_code=404, detail="Staff not found")
     new_password = secrets.token_urlsafe(9)
     staff.password_hash = hash_password(new_password)
+    revoke_staff_sessions(db, staff.id)
     audit_service.record(
         db,
         actor,

@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 # Hex chip id as read off the ESP32 itself (e.g. efuse MAC) -- 6 to 32 hex chars covers
 # everything from a 3-byte short id up to a 16-byte unique id with room to spare.
@@ -9,7 +9,7 @@ _CHIP_ID_RE = re.compile(r"^[0-9a-fA-F]{6,32}$")
 
 
 class DeviceCreate(BaseModel):
-    device_id: str
+    device_id: str = Field(min_length=1, max_length=29, pattern=r"^[A-Za-z0-9_-]+$")
     floor: int
 
 
@@ -40,6 +40,7 @@ class HeartbeatOut(BaseModel):
 
 
 class AnnounceIn(BaseModel):
+    provisioning_secret: str = Field(pattern=r"^[0-9a-f]{64}$")
     chip_id: str
 
     @field_validator("chip_id")
@@ -64,9 +65,10 @@ class DiscoveredDeviceOut(BaseModel):
 
 
 class ClaimDeviceIn(BaseModel):
+    pairing_code: str = Field(pattern=r"^[0-9a-fA-F]{12}$")
     clinic_id: int
     floor: int
-    device_id: str | None = None
+    device_id: str | None = Field(default=None, min_length=1, max_length=29, pattern=r"^[A-Za-z0-9_-]+$")
 
 
 class ClaimDeviceOut(BaseModel):

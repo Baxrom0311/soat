@@ -24,13 +24,7 @@ if not os.getenv("JWT_SECRET"):
         "JWT_SECRET is not set — using a random per-process secret; "
         "all tokens will be invalidated on restart and multi-worker deployments will not work"
     )
-# Accepted for verification but never used to sign. This is what makes rotating the
-# signing key a non-event: set the old secret here, put a fresh one in JWT_SECRET, and
-# every token already in a nurse's pocket keeps working until it expires on its own
-# while every new token is signed with the key nobody else has. Clear it once the
-# longest-lived old token has aged out -- leaving it set forever would mean a leaked key
-# never actually stops working, which is the thing the rotation was for.
-JWT_SECRET_OLD = os.getenv("JWT_SECRET_OLD", "")
+# JWT_SECRET_OLD is intentionally ignored: a compromised key must not remain valid.
 
 # Secret under which device API keys are HMAC'd. Independent of JWT_SECRET on
 # purpose: rotating the token-signing key must not invalidate every receiver in

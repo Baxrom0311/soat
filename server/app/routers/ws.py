@@ -1,4 +1,8 @@
+import asyncio
+from contextlib import suppress
+
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from starlette.concurrency import run_in_threadpool
 
 from app.core.deps import get_current_user_ws
 from app.database import SessionLocal
@@ -41,13 +45,17 @@ async def ws_calls(websocket: WebSocket, token: str | None = None):
     # The session is opened before accept() so the token can be revalidated against the
     # staff row: a deleted account must not be able to hold an open call stream for the
     # remaining lifetime of its (year-long) token.
-    db = SessionLocal()
-    try:
-        user = get_current_user_ws(subprotocol_token or token, db)
-        clinic = clinic_repo.get(db, user.clinic_id) if user and user.clinic_id else None
-        floors = staff_floor_repo.get_visible_floors(db, user.staff_id, user.role) or [] if user else []
-    finally:
-        db.close()
+    credential = subprotocol_token or token
+
+    def read_authority():
+        with SessionLocal() as db:
+            user = get_current_user_ws(credential, db)
+            if user is None or user.clinic_id is None or clinic_repo.get(db, user.clinic_id) is None:
+                return None
+            floors = staff_floor_repo.get_visible_floors(db, user.staff_id, user.role) or []
+            return user, floors
+
+    initial = await run_in_threadpool(read_authority)
 
     # Accept up front: a close() before accept() is downgraded to HTTP 403 and the
     # custom close code never reaches the browser. Accept-then-close delivers 4401.
@@ -55,16 +63,25 @@ async def ws_calls(websocket: WebSocket, token: str | None = None):
     # the connection itself.
     await websocket.accept(subprotocol="bearer" if subprotocol_token else None)
 
-    # user is None -> bad/expired token or deleted account.
-    # clinic_id None -> a superadmin token, which has no clinic stream to join.
-    if user is None or user.clinic_id is None or clinic is None:
+    if initial is None:
         await websocket.close(code=4401)
         return
+    user, floors = initial
 
-    manager.register(websocket, user.clinic_id, role=user.role, floors=floors)
+    async def validate():
+        current = await run_in_threadpool(read_authority)
+        if current is None or current[0].clinic_id != user.clinic_id:
+            return None
+        return current[0].role, current[1]
+
+    manager.register(websocket, user.clinic_id, role=user.role, floors=floors, validate=validate)
     try:
         while True:
-            # Dashboard doesn't send anything meaningful; just keep the socket alive.
-            await websocket.receive_text()
-    except WebSocketDisconnect:
+            with suppress(asyncio.TimeoutError):
+                await asyncio.wait_for(websocket.receive_text(), timeout=30)
+            if not await manager.revalidate(websocket, user.clinic_id):
+                return
+    except (WebSocketDisconnect, RuntimeError):
+        pass
+    finally:
         manager.disconnect(websocket, user.clinic_id)

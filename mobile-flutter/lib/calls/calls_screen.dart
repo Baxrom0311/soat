@@ -1027,8 +1027,11 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
                 // that has to still be in the tree.
                 if (changed == true && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Parol o‘zgartirildi')),
+                    const SnackBar(
+                      content: Text('Parol o‘zgartirildi. Qayta kiring.'),
+                    ),
                   );
+                  widget.onSignOut();
                 }
               },
             ),

@@ -36,6 +36,7 @@
 #include <esp_task_wdt.h>
 #include <Preferences.h>
 #include <time.h>
+#include <mbedtls/sha256.h>
 
 #include "config.h"
 #include "root_ca.h"
@@ -79,6 +80,7 @@ static const char *ANNOUNCE_PATH = "/api/v1/devices/announce";
 static const uint32_t ANNOUNCE_INTERVAL_MS = 5000;
 
 static char g_chipId[13] = {0};    // 12 xonali kichik-harfli hex + '\0'
+static String g_provisioningSecret;
 static String g_deviceId;          // asosiy rejimda ishlatiladigan device_id
 static String g_deviceKey;         // asosiy rejimda ishlatiladigan device_key
 static bool g_provisioned = false; // true => asosiy (avtorizatsiyali) rejim
@@ -185,6 +187,7 @@ void setup() {
   pinMode(BOOT_BUTTON_PIN, INPUT_PULLUP);
   checkWiFiFactoryReset();
 
+  WiFi.mode(WIFI_STA); // Enable the radio entropy source before generating bootstrap secrets.
   loadProvisioningState();
   if (g_provisioned) {
     Serial.printf("Device ID: %s (asosiy rejim)\n", g_deviceId.c_str());
@@ -410,7 +413,19 @@ void computeChipId() {
 //      qoladi, g_provisioned false bo'lib qoladi.
 void loadProvisioningState() {
   Preferences prefs;
-  prefs.begin(PROVISION_NVS_NAMESPACE, true);
+  prefs.begin(PROVISION_NVS_NAMESPACE, false);
+  g_provisioningSecret = prefs.getString("bootstrap", "");
+  if (g_provisioningSecret.length() != 64) {
+    char secret[65];
+    for (size_t i = 0; i < 8; ++i) snprintf(secret + i * 8, 9, "%08x", (unsigned)esp_random());
+    g_provisioningSecret = secret;
+    prefs.putString("bootstrap", g_provisioningSecret);
+  }
+  unsigned char digest[32];
+  mbedtls_sha256_ret((const unsigned char *)g_provisioningSecret.c_str(), 64, digest, 0);
+  char pairingCode[13];
+  for (size_t i = 0; i < 6; ++i) snprintf(pairingCode + i * 2, 3, "%02x", digest[i]);
+  Serial.printf("Biriktirish kodi: %s (administratorga kiriting)\n", pairingCode);
   String storedId = prefs.getString("device_id", "");
   String storedKey = prefs.getString("device_key", "");
   prefs.end();
@@ -437,7 +452,8 @@ void loadProvisioningState() {
 void clearProvisioningState() {
   Preferences prefs;
   prefs.begin(PROVISION_NVS_NAMESPACE, false);
-  prefs.clear();
+  prefs.remove("device_id");
+  prefs.remove("device_key"); // Preserve the bootstrap identity across WiFi/factory reset.
   prefs.end();
 }
 
@@ -470,6 +486,7 @@ void pollAnnounce(unsigned long nowMs) {
 
   JsonDocument doc;
   doc["chip_id"] = g_chipId;
+  doc["provisioning_secret"] = g_provisioningSecret;
   String body;
   serializeJson(doc, body);
 

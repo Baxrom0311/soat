@@ -20,6 +20,7 @@ than hiding it; the defence is the review of that one line.
 import importlib
 
 import pytest
+
 from app.core import config, security
 from app.core.security import hash_password, verify_password
 

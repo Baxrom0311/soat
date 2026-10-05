@@ -1,5 +1,6 @@
 import asyncio
 import json
+from collections.abc import Awaitable, Callable
 from datetime import datetime
 
 from fastapi import WebSocket
@@ -23,29 +24,55 @@ class ConnectionManager:
     def __init__(self) -> None:
         self.active: dict[int, list[WebSocket]] = {}
         # role/floors per connection, for floor-scoped broadcasts (see broadcast()).
+        self.validators: dict[WebSocket, Callable[[], Awaitable[tuple[str, list[int]] | None]]] = {}
         self.meta: dict[WebSocket, tuple[str, list[int]]] = {}
 
     def register(
-        self, ws: WebSocket, clinic_id: int, *, role: str = "", floors: list[int] | None = None
+        self,
+        ws: WebSocket,
+        clinic_id: int,
+        *,
+        role: str = "",
+        floors: list[int] | None = None,
+        validate: Callable[[], Awaitable[tuple[str, list[int]] | None]] | None = None,
     ) -> None:
         """Register an ALREADY-accepted socket. Accept happens in the route handler so
         it can deliver custom close codes (4401/4402) on the reject paths — a close
         before accept() is downgraded to a plain HTTP 403 and the code is lost."""
         self.active.setdefault(clinic_id, []).append(ws)
         self.meta[ws] = (role, floors or [])
+        if validate is not None:
+            self.validators[ws] = validate
 
     def disconnect(self, ws: WebSocket, clinic_id: int) -> None:
         conns = self.active.get(clinic_id)
         if conns and ws in conns:
             conns.remove(ws)
         self.meta.pop(ws, None)
+        self.validators.pop(ws, None)
+        if conns == []:
+            self.active.pop(clinic_id, None)
+
+    async def revalidate(self, ws: WebSocket, clinic_id: int) -> bool:
+        validator = self.validators.get(ws)
+        if validator is None:
+            return ws in self.meta
+        try:
+            authority = await validator()
+        except Exception:
+            # A failed DB read must not leave a stream authorized indefinitely.
+            authority = None
+        if authority is None:
+            self.disconnect(ws, clinic_id)
+            await ws.close(code=4401)
+            return False
+        self.meta[ws] = authority
+        return True
 
     def _should_receive(self, ws: WebSocket, floor: int | None) -> bool:
         if floor is None:
             return True
-        # A connection missing from meta (shouldn't happen -- register() always sets
-        # it) fails open to "receives everything", matching the same safe default as
-        # an unassigned nurse: never silently drop a call notification.
+        # Registration is revalidated before this filter is applied.
         role, floors = self.meta.get(ws, ("", []))
         if role in (StaffRole.ADMIN.value, StaffRole.SUPERADMIN.value):
             return True
@@ -66,13 +93,15 @@ class ConnectionManager:
         conns = self.active.get(clinic_id)
         if not conns:
             return
-        recipients = [ws for ws in conns if self._should_receive(ws, floor)]
-        if not recipients:
-            return
+        recipients = list(conns)
         payload = json.dumps(message, default=_json_default)
 
         async def _send(ws: WebSocket) -> WebSocket | None:
             try:
+                if not await self.revalidate(ws, clinic_id):
+                    return ws
+                if not self._should_receive(ws, floor):
+                    return None
                 await asyncio.wait_for(ws.send_text(payload), timeout=SEND_TIMEOUT_SECONDS)
                 return None
             except Exception:

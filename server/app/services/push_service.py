@@ -187,7 +187,12 @@ def _send_fcm(
 
     sent = 0
     for token in tokens:
-        error = fcm_service.send(token.expo_push_token, title=title, body=body, data=data)
+        error = fcm_service.send(
+            token.expo_push_token,
+            title=title,
+            body=body,
+            data={**data, "clinic_id": clinic_id, "staff_id": token.staff_id},
+        )
         if error is None:
             sent += 1
             continue
@@ -205,3 +210,26 @@ def _send_fcm(
         clinic_id,
         call_id,
     )
+
+
+def send_ack_notifications(clinic_id: int, call_id: int) -> None:
+    """Cancel the alert on every FCM phone, including phones asleep in the background."""
+    with SessionLocal() as db:
+        try:
+            tokens = [
+                t
+                for t in push_token_repo.list_by_clinic(db, clinic_id)
+                if not t.expo_push_token.startswith("ExponentPushToken[")
+            ]
+            _send_fcm(
+                db,
+                tokens,
+                title="",
+                body="",
+                data={"type": "ack", "call_id": call_id},
+                clinic_id=clinic_id,
+                call_id=call_id,
+            )
+            db.commit()
+        except Exception:
+            logger.exception("Call cancellation push failed for call_id=%s", call_id)

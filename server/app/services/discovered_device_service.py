@@ -9,6 +9,8 @@ can save it to NVS and switch to normal authenticated operation -- no manual
 device_id/key entry, no re-flashing.
 """
 
+import hashlib
+import hmac
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -38,7 +40,7 @@ def _check_announce_rate(client_ip: str) -> None:
         raise HTTPException(status_code=429, detail="Too many announce requests, try again later")
 
 
-def announce(db: Session, *, chip_id: str, client_ip: str) -> AnnounceOut:
+def announce(db: Session, *, chip_id: str, client_ip: str, provisioning_secret: str) -> AnnounceOut:
     _check_announce_rate(client_ip)
 
     now = datetime.now(timezone.utc)
@@ -47,7 +49,13 @@ def announce(db: Session, *, chip_id: str, client_ip: str) -> AnnounceOut:
     # Best-effort, piggybacked on a request that's already writing -- small-scale
     # deployment, so a dedicated cleanup job isn't worth it yet.
     discovered_device_repo.delete_stale_unclaimed(db, cutoff=now - timedelta(hours=24))
-    discovered_device_repo.upsert_seen(db, chip_id=chip_id, last_ip=client_ip, now=now)
+    secret_hash = hashlib.sha256(provisioning_secret.encode()).hexdigest()
+    row = discovered_device_repo.upsert_seen(
+        db, chip_id=chip_id, last_ip=client_ip, now=now, secret_hash=secret_hash
+    )
+    if row is None:
+        db.rollback()
+        raise HTTPException(status_code=403, detail="Provisioning proof rejected")
     db.commit()
 
     device = device_repo.get_by_chip_id(db, chip_id)
@@ -85,10 +93,16 @@ def list_discovered(db: Session) -> list[DiscoveredDeviceOut]:
     ]
 
 
-def claim(db: Session, *, chip_id: str, clinic_id: int, floor: int, device_id: str | None) -> ClaimDeviceOut:
+def claim(
+    db: Session, *, chip_id: str, clinic_id: int, floor: int, device_id: str | None, pairing_code: str
+) -> ClaimDeviceOut:
     discovered = discovered_device_repo.get_by_chip_id(db, chip_id)
     if discovered is None:
         raise HTTPException(status_code=404, detail="Discovered device not found")
+    if not discovered.provisioning_secret_hash or not hmac.compare_digest(
+        discovered.provisioning_secret_hash[:12], pairing_code.strip().lower()
+    ):
+        raise HTTPException(status_code=403, detail="Qurilmadagi tasdiqlash kodi mos emas")
     if discovered.claimed_device_id is not None:
         raise HTTPException(status_code=409, detail="Device already claimed")
     if device_repo.get_by_chip_id(db, chip_id) is not None:

@@ -38,12 +38,20 @@ say "O'rnatilmoqda ($(du -h "$APK" | cut -f1))"
 # in across the upgrade. A signature mismatch fails here rather than silently.
 if ! "$ADB" -s "$HOST" install -r "$APK" 2>&1 | sed 's/^/  /' | grep -q Success; then
   fail "o'rnatilmadi. Avvalgi nusxa boshqa kalit bilan imzolangan bo'lsa:
-  $ADB -s $HOST uninstall uz.soat.reminder
+  $ADB -s $HOST uninstall uz.boos.nursecall
   (diqqat: bu soatdagi kirishni ham o'chiradi)"
 fi
 
+# A different applicationId installs alongside the legacy watch app. Stop its
+# polling service after successful installation so two apps cannot alert at once.
+if "$ADB" -s "$HOST" shell pm path uz.soat.reminder | grep -q package:; then
+  "$ADB" -s "$HOST" shell am force-stop uz.soat.reminder
+  "$ADB" -s "$HOST" shell pm disable-user --user 0 uz.soat.reminder >/dev/null
+  say "Eski soat ilovasi o‘chirib qo‘yildi; yangi ilovada telefon orqali yoki --sign-in bilan kiring"
+fi
+
 say "O'rnatildi"
-"$ADB" -s "$HOST" shell dumpsys package uz.soat.reminder \
+"$ADB" -s "$HOST" shell dumpsys package uz.boos.nursecall \
   | grep -E "versionName|versionCode" | head -2 | sed 's/^/  /'
 
 if [ "${2:-}" = "--sign-in" ]; then
@@ -61,7 +69,7 @@ if [ "${2:-}" = "--sign-in" ]; then
   # The receiver is protected by the DUMP permission, so adb can send this and
   # no other app on the watch can.
   "$ADB" -s "$HOST" shell am broadcast \
-    -a uz.soat.reminder.CONFIGURE --es token "$TOKEN" >/dev/null
+    -a uz.soat.reminder.CONFIGURE -p uz.boos.nursecall --es token "$TOKEN" >/dev/null
   say "Soat $EMAIL hisobi bilan kirdi"
   echo "  Chaqiruvni qabul qilganda tarixda shu hamshiraning ismi yoziladi."
 fi

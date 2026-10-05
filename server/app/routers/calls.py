@@ -57,8 +57,13 @@ def call_history(
 async def acknowledge_call(
     call_id: int,
     body: AckIn,
+    background_tasks: BackgroundTasks,
     user: CurrentUser = Depends(get_clinic_user_ungated),  # alerting path -- see /active
     db: Session = Depends(get_db),
 ):
-    acknowledged_by = body.acknowledged_by or user.name or user.email
-    return await call_service.acknowledge_call(db, user.clinic_id, call_id, acknowledged_by=acknowledged_by)
+    acknowledged_by = user.name or user.email
+    out = await call_service.acknowledge_call(
+        db, user.clinic_id, call_id, acknowledged_by=acknowledged_by, staff_id=user.staff_id, role=user.role
+    )
+    background_tasks.add_task(call_service.push_service.send_ack_notifications, user.clinic_id, call_id)
+    return out

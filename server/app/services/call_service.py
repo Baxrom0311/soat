@@ -224,10 +224,15 @@ def call_history(
     ]
 
 
-def _ack_sync(db: Session, clinic_id: int, call_id: int, *, acknowledged_by: str) -> AckOut:
+def _ack_sync(
+    db: Session, clinic_id: int, call_id: int, *, acknowledged_by: str, staff_id: int, role: str
+) -> AckOut:
     call = call_repo.get(db, clinic_id, call_id)
     if call is None:
         raise HTTPException(status_code=404, detail="Call not found")
+    floors = staff_floor_repo.get_visible_floors(db, staff_id, role)
+    if floors is not None and call.room.floor not in floors:
+        raise HTTPException(status_code=403, detail="Call is outside your assigned floors")
     if not call_repo.acknowledge_if_active(db, clinic_id, call_id, acknowledged_by=acknowledged_by):
         db.rollback()
         raise HTTPException(status_code=409, detail="Call already acknowledged")
@@ -236,7 +241,11 @@ def _ack_sync(db: Session, clinic_id: int, call_id: int, *, acknowledged_by: str
     return AckOut(call_id=call.id, status=call.status, acknowledged_at=call.acknowledged_at)
 
 
-async def acknowledge_call(db: Session, clinic_id: int, call_id: int, *, acknowledged_by: str) -> AckOut:
-    out = await run_in_threadpool(_ack_sync, db, clinic_id, call_id, acknowledged_by=acknowledged_by)
+async def acknowledge_call(
+    db: Session, clinic_id: int, call_id: int, *, acknowledged_by: str, staff_id: int, role: str
+) -> AckOut:
+    out = await run_in_threadpool(
+        _ack_sync, db, clinic_id, call_id, acknowledged_by=acknowledged_by, staff_id=staff_id, role=role
+    )
     asyncio.create_task(manager.broadcast(clinic_id, {"type": "ack", "call_id": out.call_id}))
     return out

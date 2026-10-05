@@ -284,6 +284,7 @@ def claim_discovered_device(chip_id: str, body: ClaimDeviceIn, db: Session = Dep
     return discovered_device_service.claim(
         db,
         chip_id=chip_id.strip().lower(),
+        pairing_code=body.pairing_code,
         clinic_id=body.clinic_id,
         floor=body.floor,
         device_id=body.device_id,

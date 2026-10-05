@@ -105,6 +105,14 @@ def register_device(
     """
     # No device cap: pricing is per receiver, so an extra device raises the bill rather
     # than being refused.
+    if (
+        not device_id
+        or len(device_id) > 29
+        or not all(c.isascii() and (c.isalnum() or c in "-_") for c in device_id)
+    ):
+        raise HTTPException(
+            status_code=422, detail="device_id: 1-29 ASCII letters, digits, hyphen or underscore"
+        )
     plaintext_key = generate_device_key()
     try:
         # the repo flushes on create, so the duplicate-key error can surface here too
@@ -161,6 +169,7 @@ def authenticate_device(db: Session, *, device_id: str, plaintext_key: str | Non
         except Exception:
             db.rollback()
             logger.exception("Qurilma kalitini yangilab bo'lmadi: %s", device_id)
+    device_repo.clear_pending_key(db, device)
     return device
 
 
