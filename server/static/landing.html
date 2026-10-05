@@ -1314,46 +1314,42 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
       <p>Klinikangizdagi noaniqlik va bemorlar xavotiriga chek qo'ying.</p>
     </div>
 
-    <div class="visual-compare-grid">
-      <!-- 1. Old System Visual Card -->
+    <div class="visual-compare-grid" style="margin-bottom: 24px;">
+      <!-- 1. Old System Visual Card - Calling -->
       <div class="bento-card visual-compare-card">
         <div class="visual-photo-frame">
-          <img src="/static/img_old_calling.jpg" alt="Eski tizimda bemor qiyinchiligi" class="visual-photo-img" />
+          <img src="/static/img_old_calling.png" alt="Eski tizimda bemor qiyinchiligi" class="visual-photo-img" />
           <div class="visual-photo-badge badge-bad">
             <span>✕</span> Eski Tizim (10-15 daqiqa kutish)
           </div>
         </div>
 
         <div class="visual-compare-body">
-          <h3>Eski Tizim: Xavotir va Kechikish</h3>
+          <h3>Bemor: Xavotir va Kechikish</h3>
           <ul class="visual-points-list">
             <li class="visual-point">
               <span class="point-bad-icon">✕</span>
-              <span><strong>Chaqiruv eshitilmaydi:</strong> Bemor og'ir holatda eshikka chiqishga yoki qichqirishga majbur.</span>
+              <span><strong>Chaqiruv eshitilmaydi:</strong> Bemor og'ir ahvolda qichqirishga yoki eshikka chiqishga majbur.</span>
             </li>
             <li class="visual-point">
               <span class="point-bad-icon">✕</span>
-              <span><strong>Hamshira postda emas:</strong> Yo'lakda yoki muolajada bo'lsa xabar yetib bormaydi.</span>
-            </li>
-            <li class="visual-point">
-              <span class="point-bad-icon">✕</span>
-              <span><strong>Nazorat yo'q:</strong> Kim qachon borgani noma'lum, rahbar uchun hisobot mavjud emas.</span>
+              <span><strong>10-15 daqiqa yo'qotiladi:</strong> Kechikish tufayli bemor va yaqinlari norozi bo'ladi.</span>
             </li>
           </ul>
         </div>
       </div>
 
-      <!-- 2. NurseCall Visual Card -->
+      <!-- 2. NurseCall Visual Card - Calling -->
       <div class="bento-card visual-compare-card">
         <div class="visual-photo-frame">
-          <img src="/static/img_new_calling.jpg" alt="NurseCall zamonaviy xotirjam palata" class="visual-photo-img" />
+          <img src="/static/img_new_calling.png" alt="NurseCall zamonaviy xotirjam palata" class="visual-photo-img" />
           <div class="visual-photo-badge badge-good">
             <span>✓</span> NurseCall (1 soniyada bilakda)
           </div>
         </div>
 
         <div class="visual-compare-body">
-          <h3>NurseCall: Xotirjamlik va 1-Daqiqada Yordam</h3>
+          <h3>Bemor: Xotirjamlik va Tezkorlik</h3>
           <ul class="visual-points-list">
             <li class="visual-point">
               <span class="point-good-icon">✓</span>
@@ -1361,11 +1357,57 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
             </li>
             <li class="visual-point">
               <span class="point-good-icon">✓</span>
-              <span><strong>Bilakda kuchli tebranish:</strong> Hamshira qayerda bo'lmasin soatida aniq xona ko'rinadi.</span>
+              <span><strong>1 daqiqada yordam:</strong> Xodimlar darhol yetib keladi, 100% mamnuniyat.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="visual-compare-grid">
+      <!-- 3. Old System Visual Card - Nurse -->
+      <div class="bento-card visual-compare-card">
+        <div class="visual-photo-frame">
+          <img src="/static/img_old_nurse.png" alt="Eski tizimda postda hamshira yo'qligi" class="visual-photo-img" />
+          <div class="visual-photo-badge badge-bad">
+            <span>✕</span> Eski Tizim (Postda bog'lanish)
+          </div>
+        </div>
+
+        <div class="visual-compare-body">
+          <h3>Hamshira: Postda Emas, Xabar Yetmaydi</h3>
+          <ul class="visual-points-list">
+            <li class="visual-point">
+              <span class="point-bad-icon">✕</span>
+              <span><strong>Postda bo'lmasa eshitmaydi:</strong> Boshqa xonada yoki yo'lakda bo'lsa xabar yo'qoladi.</span>
+            </li>
+            <li class="visual-point">
+              <span class="point-bad-icon">✕</span>
+              <span><strong>Nazorat yo'q:</strong> Kim qaysi chaqiruvga borgani rahbar uchun qorong'u.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 4. NurseCall Visual Card - Nurse -->
+      <div class="bento-card visual-compare-card">
+        <div class="visual-photo-frame">
+          <img src="/static/img_new_nurse.png" alt="NurseCall zamonaviy hamshira soati bilan" class="visual-photo-img" />
+          <div class="visual-photo-badge badge-good">
+            <span>✓</span> NurseCall (Erkin harakat)
+          </div>
+        </div>
+
+        <div class="visual-compare-body">
+          <h3>Hamshira: Bilakda Aniq Xona Raqami</h3>
+          <ul class="visual-points-list">
+            <li class="visual-point">
+              <span class="point-good-icon">✓</span>
+              <span><strong>Bilakda kuchli tebranish:</strong> Bino bo'ylab erkin yurganda ham chaqiruvni 1-bosishda qabul qiladi.</span>
             </li>
             <li class="visual-point">
               <span class="point-good-icon">✓</span>
-              <span><strong>Jonli tahlil:</strong> Har bir soniya hisobda, bosh shifokor uchun to'liq audit va reyting.</span>
+              <span><strong>To'liq tahlil:</strong> Har bir soniya hisobda, bosh shifokor uchun jonli statistika.</span>
             </li>
           </ul>
         </div>
@@ -1387,7 +1429,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
       <!-- 1. Smart Watch (Span 6) -->
       <div class="bento-card eco-card eco-span-6">
         <div class="eco-photo-box">
-          <img src="/static/img_prod_watch.jpg" alt="Aqlli Hamshira Soati" class="eco-photo-img" />
+          <img src="/static/img_prod_watch.png" alt="Aqlli Hamshira Soati" class="eco-photo-img" />
         </div>
         <h3>Aqlli Hamshira Soatlari</h3>
         <p>Hamshira qo'li band bo'lsa ham bilagidagi soatdan 1 ta teginish bilan chaqiruvni qabul qiladi. Katta xona raqami va kuchli 3 bosqichli tebranish.</p>
@@ -1401,7 +1443,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
       <!-- 2. Wallboard TV Panel (Span 6) -->
       <div class="bento-card eco-card eco-span-6">
         <div class="eco-photo-box">
-          <img src="/static/img_prod_tv.jpg" alt="Devor TV Wallboard Paneli" class="eco-photo-img" />
+          <img src="/static/img_prod_tv.png" alt="Devor TV Wallboard Paneli" class="eco-photo-img" />
         </div>
         <h3>Devor TV Paneli (Wallboard)</h3>
         <p>Hamshiralar postidagi 55" televizor uchun. 15 metrdan ko'rinuvchi katta raqamlar, rangli eskalatsiya va ovozli signalizatsiya.</p>
