@@ -18,9 +18,28 @@ function formatFloors(floors: number[]): string {
   return floors.length ? floors.join(', ') : 'Barchasi';
 }
 
+import { ColumnPicker, useColumnVisibility, type ColumnDef } from '../common/ColumnPicker';
+
+type StaffColKey = 'name' | 'email' | 'role' | 'floors' | 'actions';
+
+const ALL_STAFF_COLUMNS: ColumnDef<StaffColKey>[] = [
+  { key: 'name', label: 'Ism' },
+  { key: 'email', label: 'Email' },
+  { key: 'role', label: 'Rol' },
+  { key: 'floors', label: 'Qavat' },
+  { key: 'actions', label: 'Amallar' },
+];
+
 export function StaffTab() {
   const { session } = useAuth();
   const isAdmin = session?.role === 'admin';
+
+  const staffColumns = isAdmin ? ALL_STAFF_COLUMNS : ALL_STAFF_COLUMNS.filter((c) => c.key !== 'actions');
+
+  const { visibleCols, toggleCol, resetCols } = useColumnVisibility<StaffColKey>(
+    'nursecall.staff.columns',
+    staffColumns
+  );
 
   const [staff, setStaff] = useState<Staff[]>([]);
   const [search, setSearch] = useState('');
@@ -190,94 +209,114 @@ export function StaffTab() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <span className="table-count-meta">{filteredStaff.length} ta xodim</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span className="table-count-meta">{filteredStaff.length} ta xodim</span>
+              <ColumnPicker
+                columns={staffColumns}
+                visibleCols={visibleCols}
+                onToggle={toggleCol}
+                onReset={resetCols}
+              />
+            </div>
           </div>
           <table>
             <thead>
               <tr>
-                <th>Ism</th>
-                <th>Email</th>
-                <th>Rol</th>
-                <th>Qavat</th>
-                {isAdmin && <th>Amallar</th>}
+                {visibleCols.name && <th>Ism</th>}
+                {visibleCols.email && <th>Email</th>}
+                {visibleCols.role && <th>Rol</th>}
+                {visibleCols.floors && <th>Qavat</th>}
+                {isAdmin && visibleCols.actions && <th>Amallar</th>}
               </tr>
             </thead>
             <tbody>
               {filteredStaff.map((s) =>
                 editingId === s.id ? (
                   <tr key={s.id}>
-                    <td data-label="Ism">
-                      <input
-                        type="text"
-                        className="table-input"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                      />
-                    </td>
-                    <td data-label="Email">
-                      <input
-                        type="email"
-                        className="table-input"
-                        value={editEmail}
-                        onChange={(e) => setEditEmail(e.target.value)}
-                      />
-                    </td>
-                    <td data-label="Rol">
-                      <select
-                        className="bind-select"
-                        value={editRole}
-                        onChange={(e) => setEditRole(e.target.value as StaffRole)}
-                      >
-                        <option value="nurse">Hamshira</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    </td>
-                    <td data-label="Qavat">
-                      <input
-                        type="text"
-                        className="table-input"
-                        placeholder="masalan: 1, 2"
-                        value={editFloorsInput}
-                        onChange={(e) => setEditFloorsInput(e.target.value)}
-                      />
-                    </td>
-                    <td data-label="Amallar">
-                      <input
-                        type="password"
-                        className="table-input"
-                        placeholder="Yangi parol (ixtiyoriy)"
-                        value={editPassword}
-                        onChange={(e) => setEditPassword(e.target.value)}
-                      />
-                      <div className="row-actions">
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={() => saveEdit(s.id)}
-                          disabled={editBusy}
-                          type="button"
+                    {visibleCols.name && (
+                      <td data-label="Ism">
+                        <input
+                          type="text"
+                          className="table-input"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                        />
+                      </td>
+                    )}
+                    {visibleCols.email && (
+                      <td data-label="Email">
+                        <input
+                          type="email"
+                          className="table-input"
+                          value={editEmail}
+                          onChange={(e) => setEditEmail(e.target.value)}
+                        />
+                      </td>
+                    )}
+                    {visibleCols.role && (
+                      <td data-label="Rol">
+                        <select
+                          className="bind-select"
+                          value={editRole}
+                          onChange={(e) => setEditRole(e.target.value as StaffRole)}
                         >
-                          Saqlash
-                        </button>
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => setEditingId(null)}
-                          type="button"
-                        >
-                          Bekor
-                        </button>
-                      </div>
-                      {editError && <p className="form-error">{editError}</p>}
-                    </td>
+                          <option value="nurse">Hamshira</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                      </td>
+                    )}
+                    {visibleCols.floors && (
+                      <td data-label="Qavat">
+                        <input
+                          type="text"
+                          className="table-input"
+                          placeholder="masalan: 1, 2"
+                          value={editFloorsInput}
+                          onChange={(e) => setEditFloorsInput(e.target.value)}
+                        />
+                      </td>
+                    )}
+                    {isAdmin && visibleCols.actions && (
+                      <td data-label="Amallar">
+                        <input
+                          type="password"
+                          className="table-input"
+                          placeholder="Yangi parol (ixtiyoriy)"
+                          value={editPassword}
+                          onChange={(e) => setEditPassword(e.target.value)}
+                        />
+                        <div className="row-actions">
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => saveEdit(s.id)}
+                            disabled={editBusy}
+                            type="button"
+                          >
+                            Saqlash
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => setEditingId(null)}
+                            type="button"
+                          >
+                            Bekor
+                          </button>
+                        </div>
+                        {editError && <p className="form-error">{editError}</p>}
+                      </td>
+                    )}
                   </tr>
                 ) : (
                   <tr key={s.id}>
-                    <td data-label="Ism">{s.name}</td>
-                    <td data-label="Email">{s.email}</td>
-                    <td data-label="Rol">
-                      <span className="role-pill">{s.role}</span>
-                    </td>
-                    <td data-label="Qavat">{formatFloors(s.floors)}</td>
-                    {isAdmin && (
+                    {visibleCols.name && <td data-label="Ism">{s.name}</td>}
+                    {visibleCols.email && <td data-label="Email">{s.email}</td>}
+                    {visibleCols.role && (
+                      <td data-label="Rol">
+                        <span className="role-pill">{s.role}</span>
+                      </td>
+                    )}
+                    {visibleCols.floors && <td data-label="Qavat">{formatFloors(s.floors)}</td>}
+                    {isAdmin && visibleCols.actions && (
                       <td data-label="Amallar">
                         <div className="row-actions">
                           <button className="btn btn-ghost btn-sm" onClick={() => startEdit(s)} type="button">

@@ -3,6 +3,8 @@ import type { FormEvent } from 'react';
 import { api, ApiError } from '../../api/client';
 import type { AdminClinic, AdminDevice, DiscoveredDevice } from '../../api/types';
 import { CopyIcon, PlusIcon, WarningIcon } from '../Icons';
+import { ColumnPicker, useColumnVisibility, type ColumnDef } from '../common/ColumnPicker';
+
 
 function fmtTime(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
@@ -180,13 +182,24 @@ function EditAdminDeviceModal({
   );
 }
 
+type DiscoveredColKey = 'chip_id' | 'first_seen' | 'last_seen' | 'actions';
+
+const DISCOVERED_COLUMNS: ColumnDef<DiscoveredColKey>[] = [
+  { key: 'chip_id', label: 'Chip ID' },
+  { key: 'first_seen', label: "Birinchi ko'rilgan" },
+  { key: 'last_seen', label: "Oxirgi ko'rilgan" },
+  { key: 'actions', label: 'Amal' },
+];
+
 function ClaimRow({
   discovered,
   clinics,
+  visibleCols,
   onClaimed,
 }: {
   discovered: DiscoveredDevice;
   clinics: AdminClinic[];
+  visibleCols: Record<DiscoveredColKey, boolean>;
   onClaimed: () => void;
 }) {
   const [clinicId, setClinicId] = useState<string>(clinics[0] ? String(clinics[0].id) : '');
@@ -220,52 +233,60 @@ function ClaimRow({
 
   return (
     <tr>
-      <td data-label="chip_id">
-        <code className="mono-sm">{discovered.chip_id}</code>
-      </td>
-      <td data-label="Birinchi ko'rilgan">{fmtTime(discovered.first_seen_at)}</td>
-      <td data-label="Oxirgi ko'rilgan">{relTime(discovered.last_seen_at)}</td>
-      <td data-label="Amal">
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-          <select className="bind-select" value={clinicId} onChange={(e) => setClinicId(e.target.value)}>
-            {clinics.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          <input
-            type="text"
-            className="table-input"
-            style={{ width: 140 }}
-            maxLength={29}
-            placeholder="Nomi (ixtiyoriy)"
-            value={deviceId}
-            onChange={(e) => setDeviceId(e.target.value)}
-          />
-          <input
-            type="number"
-            className="table-input"
-            style={{ width: 60 }}
-            min={0}
-            step={1}
-            value={floor}
-            onChange={(e) => setFloor(e.target.value)}
-          />
-          <input aria-label="Qurilmadagi tasdiqlash kodi" className="table-input"
-            placeholder="Tasdiqlash kodi" maxLength={12} value={pairingCode}
-            onChange={(e) => setPairingCode(e.target.value)} />
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={claim}
-            disabled={busy || !clinicId || !/^[0-9a-fA-F]{12}$/.test(pairingCode)}
-            type="button"
-          >
-            {busy ? '...' : "Klinikaga biriktirish"}
-          </button>
-        </div>
-        {error && <p className="form-error">{error}</p>}
-      </td>
+      {visibleCols.chip_id && (
+        <td data-label="chip_id">
+          <code className="mono-sm">{discovered.chip_id}</code>
+        </td>
+      )}
+      {visibleCols.first_seen && (
+        <td data-label="Birinchi ko'rilgan">{fmtTime(discovered.first_seen_at)}</td>
+      )}
+      {visibleCols.last_seen && (
+        <td data-label="Oxirgi ko'rilgan">{relTime(discovered.last_seen_at)}</td>
+      )}
+      {visibleCols.actions && (
+        <td data-label="Amal">
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+            <select className="bind-select" value={clinicId} onChange={(e) => setClinicId(e.target.value)}>
+              {clinics.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              className="table-input"
+              style={{ width: 140 }}
+              maxLength={29}
+              placeholder="Nomi (ixtiyoriy)"
+              value={deviceId}
+              onChange={(e) => setDeviceId(e.target.value)}
+            />
+            <input
+              type="number"
+              className="table-input"
+              style={{ width: 60 }}
+              min={0}
+              step={1}
+              value={floor}
+              onChange={(e) => setFloor(e.target.value)}
+            />
+            <input aria-label="Qurilmadagi tasdiqlash kodi" className="table-input"
+              placeholder="Tasdiqlash kodi" maxLength={12} value={pairingCode}
+              onChange={(e) => setPairingCode(e.target.value)} />
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={claim}
+              disabled={busy || !clinicId || !/^[0-9a-fA-F]{12}$/.test(pairingCode)}
+              type="button"
+            >
+              {busy ? '...' : "Klinikaga biriktirish"}
+            </button>
+          </div>
+          {error && <p className="form-error">{error}</p>}
+        </td>
+      )}
     </tr>
   );
 }
@@ -278,6 +299,10 @@ function DiscoveredDevicesSection({
   onClaimed: () => void;
 }) {
   const [discovered, setDiscovered] = useState<DiscoveredDevice[]>([]);
+  const { visibleCols, toggleCol, resetCols } = useColumnVisibility<DiscoveredColKey>(
+    'nursecall.admin_discovered_devices.columns',
+    DISCOVERED_COLUMNS
+  );
 
   const refresh = useCallback(async () => {
     try {
@@ -308,9 +333,12 @@ function DiscoveredDevicesSection({
 
   return (
     <div className="panel-card glass" style={{ marginBottom: 20, borderColor: 'var(--color-accent)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-        <span className="pairing-dot" />
-        <h3 style={{ margin: 0 }}>Yangi topilgan ESP32 qurilmalari ({discovered.length} ta)</h3>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span className="pairing-dot" />
+          <h3 style={{ margin: 0 }}>Yangi topilgan ESP32 qurilmalari ({discovered.length} ta)</h3>
+        </div>
+        <ColumnPicker columns={DISCOVERED_COLUMNS} visibleCols={visibleCols} onToggle={toggleCol} onReset={resetCols} />
       </div>
       <p className="card-sub">
         Bu chip ID'lar hozirgina /announce endpointiga bog'langan. Klinikani tanlab "Klinikaga
@@ -320,10 +348,10 @@ function DiscoveredDevicesSection({
         <table>
           <thead>
             <tr>
-              <th>chip_id</th>
-              <th>Birinchi ko'rilgan</th>
-              <th>Oxirgi ko'rilgan</th>
-              <th>Amal</th>
+              {visibleCols.chip_id && <th>chip_id</th>}
+              {visibleCols.first_seen && <th>Birinchi ko'rilgan</th>}
+              {visibleCols.last_seen && <th>Oxirgi ko'rilgan</th>}
+              {visibleCols.actions && <th>Amal</th>}
             </tr>
           </thead>
           <tbody>
@@ -332,6 +360,7 @@ function DiscoveredDevicesSection({
                 key={d.chip_id}
                 discovered={d}
                 clinics={clinics}
+                visibleCols={visibleCols}
                 onClaimed={() => {
                   refresh();
                   onClaimed();
@@ -345,10 +374,23 @@ function DiscoveredDevicesSection({
   );
 }
 
+type AdminDeviceColKey = 'clinic' | 'device_id' | 'floor' | 'status' | 'last_seen' | 'created_at' | 'actions';
+
+const ADMIN_DEVICE_COLUMNS: ColumnDef<AdminDeviceColKey>[] = [
+  { key: 'clinic', label: 'Klinika' },
+  { key: 'device_id', label: 'Device ID' },
+  { key: 'floor', label: 'Qavat' },
+  { key: 'status', label: 'Holat' },
+  { key: 'last_seen', label: "Oxirgi ko'rilgan" },
+  { key: 'created_at', label: 'Yaratildi' },
+  { key: 'actions', label: 'Amal' },
+];
+
 export function AdminDevicesTab() {
   const [devices, setDevices] = useState<AdminDevice[]>([]);
   const [clinics, setClinics] = useState<AdminClinic[]>([]);
   const [filterClinic, setFilterClinic] = useState<string>('');
+  const [search, setSearch] = useState('');
   const [loadError, setLoadError] = useState('');
 
   const [formClinic, setFormClinic] = useState<string>('');
@@ -360,6 +402,11 @@ export function AdminDevicesTab() {
   const [created, setCreated] = useState<{ deviceId: string; key: string } | null>(null);
 
   const [editingDevice, setEditingDevice] = useState<AdminDevice | null>(null);
+
+  const { visibleCols, toggleCol, resetCols } = useColumnVisibility<AdminDeviceColKey>(
+    'nursecall.admin_devices.columns',
+    ADMIN_DEVICE_COLUMNS
+  );
 
   const loadClinics = useCallback(async () => {
     try {
@@ -409,6 +456,15 @@ export function AdminDevicesTab() {
       setSubmitting(false);
     }
   }
+
+  const filteredDevices = devices.filter((d) => {
+    const q = search.toLowerCase();
+    return (
+      d.device_id.toLowerCase().includes(q) ||
+      d.clinic_name.toLowerCase().includes(q) ||
+      String(d.floor).includes(q)
+    );
+  });
 
   return (
     <section className="tab-panel">
@@ -501,39 +557,67 @@ export function AdminDevicesTab() {
         </div>
       ) : (
         <div className="table-wrap glass">
+          <div className="table-toolbar">
+            <input
+              type="text"
+              className="table-search-input"
+              placeholder="Qurilma ID, klinika yoki qavat bo'yicha qidirish…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span className="table-count-meta">{filteredDevices.length} ta qurilma</span>
+              <ColumnPicker
+                columns={ADMIN_DEVICE_COLUMNS}
+                visibleCols={visibleCols}
+                onToggle={toggleCol}
+                onReset={resetCols}
+              />
+            </div>
+          </div>
           <table>
             <thead>
               <tr>
-                <th>Klinika</th>
-                <th>device_id</th>
-                <th>Qavat</th>
-                <th>Holat</th>
-                <th>Oxirgi ko'rilgan</th>
-                <th>Yaratildi</th>
-                <th>Amal</th>
+                {visibleCols.clinic && <th>Klinika</th>}
+                {visibleCols.device_id && <th>device_id</th>}
+                {visibleCols.floor && <th>Qavat</th>}
+                {visibleCols.status && <th>Holat</th>}
+                {visibleCols.last_seen && <th>Oxirgi ko'rilgan</th>}
+                {visibleCols.created_at && <th>Yaratildi</th>}
+                {visibleCols.actions && <th>Amal</th>}
               </tr>
             </thead>
             <tbody>
-              {devices.map((d) => (
+              {filteredDevices.map((d) => (
                 <tr key={d.id}>
-                  <td data-label="Klinika">{d.clinic_name}</td>
-                  <td data-label="device_id"><code className="mono-sm">{d.device_id}</code></td>
-                  <td data-label="Qavat">{d.floor}</td>
-                  <td data-label="Holat">
-                    <span className={`online-badge ${d.online ? 'online' : 'offline'}`}>
-                      <span className="dot" />
-                      {d.online ? 'Onlayn' : 'Oflayn'}
-                    </span>
-                  </td>
-                  <td data-label="Oxirgi ko'rilgan" title={d.last_seen_at ? fmtTime(d.last_seen_at) : undefined}>
-                    {d.last_seen_at ? relTime(d.last_seen_at) : '—'}
-                  </td>
-                  <td data-label="Yaratildi">{fmtTime(d.created_at)}</td>
-                  <td data-label="Amal">
-                    <button className="btn btn-ghost btn-sm" onClick={() => setEditingDevice(d)} type="button">
-                      Tahrirlash
-                    </button>
-                  </td>
+                  {visibleCols.clinic && <td data-label="Klinika">{d.clinic_name}</td>}
+                  {visibleCols.device_id && (
+                    <td data-label="device_id">
+                      <code className="mono-sm">{d.device_id}</code>
+                    </td>
+                  )}
+                  {visibleCols.floor && <td data-label="Qavat">{d.floor}</td>}
+                  {visibleCols.status && (
+                    <td data-label="Holat">
+                      <span className={`online-badge ${d.online ? 'online' : 'offline'}`}>
+                        <span className="dot" />
+                        {d.online ? 'Onlayn' : 'Oflayn'}
+                      </span>
+                    </td>
+                  )}
+                  {visibleCols.last_seen && (
+                    <td data-label="Oxirgi ko'rilgan" title={d.last_seen_at ? fmtTime(d.last_seen_at) : undefined}>
+                      {d.last_seen_at ? relTime(d.last_seen_at) : '—'}
+                    </td>
+                  )}
+                  {visibleCols.created_at && <td data-label="Yaratildi">{fmtTime(d.created_at)}</td>}
+                  {visibleCols.actions && (
+                    <td data-label="Amal">
+                      <button className="btn btn-ghost btn-sm" onClick={() => setEditingDevice(d)} type="button">
+                        Tahrirlash
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

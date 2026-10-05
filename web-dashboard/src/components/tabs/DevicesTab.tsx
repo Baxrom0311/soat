@@ -186,6 +186,19 @@ interface DevicesTabProps {
   markLocalMutation?: () => void;
 }
 
+import { ColumnPicker, useColumnVisibility, type ColumnDef } from '../common/ColumnPicker';
+
+type DeviceColKey = 'device_id' | 'floor' | 'status' | 'created_at' | 'last_seen' | 'actions';
+
+const DEVICE_COLUMNS: ColumnDef<DeviceColKey>[] = [
+  { key: 'device_id', label: 'Device ID' },
+  { key: 'floor', label: 'Qavat' },
+  { key: 'status', label: 'Holat' },
+  { key: 'created_at', label: 'Yaratildi' },
+  { key: 'last_seen', label: "Oxirgi ko'rilgan" },
+  { key: 'actions', label: 'Amal' },
+];
+
 export function DevicesTab({ unassignedSignals = [], refreshUnassigned = async () => {}, markLocalMutation = () => {} }: DevicesTabProps) {
   const [viewMode, setViewMode] = useState<'all' | 'unassigned'>('all');
   const [devices, setDevices] = useState<Device[]>([]);
@@ -198,6 +211,11 @@ export function DevicesTab({ unassignedSignals = [], refreshUnassigned = async (
   const [created, setCreated] = useState<{ deviceId: string; key: string } | null>(null);
 
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
+
+  const { visibleCols, toggleCol, resetCols } = useColumnVisibility<DeviceColKey>(
+    'nursecall.devices.columns',
+    DEVICE_COLUMNS
+  );
 
   async function load() {
     setLoadError('');
@@ -354,39 +372,57 @@ export function DevicesTab({ unassignedSignals = [], refreshUnassigned = async (
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
-                <span className="table-count-meta">{filteredDevices.length} ta qurilma</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span className="table-count-meta">{filteredDevices.length} ta qurilma</span>
+                  <ColumnPicker
+                    columns={DEVICE_COLUMNS}
+                    visibleCols={visibleCols}
+                    onToggle={toggleCol}
+                    onReset={resetCols}
+                  />
+                </div>
               </div>
               <table>
                 <thead>
                   <tr>
-                    <th>Device ID</th>
-                    <th>Qavat</th>
-                    <th>Holat</th>
-                    <th>Yaratildi</th>
-                    <th>Oxirgi ko'rilgan</th>
-                    <th>Amal</th>
+                    {visibleCols.device_id && <th>Device ID</th>}
+                    {visibleCols.floor && <th>Qavat</th>}
+                    {visibleCols.status && <th>Holat</th>}
+                    {visibleCols.created_at && <th>Yaratildi</th>}
+                    {visibleCols.last_seen && <th>Oxirgi ko'rilgan</th>}
+                    {visibleCols.actions && <th>Amal</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {filteredDevices.map((d) => (
                     <tr key={d.device_id}>
-                      <td data-label="Device ID"><code className="mono-sm">{d.device_id}</code></td>
-                      <td data-label="Qavat">{d.floor}</td>
-                      <td data-label="Holat">
-                        <span className="status-dot-text">
-                          <span className={d.online ? 'dot dot--ok' : 'dot dot--hollow'} aria-hidden="true" />
-                          {d.online ? 'Onlayn' : 'Oflayn'}
-                        </span>
-                      </td>
-                      <td data-label="Yaratildi">{fmtTime(d.created_at)}</td>
-                      <td data-label="Oxirgi ko'rilgan" title={d.last_seen_at ? fmtTime(d.last_seen_at) : undefined}>
-                        {d.last_seen_at ? relTime(d.last_seen_at) : '—'}
-                      </td>
-                      <td data-label="Amal">
-                        <button className="btn btn-ghost btn-sm" onClick={() => setEditingDevice(d)} type="button">
-                          Tahrirlash
-                        </button>
-                      </td>
+                      {visibleCols.device_id && (
+                        <td data-label="Device ID">
+                          <code className="mono-sm">{d.device_id}</code>
+                        </td>
+                      )}
+                      {visibleCols.floor && <td data-label="Qavat">{d.floor}</td>}
+                      {visibleCols.status && (
+                        <td data-label="Holat">
+                          <span className="status-dot-text">
+                            <span className={d.online ? 'dot dot--ok' : 'dot dot--hollow'} aria-hidden="true" />
+                            {d.online ? 'Onlayn' : 'Oflayn'}
+                          </span>
+                        </td>
+                      )}
+                      {visibleCols.created_at && <td data-label="Yaratildi">{fmtTime(d.created_at)}</td>}
+                      {visibleCols.last_seen && (
+                        <td data-label="Oxirgi ko'rilgan" title={d.last_seen_at ? fmtTime(d.last_seen_at) : undefined}>
+                          {d.last_seen_at ? relTime(d.last_seen_at) : '—'}
+                        </td>
+                      )}
+                      {visibleCols.actions && (
+                        <td data-label="Amal">
+                          <button className="btn btn-ghost btn-sm" onClick={() => setEditingDevice(d)} type="button">
+                            Tahrirlash
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

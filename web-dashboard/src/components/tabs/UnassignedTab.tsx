@@ -18,13 +18,37 @@ interface UnassignedTabProps {
   markLocalMutation: () => void;
 }
 
+import { ColumnPicker, useColumnVisibility, type ColumnDef } from '../common/ColumnPicker';
+
+type SignalColKey = 'code' | 'device' | 'first_seen' | 'last_seen' | 'count' | 'actions';
+
+const SIGNAL_COLUMNS: ColumnDef<SignalColKey>[] = [
+  { key: 'code', label: 'Kod' },
+  { key: 'device', label: 'Resiver (ESP32)' },
+  { key: 'first_seen', label: "Birinchi ko'rilgan" },
+  { key: 'last_seen', label: "Oxirgi ko'rilgan" },
+  { key: 'count', label: 'Necha marta' },
+  { key: 'actions', label: "Xonaga bog'lash" },
+];
+
+type BoundBtnColKey = 'code' | 'room' | 'floor' | 'actions';
+
+const BOUND_BTN_COLUMNS: ColumnDef<BoundBtnColKey>[] = [
+  { key: 'code', label: 'Kod' },
+  { key: 'room', label: 'Xona' },
+  { key: 'floor', label: 'Qavat' },
+  { key: 'actions', label: 'Amal' },
+];
+
 function SignalRow({
   signal,
   rooms,
+  visibleCols,
   onBound,
 }: {
   signal: UnassignedSignal;
   rooms: Room[];
+  visibleCols: Record<SignalColKey, boolean>;
   onBound: () => void;
 }) {
   const [roomId, setRoomId] = useState<string>(rooms[0] ? String(rooms[0].id) : '');
@@ -60,30 +84,32 @@ function SignalRow({
 
   return (
     <tr>
-      <td data-label="Kod">{signal.ev1527_code}</td>
-      <td data-label="Qurilma">{signal.device_id}</td>
-      <td data-label="Birinchi ko'rilgan">{fmtTime(signal.first_seen_at)}</td>
-      <td data-label="Oxirgi ko'rilgan">{fmtTime(signal.last_seen_at)}</td>
-      <td data-label="Necha marta">{signal.seen_count}</td>
-      <td data-label="Xonaga bog'lash">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <select className="bind-select" value={roomId} onChange={(e) => setRoomId(e.target.value)}>
-            {rooms.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.room_number} ({r.floor}-qavat)
-              </option>
-            ))}
-          </select>
-          <button className="bind-btn" onClick={bind} type="button" disabled={!roomId || submitting}>
-            {submitting ? '...' : "Bog'lash"}
-          </button>
-          <button className="btn btn-ghost btn-sm" onClick={remove} type="button" title="Signalni o'chirish">
-            O'chirish
-          </button>
-        </div>
-        {rooms.length === 0 && <p className="form-error">Avval "Xonalar" bo'limida xona yarating</p>}
-        {error && <p className="form-error">{error}</p>}
-      </td>
+      {visibleCols.code && <td data-label="Kod">{signal.ev1527_code}</td>}
+      {visibleCols.device && <td data-label="Qurilma">{signal.device_id}</td>}
+      {visibleCols.first_seen && <td data-label="Birinchi ko'rilgan">{fmtTime(signal.first_seen_at)}</td>}
+      {visibleCols.last_seen && <td data-label="Oxirgi ko'rilgan">{fmtTime(signal.last_seen_at)}</td>}
+      {visibleCols.count && <td data-label="Necha marta">{signal.seen_count}</td>}
+      {visibleCols.actions && (
+        <td data-label="Xonaga bog'lash">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <select className="bind-select" value={roomId} onChange={(e) => setRoomId(e.target.value)}>
+              {rooms.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.room_number} ({r.floor}-qavat)
+                </option>
+              ))}
+            </select>
+            <button className="bind-btn" onClick={bind} type="button" disabled={!roomId || submitting}>
+              {submitting ? '...' : "Bog'lash"}
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={remove} type="button" title="Signalni o'chirish">
+              O'chirish
+            </button>
+          </div>
+          {rooms.length === 0 && <p className="form-error">Avval "Xonalar" bo'limida xona yarating</p>}
+          {error && <p className="form-error">{error}</p>}
+        </td>
+      )}
     </tr>
   );
 }
@@ -91,17 +117,25 @@ function SignalRow({
 function EditButtonRoomRow({
   binding,
   rooms,
+  visibleCols,
   onDone,
   onCancel,
 }: {
   binding: ButtonBinding;
   rooms: Room[];
+  visibleCols: Record<BoundBtnColKey, boolean>;
   onDone: () => void;
   onCancel: () => void;
 }) {
   const [roomId, setRoomId] = useState<string>(String(binding.room_id));
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  const activeColCount = Object.values(visibleCols).filter(Boolean).length;
+  const editColSpan = Math.max(
+    1,
+    activeColCount - (visibleCols.code ? 1 : 0) - (visibleCols.actions ? 1 : 0)
+  );
 
   async function save() {
     setError('');
@@ -118,38 +152,55 @@ function EditButtonRoomRow({
 
   return (
     <tr>
-      <td data-label="Kod">{binding.ev1527_code}</td>
-      <td data-label="Xona" colSpan={2}>
-        <select className="bind-select" value={roomId} onChange={(e) => setRoomId(e.target.value)}>
-          {rooms.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.room_number} ({r.floor}-qavat)
-            </option>
-          ))}
-        </select>
-      </td>
-      <td data-label="Amal">
-        <div className="row-actions">
-          <button className="btn btn-primary btn-sm" onClick={save} disabled={busy} type="button">
-            Saqlash
-          </button>
-          <button className="btn btn-ghost btn-sm" onClick={onCancel} type="button">
-            Bekor
-          </button>
-        </div>
-        {error && <p className="form-error">{error}</p>}
-      </td>
+      {visibleCols.code && <td data-label="Kod">{binding.ev1527_code}</td>}
+      {(visibleCols.room || visibleCols.floor || (!visibleCols.code && !visibleCols.actions)) && (
+        <td data-label="Xona" colSpan={editColSpan}>
+          <select className="bind-select" value={roomId} onChange={(e) => setRoomId(e.target.value)}>
+            {rooms.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.room_number} ({r.floor}-qavat)
+              </option>
+            ))}
+          </select>
+        </td>
+      )}
+      {visibleCols.actions && (
+        <td data-label="Amal">
+          <div className="row-actions">
+            <button className="btn btn-primary btn-sm" onClick={save} disabled={busy} type="button">
+              Saqlash
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={onCancel} type="button">
+              Bekor
+            </button>
+          </div>
+          {error && <p className="form-error">{error}</p>}
+        </td>
+      )}
     </tr>
   );
 }
 
 export function UnassignedTab({ signals, refreshSignals, markLocalMutation }: UnassignedTabProps) {
   const [search, setSearch] = useState('');
+  const [btnSearch, setBtnSearch] = useState('');
   const [rooms, setRooms] = useState<Room[]>([]);
   const [buttons, setButtons] = useState<ButtonBinding[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loadError, setLoadError] = useState('');
   const [unbindError, setUnbindError] = useState('');
+
+  const {
+    visibleCols: signalVisibleCols,
+    toggleCol: toggleSignalCol,
+    resetCols: resetSignalCols,
+  } = useColumnVisibility<SignalColKey>('nursecall.unassigned_signals.columns', SIGNAL_COLUMNS);
+
+  const {
+    visibleCols: boundVisibleCols,
+    toggleCol: toggleBoundCol,
+    resetCols: resetBoundCols,
+  } = useColumnVisibility<BoundBtnColKey>('nursecall.bound_buttons.columns', BOUND_BTN_COLUMNS);
 
   const loadButtons = useCallback(async () => {
     setButtons(await api.getButtons());
@@ -213,6 +264,13 @@ export function UnassignedTab({ signals, refreshSignals, markLocalMutation }: Un
         s.device_id.toLowerCase().includes(search.toLowerCase()))
   );
 
+  const filteredButtons = buttons.filter(
+    (b) =>
+      b.ev1527_code.toLowerCase().includes(btnSearch.toLowerCase()) ||
+      b.room_number.toLowerCase().includes(btnSearch.toLowerCase()) ||
+      String(b.floor).includes(btnSearch)
+  );
+
   return (
     <section className="tab-panel">
       <div className="pairing-hint glass">
@@ -245,48 +303,79 @@ export function UnassignedTab({ signals, refreshSignals, markLocalMutation }: Un
                 Barchasini tozalash
               </button>
             )}
+            <ColumnPicker
+              columns={SIGNAL_COLUMNS}
+              visibleCols={signalVisibleCols}
+              onToggle={toggleSignalCol}
+              onReset={resetSignalCols}
+            />
           </div>
         </div>
         <table>
           <thead>
             <tr>
-              <th>Kod</th>
-              <th>Resiver (ESP32)</th>
-              <th>Birinchi ko'rilgan</th>
-              <th>Oxirgi ko'rilgan</th>
-              <th>Necha marta</th>
-              <th>Xonaga bog'lash</th>
+              {signalVisibleCols.code && <th>Kod</th>}
+              {signalVisibleCols.device && <th>Resiver (ESP32)</th>}
+              {signalVisibleCols.first_seen && <th>Birinchi ko'rilgan</th>}
+              {signalVisibleCols.last_seen && <th>Oxirgi ko'rilgan</th>}
+              {signalVisibleCols.count && <th>Necha marta</th>}
+              {signalVisibleCols.actions && <th>Xonaga bog'lash</th>}
             </tr>
           </thead>
           <tbody>
             {filteredSignals.map((s) => (
-              <SignalRow key={s.ev1527_code} signal={s} rooms={rooms} onBound={handleBound} />
+              <SignalRow
+                key={s.ev1527_code}
+                signal={s}
+                rooms={rooms}
+                visibleCols={signalVisibleCols}
+                onBound={handleBound}
+              />
             ))}
           </tbody>
         </table>
       </div>
 
-      <div className="section-head">
+      <div className="section-head" style={{ marginTop: 28 }}>
         <h2>Bog'langan tugmalar</h2>
       </div>
       {unbindError && <p className="form-error">{unbindError}</p>}
       <div className="table-wrap glass">
+        <div className="table-toolbar">
+          <input
+            type="text"
+            className="table-search-input"
+            placeholder="Tugma kodi, xona yoki qavat bo'yicha qidirish…"
+            value={btnSearch}
+            onChange={(e) => setBtnSearch(e.target.value)}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span className="table-count-meta">{filteredButtons.length} ta tugma</span>
+            <ColumnPicker
+              columns={BOUND_BTN_COLUMNS}
+              visibleCols={boundVisibleCols}
+              onToggle={toggleBoundCol}
+              onReset={resetBoundCols}
+            />
+          </div>
+        </div>
         <table>
           <thead>
             <tr>
-              <th>Kod</th>
-              <th>Xona</th>
-              <th>Qavat</th>
-              <th>Amal</th>
+              {boundVisibleCols.code && <th>Kod</th>}
+              {boundVisibleCols.room && <th>Xona</th>}
+              {boundVisibleCols.floor && <th>Qavat</th>}
+              {boundVisibleCols.actions && <th>Amal</th>}
             </tr>
           </thead>
           <tbody>
-            {buttons.map((b) =>
+            {filteredButtons.map((b) =>
               editingId === b.id ? (
                 <EditButtonRoomRow
                   key={b.id}
                   binding={b}
                   rooms={rooms}
+                  visibleCols={boundVisibleCols}
                   onCancel={() => setEditingId(null)}
                   onDone={() => {
                     setEditingId(null);
@@ -295,19 +384,21 @@ export function UnassignedTab({ signals, refreshSignals, markLocalMutation }: Un
                 />
               ) : (
                 <tr key={b.id}>
-                  <td data-label="Kod">{b.ev1527_code}</td>
-                  <td data-label="Xona">{b.room_number}</td>
-                  <td data-label="Qavat">{b.floor}</td>
-                  <td data-label="Amal">
-                    <div className="row-actions">
-                      <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(b.id)} type="button">
-                        Xonani o'zgartirish
-                      </button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => unbind(b)} type="button">
-                        Uzish
-                      </button>
-                    </div>
-                  </td>
+                  {boundVisibleCols.code && <td data-label="Kod">{b.ev1527_code}</td>}
+                  {boundVisibleCols.room && <td data-label="Xona">{b.room_number}</td>}
+                  {boundVisibleCols.floor && <td data-label="Qavat">{b.floor}</td>}
+                  {boundVisibleCols.actions && (
+                    <td data-label="Amal">
+                      <div className="row-actions">
+                        <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(b.id)} type="button">
+                          Xonani o'zgartirish
+                        </button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => unbind(b)} type="button">
+                          Uzish
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               )
             )}

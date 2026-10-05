@@ -120,6 +120,16 @@ function EditRoomModal({
   );
 }
 
+import { ColumnPicker, useColumnVisibility, type ColumnDef } from '../common/ColumnPicker';
+
+type RoomColKey = 'room_number' | 'floor' | 'actions';
+
+const ROOM_COLUMNS: ColumnDef<RoomColKey>[] = [
+  { key: 'room_number', label: 'Xona' },
+  { key: 'floor', label: 'Qavat' },
+  { key: 'actions', label: 'Amallar' },
+];
+
 export function RoomsTab() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [search, setSearch] = useState('');
@@ -130,6 +140,11 @@ export function RoomsTab() {
   const [submitting, setSubmitting] = useState(false);
 
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
+
+  const { visibleCols, toggleCol, resetCols } = useColumnVisibility<RoomColKey>(
+    'nursecall.rooms.columns',
+    ROOM_COLUMNS
+  );
 
   async function load() {
     setLoadError('');
@@ -228,26 +243,36 @@ export function RoomsTab() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <span className="table-count-meta">{filteredRooms.length} ta xona</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span className="table-count-meta">{filteredRooms.length} ta xona</span>
+              <ColumnPicker
+                columns={ROOM_COLUMNS}
+                visibleCols={visibleCols}
+                onToggle={toggleCol}
+                onReset={resetCols}
+              />
+            </div>
           </div>
           <table>
             <thead>
               <tr>
-                <th>Xona</th>
-                <th>Qavat</th>
-                <th>Amallar</th>
+                {visibleCols.room_number && <th>Xona</th>}
+                {visibleCols.floor && <th>Qavat</th>}
+                {visibleCols.actions && <th>Amallar</th>}
               </tr>
             </thead>
             <tbody>
               {filteredRooms.map((r) => (
                 <tr key={r.id}>
-                  <td data-label="Xona">{r.room_number}</td>
-                  <td data-label="Qavat">{r.floor}</td>
-                  <td data-label="Amallar">
-                    <button className="btn btn-ghost btn-sm" onClick={() => setEditingRoom(r)} type="button">
-                      Tahrirlash
-                    </button>
-                  </td>
+                  {visibleCols.room_number && <td data-label="Xona">{r.room_number}</td>}
+                  {visibleCols.floor && <td data-label="Qavat">{r.floor}</td>}
+                  {visibleCols.actions && (
+                    <td data-label="Amallar">
+                      <button className="btn btn-ghost btn-sm" onClick={() => setEditingRoom(r)} type="button">
+                        Tahrirlash
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

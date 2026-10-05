@@ -144,8 +144,21 @@ function PeriodCell({
   );
 }
 
+import { ColumnPicker, useColumnVisibility, type ColumnDef } from '../common/ColumnPicker';
+
+type AdminPlanColKey = 'name' | 'monthly' | 'annual' | 'status' | 'actions';
+
+const ADMIN_PLAN_COLUMNS: ColumnDef<AdminPlanColKey>[] = [
+  { key: 'name', label: 'Nomi' },
+  { key: 'monthly', label: 'Oylik (1 qurilma)' },
+  { key: 'annual', label: 'Yillik (1 qurilma)' },
+  { key: 'status', label: 'Holat' },
+  { key: 'actions', label: 'Amallar' },
+];
+
 export function AdminPlansTab() {
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [search, setSearch] = useState('');
   const [name, setName] = useState('');
   const [amounts, setAmounts] = useState<Amounts>(EMPTY_AMOUNTS);
   const [createError, setCreateError] = useState('');
@@ -156,6 +169,11 @@ export function AdminPlansTab() {
   const [editError, setEditError] = useState('');
   const [rowError, setRowError] = useState('');
   const [loadError, setLoadError] = useState('');
+
+  const { visibleCols, toggleCol, resetCols } = useColumnVisibility<AdminPlanColKey>(
+    'nursecall.admin_plans.columns',
+    ADMIN_PLAN_COLUMNS
+  );
 
   async function load() {
     try {
@@ -241,6 +259,19 @@ export function AdminPlansTab() {
     }
   }
 
+  const filteredPlans = plans.filter((p) =>
+    p.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const activeColCount = Object.values(visibleCols).filter(Boolean).length;
+  const editColSpan = Math.max(
+    1,
+    activeColCount -
+      (visibleCols.name ? 1 : 0) -
+      (visibleCols.status ? 1 : 0) -
+      (visibleCols.actions ? 1 : 0)
+  );
+
   return (
     <section className="tab-panel">
       <header className="page-header-row">
@@ -300,91 +331,121 @@ export function AdminPlansTab() {
       {rowError && <p className="form-error">{rowError}</p>}
 
       <div className="table-wrap glass">
+        <div className="table-toolbar">
+          <input
+            type="text"
+            className="table-search-input"
+            placeholder="Tarif nomi bo'yicha qidirish…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span className="table-count-meta">{filteredPlans.length} ta tarif</span>
+            <ColumnPicker
+              columns={ADMIN_PLAN_COLUMNS}
+              visibleCols={visibleCols}
+              onToggle={toggleCol}
+              onReset={resetCols}
+            />
+          </div>
+        </div>
         <table>
           <thead>
             <tr>
-              <th>Nomi</th>
-              <th>Oylik (1 qurilma)</th>
-              <th>Yillik (1 qurilma)</th>
-              <th>Holat</th>
-              <th>Amallar</th>
+              {visibleCols.name && <th>Nomi</th>}
+              {visibleCols.monthly && <th>Oylik (1 qurilma)</th>}
+              {visibleCols.annual && <th>Yillik (1 qurilma)</th>}
+              {visibleCols.status && <th>Holat</th>}
+              {visibleCols.actions && <th>Amallar</th>}
             </tr>
           </thead>
           <tbody>
-            {plans.map((p) =>
+            {filteredPlans.map((p) =>
               editingId === p.id ? (
                 <tr key={p.id}>
-                  <td data-label="Nomi">{p.name}</td>
-                  <td data-label="Oylik (1 qurilma)" colSpan={2}>
-                    <div className="period-grid period-grid--inline">
-                      <PeriodFields
-                        idPrefix={`edit-${p.id}-monthly`}
-                        title="Oylik"
-                        note="1 oyga"
-                        perDevice={editAmounts.perDeviceMonthly}
-                        min={editAmounts.minMonthly}
-                        onPerDevice={(v) => setEditAmounts((a) => ({ ...a, perDeviceMonthly: v }))}
-                        onMin={(v) => setEditAmounts((a) => ({ ...a, minMonthly: v }))}
-                      />
-                      <PeriodFields
-                        idPrefix={`edit-${p.id}-annual`}
-                        title="Yillik"
-                        note="12 oyga"
-                        perDevice={editAmounts.perDeviceAnnual}
-                        min={editAmounts.minAnnual}
-                        onPerDevice={(v) => setEditAmounts((a) => ({ ...a, perDeviceAnnual: v }))}
-                        onMin={(v) => setEditAmounts((a) => ({ ...a, minAnnual: v }))}
-                      />
-                    </div>
-                  </td>
-                  <td data-label="Holat">{p.is_active ? 'Faol' : 'Arxiv'}</td>
-                  <td data-label="Amallar">
-                    <div className="row-actions">
-                      <button className="btn btn-primary btn-sm" onClick={() => saveEdit(p.id)} type="button">
-                        Saqlash
-                      </button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)} type="button">
-                        Bekor
-                      </button>
-                    </div>
-                    {editError && <p className="form-error">{editError}</p>}
-                  </td>
+                  {visibleCols.name && <td data-label="Nomi">{p.name}</td>}
+                  {(visibleCols.monthly || visibleCols.annual || (!visibleCols.name && !visibleCols.status && !visibleCols.actions)) && (
+                    <td data-label="Narxlar" colSpan={editColSpan}>
+                      <div className="period-grid period-grid--inline">
+                        <PeriodFields
+                          idPrefix={`edit-${p.id}-monthly`}
+                          title="Oylik"
+                          note="1 oyga"
+                          perDevice={editAmounts.perDeviceMonthly}
+                          min={editAmounts.minMonthly}
+                          onPerDevice={(v) => setEditAmounts((a) => ({ ...a, perDeviceMonthly: v }))}
+                          onMin={(v) => setEditAmounts((a) => ({ ...a, minMonthly: v }))}
+                        />
+                        <PeriodFields
+                          idPrefix={`edit-${p.id}-annual`}
+                          title="Yillik"
+                          note="12 oyga"
+                          perDevice={editAmounts.perDeviceAnnual}
+                          min={editAmounts.minAnnual}
+                          onPerDevice={(v) => setEditAmounts((a) => ({ ...a, perDeviceAnnual: v }))}
+                          onMin={(v) => setEditAmounts((a) => ({ ...a, minAnnual: v }))}
+                        />
+                      </div>
+                    </td>
+                  )}
+                  {visibleCols.status && <td data-label="Holat">{p.is_active ? 'Faol' : 'Arxiv'}</td>}
+                  {visibleCols.actions && (
+                    <td data-label="Amallar">
+                      <div className="row-actions">
+                        <button className="btn btn-primary btn-sm" onClick={() => saveEdit(p.id)} type="button">
+                          Saqlash
+                        </button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)} type="button">
+                          Bekor
+                        </button>
+                      </div>
+                      {editError && <p className="form-error">{editError}</p>}
+                    </td>
+                  )}
                 </tr>
               ) : (
                 <tr key={p.id}>
-                  <td data-label="Nomi">{p.name}</td>
-                  <td data-label="Oylik (1 qurilma)">
-                    <PeriodCell
-                      perDevice={p.price_per_device_monthly}
-                      min={p.min_price_monthly}
-                      currency={p.currency}
-                    />
-                  </td>
-                  <td data-label="Yillik (1 qurilma)">
-                    <PeriodCell
-                      perDevice={p.price_per_device_annual}
-                      min={p.min_price_annual}
-                      currency={p.currency}
-                    />
-                  </td>
-                  <td data-label="Holat">
-                    <span className={`sub-pill ${p.is_active ? 'active' : 'suspended'}`}>
-                      {p.is_active ? 'Faol' : 'Arxiv'}
-                    </span>
-                  </td>
-                  <td data-label="Amallar">
-                    <div className="row-actions">
-                      <button className="btn btn-ghost btn-sm" onClick={() => startEdit(p)} type="button">
-                        Tahrirlash
-                      </button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => toggleActive(p)} type="button">
-                        {p.is_active ? 'Faolsizlantirish' : 'Faollashtirish'}
-                      </button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => remove(p)} type="button">
-                        O'chirish
-                      </button>
-                    </div>
-                  </td>
+                  {visibleCols.name && <td data-label="Nomi">{p.name}</td>}
+                  {visibleCols.monthly && (
+                    <td data-label="Oylik (1 qurilma)">
+                      <PeriodCell
+                        perDevice={p.price_per_device_monthly}
+                        min={p.min_price_monthly}
+                        currency={p.currency}
+                      />
+                    </td>
+                  )}
+                  {visibleCols.annual && (
+                    <td data-label="Yillik (1 qurilma)">
+                      <PeriodCell
+                        perDevice={p.price_per_device_annual}
+                        min={p.min_price_annual}
+                        currency={p.currency}
+                      />
+                    </td>
+                  )}
+                  {visibleCols.status && (
+                    <td data-label="Holat">
+                      <span className={`sub-pill ${p.is_active ? 'active' : 'suspended'}`}>
+                        {p.is_active ? 'Faol' : 'Arxiv'}
+                      </span>
+                    </td>
+                  )}
+                  {visibleCols.actions && (
+                    <td data-label="Amallar">
+                      <div className="row-actions">
+                        <button className="btn btn-ghost btn-sm" onClick={() => startEdit(p)} type="button">
+                          Tahrirlash
+                        </button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => toggleActive(p)} type="button">
+                          {p.is_active ? 'Faolsizlantirish' : 'Faollashtirish'}
+                        </button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => remove(p)} type="button">
+                          O'chirish
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               )
             )}
