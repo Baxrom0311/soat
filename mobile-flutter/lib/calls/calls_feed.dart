@@ -273,8 +273,9 @@ class CallsFeed extends ChangeNotifier {
         return;
       }
       // Restore only this call, preserving unrelated arrivals.
-      if (!_calls.any((c) => c.callId == callId))
+      if (!_calls.any((c) => c.callId == callId)) {
         _calls = [..._calls, ...removed];
+      }
       notifyListeners();
       await refresh();
       rethrow;

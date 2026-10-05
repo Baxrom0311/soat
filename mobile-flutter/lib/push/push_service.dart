@@ -76,8 +76,9 @@ Future<bool> _belongsToSession(Map<String, dynamic> data) async {
     if (raw == null) return false;
     final session = jsonDecode(raw) as Map<String, dynamic>;
     if (data['clinic_id'] != null &&
-        data['clinic_id'].toString() != session['clinic_id'].toString())
+        data['clinic_id'].toString() != session['clinic_id'].toString()) {
       return false;
+    }
     final token = session['access_token'] as String;
     final claims =
         jsonDecode(
@@ -87,8 +88,9 @@ Future<bool> _belongsToSession(Map<String, dynamic> data) async {
             )
             as Map;
     if (data['staff_id'] != null &&
-        data['staff_id'].toString() != claims['sub'].toString())
+        data['staff_id'].toString() != claims['sub'].toString()) {
       return false;
+    }
     return true;
   } catch (_) {
     return false;

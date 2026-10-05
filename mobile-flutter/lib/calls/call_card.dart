@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../api/models.dart';
 import '../core/age.dart';
@@ -249,7 +250,12 @@ class _AckButton extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: busy ? null : () => onPressed(),
+          onTap: busy
+              ? null
+              : () {
+                  HapticFeedback.mediumImpact();
+                  onPressed();
+                },
           child: Center(
             child: busy
                 ? SizedBox(

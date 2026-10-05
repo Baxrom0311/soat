@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../api/models.dart';
 import '../theme/tokens.dart';
@@ -28,6 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
+    HapticFeedback.lightImpact();
     if (_busy) return;
     setState(() {
       _busy = true;
