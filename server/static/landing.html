@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>NurseCall — Klinikangiz uchun zamonaviy simsiz hamshira chaqiruv tizimi</title>
-<meta name="description" content="Bemor tugmani bosadi — hamshira bilagidagi soatida va telefonda 1 soniyada xabar oladi. Simsiz 433MHz tugmalar, ESP32 gateway, Galaxy Watch va Flutter ilovalari." />
+<title>NurseCall — Shifoxonalar va Klinikalar Uchun Simsiz Hamshira Chaqiruv Tizimi</title>
+<meta name="description" content="Bemor yordam so'raganda hamshira bilagidagi soatida 1 soniyada biladi. 0 ta o'tkazib yuborilgan chaqiruv, xotirjam bemorlar va bosh shifokor uchun to'liq nazorat. 1 kunda o'rnatiladi, sim tortilmaydi." />
 <link rel="canonical" href="https://nurcecall.boos.uz/" />
-<meta property="og:title" content="NurseCall — Simsiz va aqlli hamshira chaqiruv tizimi" />
-<meta property="og:description" content="Bemor tugmani bosadi — hamshira bilagidagi soatida va telefonda 1 soniyada xabar oladi." />
+<meta property="og:title" content="NurseCall — Shifoxonalar uchun aqlli hamshira chaqiruv tizimi" />
+<meta property="og:description" content="Bemor tugmani bosadi — hamshira bilagidagi soatida 1 soniyada xabar oladi. Bemorlar rozi, xodimlar mas'uliyatli, rahbar uchun to'liq nazorat." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://nurcecall.boos.uz/" />
 <meta property="og:site_name" content="NurseCall O'zbekiston" />
@@ -38,19 +38,20 @@
   --bg: #F8FAFC;
   --bg-alt: #F1F5F9;
   --surface: #FFFFFF;
-  --surface-glass: rgba(255, 255, 255, 0.85);
+  --surface-glass: rgba(255, 255, 255, 0.88);
   --border: #E2E8F0;
   --border-focus: #00E5FF;
   --text1: #0F172A;
   --text2: #334155;
   --text3: #64748B;
   --primary: #0A6AFA;
-  --primary-glow: rgba(10, 106, 250, 0.35);
+  --primary-glow: rgba(10, 106, 250, 0.3);
   --cyan: #00E5FF;
-  --cyan-glow: rgba(0, 229, 255, 0.3);
+  --cyan-glow: rgba(0, 229, 255, 0.25);
   --red: #EF4444;
-  --red-glow: rgba(239, 68, 68, 0.4);
+  --red-glow: rgba(239, 68, 68, 0.35);
   --emerald: #10B981;
+  --emerald-glow: rgba(16, 185, 129, 0.25);
   --amber: #F59E0B;
   --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
@@ -61,25 +62,25 @@
   --radius-xl: 28px;
   --radius-full: 9999px;
   --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
-  --shadow-glass: 0 20px 40px -15px rgba(10, 106, 250, 0.12);
+  --shadow-glass: 0 20px 40px -15px rgba(10, 106, 250, 0.1);
 }
 
 [data-theme="dark"] {
   --bg: #090E17;
   --bg-alt: #0E1626;
   --surface: #121C2F;
-  --surface-glass: rgba(18, 28, 47, 0.75);
+  --surface-glass: rgba(18, 28, 47, 0.82);
   --border: rgba(255, 255, 255, 0.09);
   --border-focus: #00E5FF;
   --text1: #F8FAFC;
   --text2: #CBD5E1;
   --text3: #94A3B8;
   --primary: #00E5FF;
-  --primary-glow: rgba(0, 229, 255, 0.4);
+  --primary-glow: rgba(0, 229, 255, 0.35);
   --cyan: #00E5FF;
-  --cyan-glow: rgba(0, 229, 255, 0.45);
+  --cyan-glow: rgba(0, 229, 255, 0.4);
   --shadow-card: 0 16px 40px -12px rgba(0, 0, 0, 0.5);
-  --shadow-glass: 0 20px 50px -15px rgba(0, 229, 255, 0.15);
+  --shadow-glass: 0 20px 50px -15px rgba(0, 229, 255, 0.12);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -112,18 +113,18 @@ body {
   position: absolute;
   border-radius: 50%;
   filter: blur(140px);
-  opacity: 0.18;
+  opacity: 0.16;
   transition: opacity 0.5s ease;
 }
 [data-theme="dark"] .ambient-blob { opacity: 0.12; }
 .blob-1 { top: -100px; left: 50%; transform: translateX(-50%); width: 700px; height: 450px; background: #0A6AFA; }
 .blob-2 { top: 30%; left: -100px; width: 500px; height: 500px; background: #00E5FF; }
-.blob-3 { top: 60%; right: -150px; width: 600px; height: 600px; background: #38BDF8; }
+.blob-3 { top: 65%; right: -150px; width: 600px; height: 600px; background: #38BDF8; }
 
 /* Typography */
-h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height: 1.2; color: var(--text1); }
+h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height: 1.25; color: var(--text1); }
 .gradient-text {
-  background: linear-gradient(135deg, #0A6AFA 0%, #00E5FF 60%, #38BDF8 100%);
+  background: linear-gradient(135deg, #0A6AFA 0%, #00B4D8 60%, #00E5FF 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -186,7 +187,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 }
 .btn-lg {
   padding: 16px 32px;
-  font-size: 17px;
+  font-size: 16px;
   border-radius: var(--radius-md);
 }
 
@@ -257,7 +258,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
 }
 .theme-btn {
   background: transparent;
@@ -288,7 +289,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 
 /* Hero Section */
 .hero {
-  padding: 70px 0 90px;
+  padding: 64px 0 84px;
   position: relative;
 }
 .hero-grid {
@@ -329,28 +330,28 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 }
 
 .hero h1 {
-  font-size: 46px;
+  font-size: 44px;
   letter-spacing: -0.03em;
   margin-bottom: 20px;
 }
 .hero-sub {
-  font-size: 18px;
+  font-size: 17px;
   color: var(--text2);
-  margin-bottom: 36px;
-  line-height: 1.6;
+  margin-bottom: 32px;
+  line-height: 1.65;
 }
 .hero-ctas {
   display: flex;
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 40px;
+  margin-bottom: 36px;
 }
 .stats-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  padding-top: 32px;
+  padding-top: 28px;
   border-top: 1px solid var(--border);
 }
 .stat-card {
@@ -384,14 +385,14 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
-  padding-bottom: 14px;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--border);
 }
 .sim-title {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-size: 14px;
   font-weight: 700;
   color: var(--text1);
@@ -420,7 +421,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
   color: #FFF;
   border-radius: var(--radius-md);
   padding: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
   box-shadow: 0 12px 30px var(--red-glow);
   position: relative;
   overflow: hidden;
@@ -440,14 +441,14 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 }
 .sim-room {
   font-family: var(--font-display);
-  font-size: 38px;
+  font-size: 36px;
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.03em;
 }
 .sim-time {
   font-family: var(--font-mono);
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   background: rgba(0, 0, 0, 0.25);
   padding: 4px 10px;
@@ -455,11 +456,11 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 }
 .sim-sub {
   font-size: 13px;
-  opacity: 0.9;
+  opacity: 0.95;
   margin-bottom: 16px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
 }
 .sim-ack-btn {
   width: 100%;
@@ -467,7 +468,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
   color: #C4241A;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 16px;
+  font-size: 15px;
   padding: 12px;
   border-radius: var(--radius-sm);
   border: none;
@@ -507,100 +508,171 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 .sim-device-text h5 { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
 .sim-device-text p { font-size: 11px; color: var(--text3); }
 
-/* Steps Section */
-.section { padding: 90px 0; }
+/* Common Sections */
+.section { padding: 84px 0; }
 .section-alt { background: var(--bg-alt); }
 .section-head {
   text-align: center;
-  max-width: 700px;
-  margin: 0 auto 56px;
+  max-width: 740px;
+  margin: 0 auto 52px;
+}
+.section-head .sec-tag {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-bottom: 8px;
 }
 .section-head h2 {
-  font-size: 36px;
+  font-size: 34px;
   letter-spacing: -0.02em;
   margin-bottom: 14px;
 }
 .section-head p {
   font-size: 16px;
   color: var(--text2);
+  line-height: 1.6;
 }
 
-.steps-grid {
+/* Comparison / Pain Points Section */
+.comparison-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 32px;
-  position: relative;
 }
-.step-card {
-  padding: 36px 28px;
-  position: relative;
+.problem-card {
+  background: rgba(239, 68, 68, 0.04);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-lg);
+  padding: 36px 32px;
+}
+.problem-card h3 {
+  color: #DC2626;
+  font-size: 22px;
   display: flex;
-  flex-direction: column;
-}
-.step-num {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--primary);
-  background: rgba(10, 106, 250, 0.1);
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  display: inline-block;
-  align-self: flex-start;
+  align-items: center;
+  gap: 10px;
   margin-bottom: 20px;
 }
-[data-theme="dark"] .step-num { background: rgba(0, 229, 255, 0.12); color: #00E5FF; }
-.step-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(10, 106, 250, 0.1) 0%, rgba(0, 229, 255, 0.1) 100%);
+.solution-card {
+  background: rgba(16, 185, 129, 0.04);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: var(--radius-lg);
+  padding: 36px 32px;
+}
+.solution-card h3 {
+  color: #059669;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.point-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.point-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.point-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.point-icon-bad { background: rgba(239, 68, 68, 0.15); color: #DC2626; }
+.point-icon-good { background: rgba(16, 185, 129, 0.15); color: #059669; }
+.point-item strong { display: block; font-size: 15px; margin-bottom: 2px; color: var(--text1); }
+.point-item p { font-size: 13px; color: var(--text2); margin: 0; line-height: 1.5; }
+
+/* How It Works / Roles Grid */
+.roles-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+.role-card {
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.role-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--cyan);
+}
+.role-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.role-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(10, 106, 250, 0.1);
   color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 20px;
-  border: 1px solid rgba(10, 106, 250, 0.15);
+  margin-bottom: 18px;
 }
-.step-card h3 { font-size: 20px; margin-bottom: 12px; }
-.step-card p { font-size: 14px; color: var(--text2); }
+.role-card h3 { font-size: 18px; margin-bottom: 10px; }
+.role-card p { font-size: 13px; color: var(--text2); line-height: 1.55; }
 
-/* Hardware & Ecosystem Showcase */
-.hardware-grid {
+/* What We Sell / Hardware Kit */
+.products-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 28px;
 }
-.hardware-card {
+.product-card {
   padding: 32px 26px;
   display: flex;
   flex-direction: column;
   transition: transform 0.2s, border-color 0.2s;
 }
-.hardware-card:hover {
+.product-card:hover {
   transform: translateY(-4px);
   border-color: var(--cyan);
 }
-.hw-badge {
+.product-badge {
   font-size: 11px;
   font-weight: 700;
   color: var(--cyan);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   margin-bottom: 12px;
 }
-.hardware-card h3 { font-size: 20px; margin-bottom: 10px; }
-.hardware-card p { font-size: 14px; color: var(--text2); margin-bottom: 20px; flex-grow: 1; }
-.hw-features {
+.product-card h3 { font-size: 20px; margin-bottom: 10px; }
+.product-card p { font-size: 14px; color: var(--text2); margin-bottom: 20px; flex-grow: 1; }
+.product-features {
   list-style: none;
   padding-top: 16px;
   border-top: 1px solid var(--border);
 }
-.hw-features li {
+.product-features li {
   font-size: 13px;
   color: var(--text2);
   margin-bottom: 8px;
@@ -608,7 +680,31 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
   align-items: center;
   gap: 8px;
 }
-.hw-check { color: var(--emerald); }
+.check-icon { color: var(--emerald); font-weight: bold; }
+
+/* Results & ROI Strip */
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+.result-card {
+  padding: 32px 28px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.result-big {
+  font-family: var(--font-display);
+  font-size: 42px;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 8px;
+  line-height: 1;
+}
+.result-card h3 { font-size: 18px; margin-bottom: 8px; }
+.result-card p { font-size: 13px; color: var(--text2); line-height: 1.5; }
 
 /* Interactive Calculator */
 .calc-card {
@@ -637,7 +733,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 .calc-label { font-size: 15px; font-weight: 600; color: var(--text1); }
 .calc-val {
   font-family: var(--font-mono);
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--primary);
   background: var(--bg-alt);
@@ -693,7 +789,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 .calc-total-label { font-size: 13px; color: var(--text3); }
 .calc-total-amount {
   font-family: var(--font-display);
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 800;
   color: var(--primary);
 }
@@ -732,10 +828,10 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 }
 [data-theme="dark"] .featured-badge { color: #090E17; }
 .price-title { font-size: 22px; margin-bottom: 8px; }
-.price-desc { font-size: 13px; color: var(--text3); margin-bottom: 24px; min-height: 38px; }
+.price-desc { font-size: 13px; color: var(--text3); margin-bottom: 20px; min-height: 38px; }
 .price-amount {
   font-family: var(--font-display);
-  font-size: 36px;
+  font-size: 32px;
   font-weight: 800;
   color: var(--text1);
   margin-bottom: 24px;
@@ -761,11 +857,11 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 /* Contact & Demo Form */
 .contact-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1.1fr 0.9fr;
   gap: 48px;
   align-items: center;
 }
-.contact-info h2 { font-size: 38px; margin-bottom: 16px; }
+.contact-info h2 { font-size: 36px; margin-bottom: 16px; }
 .contact-info p { font-size: 16px; color: var(--text2); margin-bottom: 32px; }
 .contact-perks { display: flex; flex-direction: column; gap: 20px; }
 .perk-item { display: flex; align-items: flex-start; gap: 14px; }
@@ -830,7 +926,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 
 /* FAQ */
 .faq-grid {
-  max-width: 800px;
+  max-width: 840px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -894,16 +990,16 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 /* Responsive */
 @media (max-width: 1024px) {
   .hero-grid { grid-template-columns: 1fr; }
-  .steps-grid, .hardware-grid, .pricing-grid { grid-template-columns: 1fr 1fr; }
-  .calc-card, .contact-grid { grid-template-columns: 1fr; }
+  .roles-grid, .products-grid, .pricing-grid, .results-grid { grid-template-columns: 1fr 1fr; }
+  .comparison-grid, .calc-card, .contact-grid { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 680px) {
   .nav-links, .header-actions .btn { display: none; }
   .menu-btn { display: flex; }
-  .hero h1 { font-size: 34px; }
+  .hero h1 { font-size: 32px; }
   .stats-strip { grid-template-columns: 1fr 1fr; }
-  .steps-grid, .hardware-grid, .pricing-grid { grid-template-columns: 1fr; }
+  .roles-grid, .products-grid, .pricing-grid, .results-grid, .comparison-grid { grid-template-columns: 1fr; }
   .calc-card { padding: 24px; }
   .form-card { padding: 24px; }
   .footer-grid { grid-template-columns: 1fr; }
@@ -971,12 +1067,13 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
     </a>
 
     <nav class="nav-links">
+      <a href="#muammo" class="nav-link">Muammo & Yechim</a>
       <a href="#qulayliklar" class="nav-link">Imkoniyatlar</a>
-      <a href="#qanday-ishlaydi" class="nav-link">Qanday ishlaydi</a>
-      <a href="#ekotizim" class="nav-link">Uskunalar</a>
+      <a href="#mahsulotlar" class="nav-link">Nima sotamiz?</a>
+      <a href="#natija" class="nav-link">Natijalar</a>
       <a href="#kalkulyator" class="nav-link">Kalkulyator</a>
       <a href="#narxlar" class="nav-link">Tariflar</a>
-      <a href="#faq" class="nav-link">FAQ</a>
+      <a href="#faq" class="nav-link">Savol-Javob</a>
     </nav>
 
     <div class="header-actions">
@@ -985,8 +1082,8 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
           <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/>
         </svg>
       </button>
-      <a href="/login" class="btn btn-outline" style="padding: 9px 18px; font-size: 14px;">Kirish</a>
-      <a href="#aloqa" class="btn btn-primary" style="padding: 9px 18px; font-size: 14px;">Demo So‘rash</a>
+      <a href="/login" class="btn btn-outline" style="padding: 9px 18px; font-size: 14px;">Tizimga Kirish</a>
+      <a href="#aloqa" class="btn btn-primary" style="padding: 9px 18px; font-size: 14px;">14 Kun Bepul Sinash</a>
       <button type="button" class="menu-btn" id="menuToggle" aria-label="Menyu">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
@@ -1002,15 +1099,16 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
       <button type="button" class="theme-btn" id="drawerClose" style="width:32px; height:32px;">✕</button>
     </div>
     <div class="mobile-drawer-links">
+      <a href="#muammo" onclick="closeDrawer()">Muammo & Yechim</a>
       <a href="#qulayliklar" onclick="closeDrawer()">Imkoniyatlar</a>
-      <a href="#qanday-ishlaydi" onclick="closeDrawer()">Qanday ishlaydi</a>
-      <a href="#ekotizim" onclick="closeDrawer()">Uskunalar</a>
+      <a href="#mahsulotlar" onclick="closeDrawer()">Nima sotamiz?</a>
+      <a href="#natija" onclick="closeDrawer()">Natijalar</a>
       <a href="#kalkulyator" onclick="closeDrawer()">Kalkulyator</a>
       <a href="#narxlar" onclick="closeDrawer()">Tariflar</a>
-      <a href="#faq" onclick="closeDrawer()">FAQ</a>
-      <a href="/login" onclick="closeDrawer()">Tizimga kirish</a>
+      <a href="#faq" onclick="closeDrawer()">Savol-Javob</a>
+      <a href="/login" onclick="closeDrawer()">Xodimlar kabineti</a>
     </div>
-    <a href="#aloqa" class="btn btn-primary" onclick="closeDrawer()" style="width:100%">Demo Olish</a>
+    <a href="#aloqa" class="btn btn-primary" onclick="closeDrawer()" style="width:100%">14 Kun Bepul Sinash</a>
   </div>
 </div>
 
@@ -1020,41 +1118,41 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
     <div class="hero-content">
       <div class="hero-tag">
         <span class="hero-tag-dot"></span>
-        <span>O‘zbekistondagi zamonaviy klinikalar uchun #1 simsiz chaqiruv tizimi</span>
+        <span>Kasalxonalar va Klinikalar Uchun #1 Simsiz Chaqiruv Tizimi</span>
       </div>
 
-      <h1>Bemor tugmani bosadi — hamshira soatida <span class="gradient-text">1 soniyada</span> xabar oladi</h1>
+      <h1>Bemor tugmani bosadi — hamshira soatida <span class="gradient-text">1 soniyada</span> biladi</h1>
       <p class="hero-sub">
-        Simsiz 433MHz SOS tugmalar, avtonom ESP32 gatewaylar, Galaxy Watch soat ilovasi, Flutter mobil monitoring va shifokorlar posti uchun Wallboard telemetriyasi.
+        Sim tortish talab etilmaydi, mavjud xonalarga 1 kunda o'rnatiladi. Bemorlar rozi va xotirjam, hamshiralar chaqiruvni o'tkazib yubormaydi, bosh shifokor uchun esa to'liq va shaffof nazorat.
       </p>
 
       <div class="hero-ctas">
         <a href="#aloqa" class="btn btn-primary btn-lg">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          Bepul Demo Sinab Ko‘rish
+          14 Kunlik Bepul Sinov Olish
         </a>
-        <a href="#qanday-ishlaydi" class="btn btn-outline btn-lg">
+        <a href="#muammo" class="btn btn-outline btn-lg">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Tizim Qanday Ishlaydi
+          Qanday Yengillik Beradi?
         </a>
       </div>
 
       <div class="stats-strip">
         <div class="stat-card">
-          <span class="stat-num">&lt; 0.8s</span>
-          <span class="stat-label">Tezkor signal yetishi</span>
+          <span class="stat-num">&lt; 1 soniya</span>
+          <span class="stat-label">Hamshiraga yetib borish</span>
         </div>
         <div class="stat-card">
-          <span class="stat-num">2 yil</span>
-          <span class="stat-label">Batareya zaryadi</span>
+          <span class="stat-num">0 ta</span>
+          <span class="stat-label">Yo'qotilgan chaqiruv</span>
         </div>
         <div class="stat-card">
-          <span class="stat-num">500m</span>
-          <span class="stat-label">Qamrov radiusi</span>
+          <span class="stat-num">1 kunda</span>
+          <span class="stat-label">Tezkor o'rnatib berish</span>
         </div>
         <div class="stat-card">
-          <span class="stat-num">45+</span>
-          <span class="stat-label">Klinikalarda o‘rnatilgan</span>
+          <span class="stat-num">100%</span>
+          <span class="stat-label">Rahbariyat nazorati</span>
         </div>
       </div>
     </div>
@@ -1064,27 +1162,27 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
       <div class="glass simulator-card">
         <div class="sim-header">
           <div class="sim-title">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            Jonli Telemetriya Simulyatori
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Tizim Ishlashini Sinab Ko'ring
           </div>
           <div class="live-beacon">
             <span class="live-dot"></span>
-            ESP32 ONLAYN
+            TIZIM FAOL
           </div>
         </div>
 
         <div class="sim-alert-card" id="simCard">
           <div class="sim-alert-head">
-            <span class="sim-room" id="simRoom">204-XONA</span>
-            <span class="sim-time" id="simTimer">00:04</span>
+            <span class="sim-room" id="simRoom">304-XONA</span>
+            <span class="sim-time" id="simTimer">00:03</span>
           </div>
           <div class="sim-sub">
-            <span>2-qavat • Palata SOS</span>
+            <span>3-qavat • 2-koyka (Bemor chaqirmoqda)</span>
             <span id="simStatusBadge" style="background:rgba(255,255,255,0.2); padding:2px 8px; border-radius:4px; font-weight:700;">FAOL CHAQIRUV</span>
           </div>
           <button type="button" class="sim-ack-btn" id="simAckBtn" onclick="toggleSimAck()">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-            <span id="simAckText">Qabul qilish (1-Tap Ack)</span>
+            <span id="simAckText">Soatda Qabul Qilish (1 bosish)</span>
           </button>
         </div>
 
@@ -1094,17 +1192,17 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/><path d="M12 5V2M12 22v-3"/></svg>
             </div>
             <div class="sim-device-text">
-              <h5>Galaxy Watch</h5>
-              <p>Bilakda tebranish</p>
+              <h5>Aqlli Hamshira Soati</h5>
+              <p>Bilakda kuchli tebranish</p>
             </div>
           </div>
           <div class="sim-device-pill">
             <div class="sim-device-icon">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
             </div>
             <div class="sim-device-text">
-              <h5>Flutter App</h5>
-              <p>DND Bypass signal</p>
+              <h5>Postdagi Katta Ekran</h5>
+              <p>Qizil yonib turuvchi xona</p>
             </div>
           </div>
         </div>
@@ -1113,118 +1211,249 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
   </div>
 </section>
 
-<!-- ================= HOW IT WORKS ================= -->
-<section class="section section-alt" id="qanday-ishlaydi">
+<!-- ================= PROBLEM VS SOLUTION ================= -->
+<section class="section section-alt" id="muammo">
   <div class="wrap">
     <div class="section-head">
-      <h2>Qanday ishlaydi?</h2>
-      <p>Bemor chaqiruvidan to hamshira yetib borguniga qadar 3 oddiy va ishonchli bosqich.</p>
+      <span class="sec-tag">Muammo va Yechim</span>
+      <h2>Shifoxonadagi odatiy qiyinchiliklar va bizning yechimimiz</h2>
+      <p>Bemorning vaqtida yordam ololmasligi shifoxona obro'siga va inson hayotiga to'g'ridan-to'g'ri ta'sir qiladi.</p>
     </div>
 
-    <div class="steps-grid">
-      <div class="glass step-card">
-        <span class="step-num">1-QADAM</span>
-        <div class="step-icon">
-          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
-        </div>
-        <h3>Bemor SOS tugmasini bosadi</h3>
-        <p>Koyka yonidagi yoki dushdagi simsiz 433MHz tugma bosilganda zudlik bilan shifrlangan radio signal tarqatiladi. Kabel tortish shart emas.</p>
+    <div class="comparison-grid">
+      <!-- Problem -->
+      <div class="problem-card">
+        <h3>
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          Eski Tizimda Qanday Muammolar Bor?
+        </h3>
+        <ul class="point-list">
+          <li class="point-item">
+            <div class="point-icon point-icon-bad">✕</div>
+            <div>
+              <strong>Chaqiruv eshitilmay qoladi:</strong>
+              <p>Bemor og'ir holatda baqirib chaqirishga yoki o'rnidan turib eshik oldiga chiqishga majbur bo'ladi.</p>
+            </div>
+          </li>
+          <li class="point-item">
+            <div class="point-icon point-icon-bad">✕</div>
+            <div>
+              <strong>Hamshira postda bo'lmaydi:</strong>
+              <p>Hamshira boshqa palatada, yo'lakda yoki muolajada bo'lsa, postdagi qo'ng'iroqni eshitmay qoladi.</p>
+            </div>
+          </li>
+          <li class="point-item">
+            <div class="point-icon point-icon-bad">✕</div>
+            <div>
+              <strong>10-15 daqiqa qimmatli vaqt yo'qotiladi:</strong>
+              <p>Kechikishlar sababli bemor va uning qarindoshlari norozi bo'ladi, klinika obro'si tushadi.</p>
+            </div>
+          </li>
+          <li class="point-item">
+            <div class="point-icon point-icon-bad">✕</div>
+            <div>
+              <strong>Nazorat va hisobot umuman yo'q:</strong>
+              <p>Rahbar kim qaysi chaqiruvga necha daqiqada borganini, kim mas'uliyatli ishlaganini ko'ra olmaydi.</p>
+            </div>
+          </li>
+        </ul>
       </div>
 
-      <div class="glass step-card">
-        <span class="step-num">2-QADAM</span>
-        <div class="step-icon">
-          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        </div>
-        <h3>ESP32 Gateway signalni uzatadi</h3>
-        <p>Qavatdagi ESP32 qabul qilgich signalni tutib, shifoxona mahalliy Wi-Fi/LAN tarmog'i yoki bulutli server orqali 0.1 soniyada uzatadi.</p>
-      </div>
-
-      <div class="glass step-card">
-        <span class="step-num">3-QADAM</span>
-        <div class="step-icon">
-          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        </div>
-        <h3>Soat va Telefonda xabar keladi</h3>
-        <p>Hamshira qayerda bo'lishidan qat'i nazar, bilagidagi soati tebranadi, telefoni ovoz beradi va devordagi TV monitor qizil yonadi.</p>
+      <!-- Solution -->
+      <div class="solution-card">
+        <h3>
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="9 12 12 15 16 10"/></svg>
+          NurseCall Bilan Qanday Yechiladi?
+        </h3>
+        <ul class="point-list">
+          <li class="point-item">
+            <div class="point-icon point-icon-good">✓</div>
+            <div>
+              <strong>Bitta tugma — 1 soniyada xabar:</strong>
+              <p>Bemor yotog'i yonidagi tugmaga barmog'i bilan teginishi kifoya. O'rnidan turish shart emas.</p>
+            </div>
+          </li>
+          <li class="point-item">
+            <div class="point-icon point-icon-good">✓</div>
+            <div>
+              <strong>Hamshiraning bilagidagi soat tebranadi:</strong>
+              <p>Hamshira binoning qaysi nuqtasida bo'lmasin, soatida "304-xona" ko'rinadi va darhol yo'lga chiqadi.</p>
+            </div>
+          </li>
+          <li class="point-item">
+            <div class="point-icon point-icon-good">✓</div>
+            <div>
+              <strong>1-2 daqiqada tezkor yordam:</strong>
+              <p>Barcha chaqiruvlar zudlik bilan qabul qilinadi. Bemorlar va yaqinlari 100% minnatdor bo'ladi.</p>
+            </div>
+          </li>
+          <li class="point-item">
+            <div class="point-icon point-icon-good">✓</div>
+            <div>
+              <strong>Bosh shifokor uchun to'liq tahlil:</strong>
+              <p>Har bir chaqiruv soniyalargacha hisoblanadi. Oylik hisobotlar va xodimlar reytingi doim qo'lingizda.</p>
+            </div>
+          </li>
+        </ul>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ================= HARDWARE & ECOSYSTEM ================= -->
-<section class="section" id="ekotizim">
+<!-- ================= ROLES / CONVENIENCE ================= -->
+<section class="section" id="qulayliklar">
   <div class="wrap">
     <div class="section-head">
-      <h2>To'liq Ekotizim va Uskunalar</h2>
-      <p>Apparat mikrokontrollerlardan tortib bulutli tahliligacha o'zaro mukammal integratsiya qilingan.</p>
+      <span class="sec-tag">Har Bir Ishtirokchi Uchun Qulaylik</span>
+      <h2>Klinikadagi har bir inson uchun qanday yengillik beradi?</h2>
+      <p>Tizim bemordan tortib bosh shifokorgacha butun jamoaning ishini osonlashtiradi va tartibga soladi.</p>
     </div>
 
-    <div class="hardware-grid">
-      <div class="glass hardware-card">
-        <span class="hw-badge">Apparat vositasi</span>
-        <h3>Simsiz 433MHz SOS Tugmalar</h3>
-        <p>Kasalxona xonalari va dushlar uchun maxsus suv o'tkazmaydigan (IP67) va 2 yil batareya zaryadi ushlovchi tugmalar.</p>
-        <ul class="hw-features">
-          <li><span class="hw-check">✓</span> 500 metrgacha kuchli radio signal</li>
-          <li><span class="hw-check">✓</span> 2 yil almashtirilmaydigan batareya</li>
-          <li><span class="hw-check">✓</span> Suvga va dezinfeksiyaga chidamli</li>
+    <div class="roles-grid">
+      <div class="glass role-card">
+        <span class="role-badge">Bemorga</span>
+        <div class="role-icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <h3>Xotirjamlik va Tezkor Yordam</h3>
+        <p>Bemor o'rnidan turmasdan, qichqirmasdan yotog'i yonidagi tugmani bosadi. Yordam kelishiga to'liq ishonch hosil qiladi.</p>
+      </div>
+
+      <div class="glass role-card">
+        <span class="role-badge">Hamshiraga</span>
+        <div class="role-icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/><path d="M12 5V2M12 22v-3"/></svg>
+        </div>
+        <h3>Erkin Harakat va Aniq Xabar</h3>
+        <p>Postda bog'lanib qolmaydi. Bilagidagi aqlli soat orqali chaqiruv bo'lgan xona va koykani darhol biladi va 1 bosishda qabul qiladi.</p>
+      </div>
+
+      <div class="glass role-card">
+        <span class="role-badge">Hamshiralar Postiga</span>
+        <div class="role-icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <h3>Katta Ekran va Umumiy Ko'rinish</h3>
+        <p>Katta monitorda barcha xonalar holati, qaysi palata qancha daqiqadan beri kutayotgani yorqin ranglarda ko'rinib turadi.</p>
+      </div>
+
+      <div class="glass role-card">
+        <span class="role-badge">Bosh Shifokorga</span>
+        <div class="role-icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <h3>Shaffof Nazorat va Tahlil</h3>
+        <p>Telefon yoki kompyuterdan kirib, qaysi smena qanday ishlagani, o'rtacha javob berish vaqti va xizmat sifatini nazorat qiladi.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= WHAT WE SELL ================= -->
+<section class="section section-alt" id="mahsulotlar">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="sec-tag">Biz Nima Sotamiz?</span>
+      <h2>Klinikangiz uchun tayyor uskunalar komplekti</h2>
+      <p>Hech qanday qo'shimcha xarajatlarsiz: uskunalar, o'rnatish, dasturiy ta'minot va xodimlarni o'qitish to'liq ichida.</p>
+    </div>
+
+    <div class="products-grid">
+      <div class="glass product-card">
+        <span class="product-badge">Palatalar Uchun</span>
+        <h3>Simsiz Chaqiruv Tugmalari</h3>
+        <p>Har bir bemor koykasi yoniga, palata devoriga va suvga chidamli holda dush/hojatxonalarga o'rnatiladi.</p>
+        <ul class="product-features">
+          <li><span class="check-icon">✓</span> Sim tortilmaydi, 1 daqiqada yopishtiriladi</li>
+          <li><span class="check-icon">✓</span> 2 yil zaryad talab qilmaydi</li>
+          <li><span class="check-icon">✓</span> Suv o'tkazmaydigan germetik korpus</li>
         </ul>
       </div>
 
-      <div class="glass hardware-card">
-        <span class="hw-badge">Gateway moduli</span>
-        <h3>ESP32 Aqlli Qabul Qilgich</h3>
-        <p>Qavatlar va koridorlarga o'rnatiluvchi yuqori sezuvchan antennali mikrokontroller. Tarmoq uzilsa ham avtonom ishlaydi.</p>
-        <ul class="hw-features">
-          <li><span class="hw-check">✓</span> Wi-Fi va LAN Ethernet ulanish</li>
-          <li><span class="hw-check">✓</span> Avtomatik chip-pairing va kesh</li>
-          <li><span class="hw-check">✓</span> 24/7 uzluksiz telemetriya nazorati</li>
+      <div class="glass product-card">
+        <span class="product-badge">Qavatlar Uchun</span>
+        <h3>Signal Qabul Qiluvchi Stansiyalar</h3>
+        <p>Bino qavatlariga o'rnatiladi va tugmalardan kelgan chaqiruvni butun bino bo'ylab uzatadi.</p>
+        <ul class="product-features">
+          <li><span class="check-icon">✓</span> 500 metrgacha qamrov maydoni</li>
+          <li><span class="check-icon">✓</span> Qalin devorlar va liftlardan o'tadi</li>
+          <li><span class="check-icon">✓</span> Tarmoq uzilsa ham avtonom ishlaydi</li>
         </ul>
       </div>
 
-      <div class="glass hardware-card">
-        <span class="hw-badge">Wear OS Ilovasi</span>
-        <h3>Galaxy Watch Hamshira Soati</h3>
-        <p>Hamshiralar qo'li band bo'lganda ham bilagidagi soatdan 1 ta teginish (1-tap) bilan chaqiruvni qabul qiladi.</p>
-        <ul class="hw-features">
-          <li><span class="hw-check">✓</span> 48px katta xona raqami (450x450)</li>
-          <li><span class="hw-check">✓</span> 3 bosqichli kuchli tebranish</li>
-          <li><span class="hw-check">✓</span> Avtomatik ekran uyg'onishi</li>
+      <div class="glass product-card">
+        <span class="product-badge">Hamshiralar Uchun</span>
+        <h3>Aqlli Hamshira Soatlari</h3>
+        <p>Har bir navbatchi hamshiraning bilagiga taqiladi. Shoshilinch chaqiruvda kuchli tebranadi va xona raqamini ko'rsatadi.</p>
+        <ul class="product-features">
+          <li><span class="check-icon">✓</span> 1 bosishda "Qabul qildim" tasdig'i</li>
+          <li><span class="check-icon">✓</span> Katta shrift va qulay boshqaruv</li>
+          <li><span class="check-icon">✓</span> Butun smena davomida uzoq zaryad</li>
         </ul>
       </div>
 
-      <div class="glass hardware-card">
-        <span class="hw-badge">Mobil Ilova</span>
-        <h3>Flutter Hamshira Ilovasi</h3>
-        <p>Android va iOS uchun. Telefon ovozi o'chirilgan (DND) bo'lsa ham favqulodda signal bilan uyg'otuvchi tizim.</p>
-        <ul class="hw-features">
-          <li><span class="hw-check">✓</span> DND (Bez zvuk) rejimini yorib o'tish</li>
-          <li><span class="hw-check">✓</span> Haptic Feedback va real-time timer</li>
-          <li><span class="hw-check">✓</span> Smena statistikasi va chaqiruvlar tarixi</li>
+      <div class="glass product-card">
+        <span class="product-badge">Post Uchun</span>
+        <h3>Katta Ekran / TV Monitor Dasturi</h3>
+        <p>Hamshiralar postidagi katta televizor yoki monitorda barcha faol chaqiruvlarni rangli holatda ko'rsatadi.</p>
+        <ul class="product-features">
+          <li><span class="check-icon">✓</span> 15 metrdan aniq ko'rinuvchi katta raqamlar</li>
+          <li><span class="check-icon">✓</span> Vaqt o'tishi bilan rangning qizilga o'zgarishi</li>
+          <li><span class="check-icon">✓</span> Ovozli ogohlantirish signali</li>
         </ul>
       </div>
 
-      <div class="glass hardware-card">
-        <span class="hw-badge">Kiosk Displey</span>
-        <h3>Devor TV Wallboard Paneli</h3>
-        <p>Hamshiralar postidagi 55" katta televizorlar uchun. 15 metrdan ko'rinuvchi ulkan shrift va audio signalizatsiya.</p>
-        <ul class="hw-features">
-          <li><span class="hw-check">✓</span> 256px ulkan xona raqami</li>
-          <li><span class="hw-check">✓</span> 3 bosqichli eskalatsiya rangi</li>
-          <li><span class="hw-check">✓</span> Web Audio API shovqinni yorib o'tuvchi ton</li>
+      <div class="glass product-card">
+        <span class="product-badge">Smartfonlar Uchun</span>
+        <h3>Hamshiralar Mobil Dasturi</h3>
+        <p>Hamshira va shifokorlarning telefonlari uchun maxsus dastur. Telefon ovozi o'chiq bo'lsa ham qattiq signal beradi.</p>
+        <ul class="product-features">
+          <li><span class="check-icon">✓</span> Ovoz o'chirilgan (Bez zvuk) rejimni yorib o'tish</li>
+          <li><span class="check-icon">✓</span> Chaqiruvlar tarixi va smena hisoboti</li>
+          <li><span class="check-icon">✓</span> Android va iOS uchun qulay dastur</li>
         </ul>
       </div>
 
-      <div class="glass hardware-card">
-        <span class="hw-badge">Admin Paneli</span>
-        <h3>Web Dashboard va Tahlil</h3>
-        <p>Bosh shifokor va ma'murlar uchun. Hamshiralar javob berish tezligi, qavatlar yuklamasi va to'liq hisobotlar.</p>
-        <ul class="hw-features">
-          <li><span class="hw-check">✓</span> Dinamik jadval ustunlari (ColumnPicker)</li>
-          <li><span class="hw-check">✓</span> Xodimlar va xonalar boshqaruvi</li>
-          <li><span class="hw-check">✓</span> Excel va PDF eksport hisobotlari</li>
+      <div class="glass product-card">
+        <span class="product-badge">Rahbariyat Uchun</span>
+        <h3>Boshqaruv va Tahlil Paneli</h3>
+        <p>Bosh shifokor va rahbarlar uchun kompyuter va telefondan to'liq nazorat va statistika tizimi.</p>
+        <ul class="product-features">
+          <li><span class="check-icon">✓</span> Hamshiralar javob berish tezligi (sekundomer)</li>
+          <li><span class="check-icon">✓</span> Xodimlar reytingi va qavatlar yuklamasi</li>
+          <li><span class="check-icon">✓</span> Oylik hisobotlarni Excel/PDF yuklab olish</li>
         </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= RESULTS & OUTCOMES ================= -->
+<section class="section" id="natija">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="sec-tag">Klinika Uchun Natijalar</span>
+      <h2>Tizim o'rnatilgandan so'ng qanday aniq natijaga erishasiz?</h2>
+      <p>Raqamlar va amaliyotda sinalgan shifoxonalar tajribasi.</p>
+    </div>
+
+    <div class="results-grid">
+      <div class="glass result-card">
+        <div class="result-big">10x</div>
+        <h3>Tezroq Javob Berish</h3>
+        <p>Chaqiruvga yetib borish vaqti 10-15 daqiqadan o'rtacha 45 soniya - 1.5 daqiqagacha qisqaradi.</p>
+      </div>
+
+      <div class="glass result-card">
+        <div class="result-big">100%</div>
+        <h3>Bemorlar Mamnuniyati</h3>
+        <p>Bemorlar va ularning yaqinlari o'zlarini xavfsiz va e'tiborda his qiladi, shikoyatlar butunlay to'xtaydi.</p>
+      </div>
+
+      <div class="glass result-card">
+        <div class="result-big">0 ta</div>
+        <h3>Yo'qotilgan Chaqiruv</h3>
+        <p>Har bir chaqiruv tizimda qayd etiladi va qabul qilinmaguncha soat va monitorlarda ogohlantirib turadi.</p>
       </div>
     </div>
   </div>
@@ -1234,15 +1463,16 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 <section class="section section-alt" id="kalkulyator">
   <div class="wrap">
     <div class="section-head">
-      <h2>Tarif va Uskunalar Kalkulyatori</h2>
-      <p>Klinikangiz o'lchamini tanlang va kerakli uskunalar hamda obuna summasini darhol hisoblang.</p>
+      <span class="sec-tag">Interaktiv Kalkulyator</span>
+      <h2>Klinikangiz uchun kerakli to'plamni hisoblang</h2>
+      <p>Koykalar, xodimlar va qavatlar sonini belgilang va taxminiy oylik xizmat to'lovini ko'ring.</p>
     </div>
 
     <div class="glass calc-card">
       <div class="calc-controls">
         <div class="calc-group">
           <div class="calc-label-row">
-            <span class="calc-label">Palatalar / Koykalar soni (SOS tugmalar)</span>
+            <span class="calc-label">Palatalar / Koykalar soni (Tugmalar)</span>
             <span class="calc-val" id="valBeds">30 ta</span>
           </div>
           <input type="range" class="calc-slider" id="sliderBeds" min="5" max="150" step="5" value="30" oninput="updateCalc()" />
@@ -1258,7 +1488,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 
         <div class="calc-group">
           <div class="calc-label-row">
-            <span class="calc-label">Bino qavatlari soni (ESP32 Gateways)</span>
+            <span class="calc-label">Bino qavatlari soni</span>
             <span class="calc-val" id="valFloors">3 qavat</span>
           </div>
           <input type="range" class="calc-slider" id="sliderFloors" min="1" max="10" step="1" value="3" oninput="updateCalc()" />
@@ -1266,26 +1496,26 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
       </div>
 
       <div class="calc-summary">
-        <h4>Hisoblangan to'plam:</h4>
+        <h4>Hisoblangan komplekt:</h4>
         <div class="calc-summary-item">
-          <span>Simsiz SOS tugmalar:</span>
+          <span>Simsiz chaqiruv tugmalari:</span>
           <strong id="calcBtnCount">30 dona</strong>
         </div>
         <div class="calc-summary-item">
-          <span>ESP32 Gateway resiverlar:</span>
+          <span>Signal stansiyalari:</span>
           <strong id="calcGwCount">3 dona</strong>
         </div>
         <div class="calc-summary-item">
-          <span>Hamshira soatlari to'plami:</span>
+          <span>Hamshira aqlli soatlari:</span>
           <strong id="calcWatchCount">6 dona</strong>
         </div>
         <div class="calc-summary-item">
           <span>O'rnatish va sozlash:</span>
-          <strong style="color:var(--emerald);">1 kunda tayyor</strong>
+          <strong style="color:var(--emerald);">1 kunda tayyor (bepul)</strong>
         </div>
 
         <div class="calc-total-box">
-          <div class="calc-total-label">Oylik abonent to'lovi (tavsiya):</div>
+          <div class="calc-total-label">Oylik xizmat ko'rsatish to'lovi:</div>
           <div class="calc-total-amount" id="calcTotal">1 200 000 so'm / oy</div>
         </div>
 
@@ -1299,48 +1529,51 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 <section class="section" id="narxlar">
   <div class="wrap">
     <div class="section-head">
-      <h2>Shaffof va Qulay Tariflar</h2>
-      <p>Har qanday hajmdagi tibbiyot muassasasi uchun moslashuvchan shartlar.</p>
+      <span class="sec-tag">Shaffof Tariflar</span>
+      <h2>Har qanday hajmdagi klinika uchun qulay paketlar</h2>
+      <p>14 kunlik bepul sinov muddati mavjud. Avval sinab ko'ring, keyin to'lang.</p>
     </div>
 
     <div class="pricing-grid">
       <div class="glass price-card">
-        <h3 class="price-title">Boshlang'ich</h3>
-        <p class="price-desc">Kichik xususiy klinikalar va stomatologiyalar uchun</p>
-        <div class="price-amount">Hamyonbop</div>
+        <h3 class="price-title">Kichik Klinika</h3>
+        <p class="price-desc">Stomatologiyalar, kichik statsionar va poliklinikalar uchun</p>
+        <div class="price-amount">Hamyonbop <span class="price-period">/ kelishuv asosida</span></div>
         <ul class="price-features">
-          <li><span class="hw-check">✓</span> 1-2 qavatgacha qamrov</li>
-          <li><span class="hw-check">✓</span> 10 tagacha SOS tugmalar</li>
-          <li><span class="hw-check">✓</span> Hamshiralar mobil ilovasi</li>
-          <li><span class="hw-check">✓</span> Web Dashboard boshqaruv paneli</li>
+          <li><span class="check-icon">✓</span> 1-2 qavat to'liq qamrov</li>
+          <li><span class="check-icon">✓</span> 10 tagacha simsiz tugmalar</li>
+          <li><span class="check-icon">✓</span> Hamshiralar mobil dasturi</li>
+          <li><span class="check-icon">✓</span> Onlayn boshqaruv paneli</li>
+          <li><span class="check-icon">✓</span> Bepul o'rnatish va o'rgatish</li>
         </ul>
         <a href="#aloqa" class="btn btn-outline" style="width:100%;">Bog'lanish</a>
       </div>
 
       <div class="glass price-card featured">
-        <div class="featured-badge">ENG OMMABOP</div>
-        <h3 class="price-title">Standard</h3>
-        <p class="price-desc">O'rta va yirik shifoxonalar, statsionarlar uchun optimal</p>
-        <div class="price-amount">Optimal <span class="price-period">/ moslashtiriladi</span></div>
+        <div class="featured-badge">ENG KO'P TANLANADIGAN</div>
+        <h3 class="price-title">Standard Shifoxona</h3>
+        <p class="price-desc">O'rta va yirik statsionarlar, xususiy klinikalar uchun optimal</p>
+        <div class="price-amount">Optimal <span class="price-period">/ ehtiyojga mos</span></div>
         <ul class="price-features">
-          <li><span class="hw-check">✓</span> 3-5 qavatgacha to'liq qamrov</li>
-          <li><span class="hw-check">✓</span> 30+ SOS tugmalar va dush tugmalari</li>
-          <li><span class="hw-check">✓</span> Galaxy Watch soatlari integratsiyasi</li>
-          <li><span class="hw-check">✓</span> Postlar uchun TV Wallboard ekrani</li>
-          <li><span class="hw-check">✓</span> 24/7 texnik qo'llab-quvvatlash</li>
+          <li><span class="check-icon">✓</span> 3-5 qavat to'liq simsiz qamrov</li>
+          <li><span class="check-icon">✓</span> 30+ chaqiruv va dush tugmalari</li>
+          <li><span class="check-icon">✓</span> Aqlli hamshira soatlari to'plami</li>
+          <li><span class="check-icon">✓</span> Post uchun katta monitor dasturi</li>
+          <li><span class="check-icon">✓</span> Bosh shifokor uchun to'liq tahlil</li>
+          <li><span class="check-icon">✓</span> 24/7 texnik qo'llab-quvvatlash</li>
         </ul>
         <a href="#aloqa" class="btn btn-primary" style="width:100%;">Hisoblatish uchun bog'lanish</a>
       </div>
 
       <div class="glass price-card">
-        <h3 class="price-title">Korporativ</h3>
-        <p class="price-desc">Katta tibbiyot markazlari va klinika tarmoqlari uchun</p>
-        <div class="price-amount">Individual</div>
+        <h3 class="price-title">Katta Tibbiyot Markazi</h3>
+        <p class="price-desc">Ko'p tarmoqli kasalxonalar va klinika tarmoqlari uchun</p>
+        <div class="price-amount">Individual <span class="price-period">/ shartnoma asosida</span></div>
         <ul class="price-features">
-          <li><span class="hw-check">✓</span> Cheksiz qavatlar, xonalar va binolar</li>
-          <li><span class="hw-check">✓</span> Shaxsiy server (On-Premise) imkoni</li>
-          <li><span class="hw-check">✓</span> Shifoxona MIS/HIS tizimiga integratsiya</li>
-          <li><span class="hw-check">✓</span> Shaxsiy menejer va tezkor servis</li>
+          <li><span class="check-icon">✓</span> Cheksiz qavatlar, xonalar va binolar</li>
+          <li><span class="check-icon">✓</span> Klinika ichki dasturi (MIS/HIS) bilan bog'lash</li>
+          <li><span class="check-icon">✓</span> Barcha bo'limlar uchun soatlar va monitorlar</li>
+          <li><span class="check-icon">✓</span> Shaxsiy menejer va doimiy texnik servis</li>
         </ul>
         <a href="#aloqa" class="btn btn-outline" style="width:100%;">Bog'lanish</a>
       </div>
@@ -1354,11 +1587,11 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
     <div class="contact-info">
       <div class="hero-tag">
         <span class="hero-tag-dot"></span>
-        <span>Bepul Namoyish & Smeta</span>
+        <span>14 Kunlik Bepul Sinov & Smeta</span>
       </div>
-      <h2>Klinikangizda 7 kunlik bepul sinov tizimini o'rnatib beramiz</h2>
+      <h2>Klinikangizda 14 kun bepul sinov tizimini o'rnatib beramiz</h2>
       <p>
-        Raqamingizni qoldiring — mutaxassisimiz 15 daqiqada bog'lanib, binongiz tuzilishiga mos barcha SOS tugmalar, soatlar va uskunalarning aniq loyiha smetasini taqdim etadi.
+        Telefon raqamingizni qoldiring — mutaxassisimiz 15 daqiqada bog'lanib, shifoxonangiz xonalari va qavatlariga mos uskunalarning aniq hisob-kitobini tayyorlab beradi.
       </p>
 
       <div class="contact-perks">
@@ -1367,8 +1600,8 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           </div>
           <div class="perk-text">
-            <h4>15 daqiqada tezkor aloqa</h4>
-            <p>Sizga kerakli qurilmalar soni va narxini aniq hisoblab beramiz.</p>
+            <h4>15 daqiqada tezkor javob</h4>
+            <p>Sizga kerakli tugmalar va soatlar sonini aniq hisoblab beramiz.</p>
           </div>
         </div>
 
@@ -1378,15 +1611,15 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
           </div>
           <div class="perk-text">
             <h4>Klinikangizga borib ko'rsatamiz</h4>
-            <p>Toshkent va viloyatlar bo'yicha uskunalarni olib borib, jonli namoyish qilamiz.</p>
+            <p>O'zbekiston bo'ylab uskunalarni olib borib, jonli namoyish qilamiz.</p>
           </div>
         </div>
       </div>
     </div>
 
     <div class="glass form-card" id="demo-form">
-      <h3>Bepul Konsultatsiya va Demo</h3>
-      <p>Formani to'ldiring, mutaxassisimiz tezda bog'lanadi.</p>
+      <h3>Bepul Namoyish va Sinov So'rovi</h3>
+      <p>Ma'lumotlaringizni qoldiring, mutaxassisimiz tezda bog'lanadi.</p>
 
       <div class="form-alert-success" id="contactSuccess"></div>
 
@@ -1404,11 +1637,11 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
           <input type="text" class="form-control" id="clinic" name="clinic" placeholder="Masalan: Shifo Nur Klinikasi" />
         </div>
         <div class="form-group">
-          <label for="note">Qo'shimcha izoh (xonalar/koykalar soni)</label>
-          <textarea class="form-control" id="note" name="note" rows="3" placeholder="Masalan: 4 qavatli bino, 40 ta koyka..."></textarea>
+          <label for="note">Qo'shimcha ma'lumot (koykalar / qavatlar soni)</label>
+          <textarea class="form-control" id="note" name="note" rows="3" placeholder="Masalan: 3 qavatli bino, 35 ta koyka..."></textarea>
         </div>
         <button type="submit" id="submitBtn" class="btn btn-primary btn-lg" style="width:100%; margin-top:8px;">
-          Demo So‘rovini Yuborish
+          14 Kunlik Bepul Sinovni Olish
         </button>
       </form>
     </div>
@@ -1419,48 +1652,49 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 <section class="section" id="faq">
   <div class="wrap">
     <div class="section-head">
-      <h2>Ko'p So'raladigan Savollar</h2>
-      <p>Simsiz tizimning ishlashi, o'rnatilishi va kafolati haqida muhim ma'lumotlar.</p>
+      <span class="sec-tag">Savol-Javob</span>
+      <h2>Ko'p so'raladigan muhim savollar</h2>
+      <p>Simsiz tizimning o'rnatilishi, ishlashi va kafolati bo'yicha javoblar.</p>
     </div>
 
     <div class="faq-grid">
       <div class="faq-item open">
         <div class="faq-question" onclick="toggleFaq(this)">
-          <span>Eski yoki faol ishlayotgan binolarga sim tortish kerakmi?</span>
+          <span>Klinika ishlayotgan bo'lsa devorlarni buzish yoki sim tortish kerakmi?</span>
           <span class="faq-icon">▼</span>
         </div>
         <div class="faq-answer">
-          Yo'q, devorlarni teshish yoki kabel tortish shart emas. Tugmalar 433MHz simsiz radiochastotada ishlaydi va har bir koykaga 1 daqiqada o'rnatiladi. Butun tizimni 1 ish kunida to'liq ishga tushirib beramiz.
+          Umuman yo'q. Tizim to'liq simsiz ishlaydi. Tugmalar 1 daqiqada koyka yoniga o'rnatiladi. Shifoxonadagi ta'mirga hech qanday zarar yetkazilmaydi va butun tizim 1 ish kunida to'liq ishga tushirib beriladi.
         </div>
       </div>
 
       <div class="faq-item">
         <div class="faq-question" onclick="toggleFaq(this)">
-          <span>Internet yoki Wi-Fi o'chib qolsa tizim nima bo'ladi?</span>
+          <span>Internet yoki Wi-Fi uzilib qolsa tizim to'xtab qoladimi?</span>
           <span class="faq-icon">▼</span>
         </div>
         <div class="faq-answer">
-          ESP32 gatewaylar shifoxona ichki lokal tarmog'ida ham avtonom ishlaydi. Internet uzilgan taqdirda ham palatadan kelgan chaqiruv hamshira soatlariga va devor monitoriga to'xtovsiz yetib boradi.
+          Yo'q, tizim shifoxona ichida avtonom ishlaydi. Internet uzilsa ham bemor bosgan chaqiruv hamshiraning bilagidagi soatiga va devor monitoriga to'xtovsiz yetib boradi.
         </div>
       </div>
 
       <div class="faq-item">
         <div class="faq-question" onclick="toggleFaq(this)">
-          <span>Tugmalar batareyasi qancha vaqtga yetadi?</span>
+          <span>Tugmalar batareyasini qachon almashtirish kerak?</span>
           <span class="faq-icon">▼</span>
         </div>
         <div class="faq-answer">
-          Simsiz tugmalarda ultra kam energiya sarflovchi EV1527 mikrosxemalari qo'llanilgan. O'rtacha 50 000 marta bosishga yoki 2 yil uzluksiz ishlashga mo'ljallangan. Batareya darajasi tizim orqali nazorat qilib boriladi.
+          Tugmalar batareyasi kamida 2 yil uzluksiz ishlashga mo'ljallangan. Batareya darajasi boshqaruv panelida oldindan ko'rinib turadi va vaqti kelganda mutaxassislarimiz profilaktika qilib beradi.
         </div>
       </div>
 
       <div class="faq-item">
         <div class="faq-question" onclick="toggleFaq(this)">
-          <span>Kafolat va texnik xizmat qanday amalga oshiriladi?</span>
+          <span>Kafolat va texnik xizmat qanday beriladi?</span>
           <span class="faq-icon">▼</span>
         </div>
         <div class="faq-answer">
-          Barcha apparat uskunalariga 12 oylik rasmiy kafolat beriladi. Abonent shartnomasi doirasida mutaxassislarimiz profilaktika, xodimlarni o'qitish va yangilanishlarni doimiy ta'minlaydi.
+          Barcha uskunalarga 12 oylik to'liq kafolat beriladi. Shuningdek, xodimlarni o'qitish, doimiy profilaktika va texnik yordam xizmati ko'rsatiladi.
         </div>
       </div>
     </div>
@@ -1484,16 +1718,16 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
         </div>
       </div>
       <p style="font-size:13px; color:var(--text3); line-height:1.6; max-width:320px;">
-        Kasalxonalar, klinikalar va qariyalar uylari uchun zamonaviy simsiz hamshira chaqiruv va telemetriya tizimi.
+        Kasalxonalar, klinikalar va statsionarlar uchun zamonaviy simsiz hamshira chaqiruv va boshqaruv tizimi.
       </p>
     </div>
 
     <div class="footer-col">
       <h4>Tizim</h4>
       <ul class="footer-links">
+        <li><a href="#muammo">Muammo va Yechim</a></li>
         <li><a href="#qulayliklar">Imkoniyatlar</a></li>
-        <li><a href="#qanday-ishlaydi">Qanday ishlaydi</a></li>
-        <li><a href="#ekotizim">Uskunalar</a></li>
+        <li><a href="#mahsulotlar">Nima sotamiz?</a></li>
         <li><a href="#kalkulyator">Kalkulyator</a></li>
       </ul>
     </div>
@@ -1504,7 +1738,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
         <li><a href="#narxlar">Tariflar</a></li>
         <li><a href="#aloqa">Bog'lanish</a></li>
         <li><a href="/login">Xodimlar kabineti</a></li>
-        <li><a href="#faq">Ko'p so'raladigan savollar</a></li>
+        <li><a href="#faq">Savol-Javob</a></li>
       </ul>
     </div>
 
@@ -1520,7 +1754,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 
   <div class="wrap footer-bottom">
     <div>© 2026 NurseCall O‘zbekiston. Barcha huquqlar himoyalangan.</div>
-    <div>ISO 13485 va O'zstandart muvofiqligi</div>
+    <div>Sertifikatlangan va kafolatlangan tibbiy uskunalar tizimi</div>
   </div>
 </footer>
 
@@ -1555,7 +1789,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 
   // Live Simulator Logic
   var simAcked = false;
-  var simSeconds = 4;
+  var simSeconds = 3;
   var simTimerInterval = setInterval(function () {
     if (!simAcked) {
       simSeconds++;
@@ -1578,7 +1812,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
       if (badge) badge.textContent = "QABUL QILINDI";
     } else {
       card?.classList.remove('is-acked');
-      if (text) text.textContent = "Qabul qilish (1-Tap Ack)";
+      if (text) text.textContent = "Soatda Qabul Qilish (1 bosish)";
       if (badge) badge.textContent = "FAOL CHAQIRUV";
       simSeconds = 0;
     }
@@ -1598,7 +1832,6 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
     document.getElementById('calcGwCount').textContent = floors + " dona";
     document.getElementById('calcWatchCount').textContent = nurses + " dona";
 
-    // Monthly fee formula: baseline + per-device rate
     var monthly = Math.max(400000, (floors * 400000));
     document.getElementById('calcTotal').textContent = monthly.toLocaleString('ru-RU') + " so'm / oy";
   }
@@ -1641,7 +1874,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
       alert("Tarmoqda xatolik yuz berdi. Iltimos qayta urinib ko'ring.");
     } finally {
       btn.disabled = false;
-      btn.textContent = "Demo So‘rovini Yuborish";
+      btn.textContent = "14 Kunlik Bepul Sinovni Olish";
     }
   });
 </script>
