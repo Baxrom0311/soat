@@ -38,42 +38,34 @@
   --bg: #F8FAFC;
   --bg-subtle: #F1F5F9;
   --surface: #FFFFFF;
-  --surface-glass: rgba(255, 255, 255, 0.88);
-  --surface-card: #FFFFFF;
+  --surface-glass: rgba(255, 255, 255, 0.90);
   --border: #E2E8F0;
   --border-focus: #0284C7;
-  --border-glow: rgba(2, 132, 199, 0.35);
   --text1: #0F172A;
   --text2: #475569;
   --text3: #94A3B8;
   --primary: #0284C7;
-  --primary-hover: #0369A1;
   --primary-glow: rgba(2, 132, 199, 0.28);
   --primary-light: #E0F2FE;
   --cyan: #06B6D4;
-  --cyan-glow: rgba(6, 182, 212, 0.25);
   --emerald: #10B981;
   --emerald-light: #ECFDF5;
   --emerald-glow: rgba(16, 185, 129, 0.25);
   --rose: #F43F5E;
   --rose-light: #FFF1F2;
   --rose-glow: rgba(244, 63, 94, 0.25);
-  --amber: #F59E0B;
   --gradient-brand: linear-gradient(135deg, #0284C7 0%, #0369A1 100%);
   --gradient-accent: linear-gradient(135deg, #0284C7 0%, #06B6D4 100%);
-  --gradient-text: linear-gradient(135deg, #0284C7 0%, #0284C7 40%, #06B6D4 100%);
+  --gradient-text: linear-gradient(135deg, #0284C7 0%, #0369A1 40%, #06B6D4 100%);
   --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-body: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-  --radius-xs: 6px;
   --radius-sm: 10px;
   --radius-md: 16px;
   --radius-lg: 24px;
   --radius-xl: 32px;
   --radius-full: 9999px;
-  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
-  --shadow-md: 0 12px 32px -10px rgba(15, 23, 42, 0.08);
-  --shadow-lg: 0 24px 60px -15px rgba(15, 23, 42, 0.12);
+  --shadow-card: 0 10px 30px -10px rgba(15, 23, 42, 0.08);
   --shadow-hover: 0 20px 48px -12px rgba(2, 132, 199, 0.18);
 }
 
@@ -82,19 +74,15 @@
   --bg-subtle: #0E1322;
   --surface: #111827;
   --surface-glass: rgba(17, 24, 39, 0.85);
-  --surface-card: #111827;
   --border: #1E293B;
   --border-focus: #38BDF8;
-  --border-glow: rgba(56, 189, 248, 0.4);
   --text1: #F8FAFC;
   --text2: #94A3B8;
   --text3: #64748B;
   --primary: #38BDF8;
-  --primary-hover: #7DD3FC;
   --primary-glow: rgba(56, 189, 248, 0.35);
   --primary-light: rgba(56, 189, 248, 0.12);
   --cyan: #22D3EE;
-  --cyan-glow: rgba(34, 211, 238, 0.3);
   --emerald: #34D399;
   --emerald-light: rgba(52, 211, 153, 0.12);
   --emerald-glow: rgba(52, 211, 153, 0.3);
@@ -104,9 +92,7 @@
   --gradient-brand: linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
   --gradient-accent: linear-gradient(135deg, #38BDF8 0%, #22D3EE 100%);
   --gradient-text: linear-gradient(135deg, #FFFFFF 0%, #38BDF8 50%, #22D3EE 100%);
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 16px 40px -12px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 28px 70px -15px rgba(0, 0, 0, 0.75);
+  --shadow-card: 0 16px 40px -12px rgba(0, 0, 0, 0.6);
   --shadow-hover: 0 20px 50px -10px rgba(56, 189, 248, 0.2);
 }
 
@@ -129,7 +115,7 @@ body {
   padding: 0 24px;
 }
 
-/* Ambient 2026 Background Glows */
+/* Ambient Background Lights */
 .ambient-glow {
   position: fixed;
   inset: 0;
@@ -141,25 +127,23 @@ body {
   position: absolute;
   border-radius: 50%;
   filter: blur(140px);
-  opacity: 0.15;
+  opacity: 0.14;
   transition: opacity 0.5s ease;
 }
-[data-theme="dark"] .glow-orb { opacity: 0.12; }
+[data-theme="dark"] .glow-orb { opacity: 0.10; }
 .glow-1 { top: -120px; left: 40%; transform: translateX(-50%); width: 700px; height: 500px; background: #0284C7; }
 .glow-2 { top: 35%; right: -100px; width: 550px; height: 550px; background: #06B6D4; }
 .glow-3 { top: 70%; left: -150px; width: 600px; height: 600px; background: #38BDF8; }
 
-/* Grid Line Texture */
 .grid-mesh {
   position: fixed;
   inset: 0;
   background-image: radial-gradient(var(--border) 1px, transparent 1px);
   background-size: 32px 32px;
-  opacity: 0.35;
+  opacity: 0.3;
   pointer-events: none;
   z-index: -1;
 }
-[data-theme="dark"] .grid-mesh { opacity: 0.18; }
 
 /* Typography */
 h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-height: 1.18; color: var(--text1); letter-spacing: -0.03em; }
@@ -169,34 +153,22 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   -webkit-text-fill-color: transparent;
 }
 
-/* 2026 Bento Cards & Glass Surfaces */
+/* Bento Cards */
 .bento-card {
   background: var(--surface-glass);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-card);
   position: relative;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.bento-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), var(--primary-glow), transparent 40%);
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  pointer-events: none;
 }
 .bento-card:hover {
   transform: translateY(-4px);
   border-color: var(--primary);
   box-shadow: var(--shadow-hover);
-}
-.bento-card:hover::before {
-  opacity: 1;
 }
 
 /* Buttons */
@@ -240,7 +212,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   transform: translateY(-2px);
 }
 .btn-lg {
-  padding: 16px 32px;
+  padding: 15px 30px;
   font-size: 15px;
   border-radius: var(--radius-md);
 }
@@ -346,13 +318,13 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 
 /* ================= HERO SECTION ================= */
 .hero {
-  padding: 60px 0 80px;
+  padding: 50px 0 70px;
   position: relative;
 }
 .hero-grid {
   display: grid;
   grid-template-columns: 1.1fr 1fr;
-  gap: 48px;
+  gap: 44px;
   align-items: center;
 }
 .hero-tag {
@@ -366,7 +338,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   font-size: 12px;
   font-weight: 800;
   color: var(--primary);
-  margin-bottom: 20px;
+  margin-bottom: 18px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -384,42 +356,41 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 }
 
 .hero h1 {
-  font-size: 52px;
+  font-size: 48px;
   letter-spacing: -0.04em;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   line-height: 1.1;
 }
 .hero-sub {
-  font-size: 18px;
+  font-size: 17px;
   color: var(--text2);
-  margin-bottom: 32px;
+  margin-bottom: 28px;
   line-height: 1.6;
-  max-width: 540px;
+  max-width: 520px;
 }
 .hero-ctas {
   display: flex;
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 36px;
+  margin-bottom: 32px;
 }
 .hero-badges {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 .hero-badge-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
+  padding: 8px 14px;
   background: var(--surface-glass);
   border: 1px solid var(--border);
   border-radius: var(--radius-full);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   color: var(--text1);
-  box-shadow: var(--shadow-sm);
 }
 .hero-badge-pill svg { color: var(--emerald); }
 
@@ -430,16 +401,16 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  padding: 32px;
-  box-shadow: var(--shadow-lg);
+  padding: 28px;
+  box-shadow: var(--shadow-card);
   position: relative;
 }
 .sim-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
   border-bottom: 1px solid var(--border);
 }
 .sim-status {
@@ -447,11 +418,10 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   align-items: center;
   gap: 8px;
   font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 800;
   color: var(--emerald);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 .sim-status-dot {
   width: 8px;
@@ -462,50 +432,47 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   animation: pulseBeacon 1.5s infinite;
 }
 .sim-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   color: var(--text3);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
 }
 
 .sim-interactive-grid {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  gap: 20px;
+  gap: 16px;
   align-items: center;
 }
 
-/* 1. Simulated Bedside Button */
+/* Simulated Bedside Button */
 .sim-device-bedside {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 24px 20px;
+  padding: 20px 16px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
 }
 .sim-bed-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
   text-transform: uppercase;
   color: var(--text3);
-  letter-spacing: 0.06em;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .sim-sos-button {
-  width: 90px;
-  height: 90px;
+  width: 84px;
+  height: 84px;
   border-radius: 50%;
   background: radial-gradient(circle at 30% 30%, #F43F5E, #BE123C);
-  border: 4px solid #FFF;
-  box-shadow: 0 10px 24px rgba(244, 63, 94, 0.4), inset 0 3px 6px rgba(255,255,255,0.4);
+  border: 3px solid #FFF;
+  box-shadow: 0 8px 20px rgba(244, 63, 94, 0.4), inset 0 2px 5px rgba(255,255,255,0.4);
   color: #FFF;
   font-family: var(--font-display);
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 900;
   display: flex;
   flex-direction: column;
@@ -518,26 +485,11 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 }
 .sim-sos-button:active, .sim-sos-button.active {
   transform: scale(0.92);
-  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.6);
 }
-.sim-sos-sub {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  opacity: 0.9;
-  margin-top: 2px;
-}
-.sim-hint {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--primary);
-  margin-top: 14px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
+.sim-sos-sub { font-size: 8px; font-weight: 700; opacity: 0.9; margin-top: 1px; }
+.sim-hint { font-size: 11px; font-weight: 700; color: var(--primary); margin-top: 12px; }
 
-/* Signal Propagation Indicator */
+/* Signal Wave */
 .sim-signal-wave {
   display: flex;
   flex-direction: column;
@@ -546,7 +498,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   color: var(--text3);
 }
 .sim-wave-line {
-  width: 44px;
+  width: 40px;
   height: 3px;
   background: var(--border);
   border-radius: 2px;
@@ -570,22 +522,21 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   100% { left: 100%; }
 }
 
-/* 2. Simulated Smart Nurse Watch */
+/* Simulated Nurse Watch */
 .sim-device-watch {
   background: #090E17;
   border: 4px solid #1E293B;
   border-radius: 50%;
-  width: 170px;
-  height: 170px;
+  width: 160px;
+  height: 160px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  position: relative;
-  box-shadow: 0 16px 36px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.8);
+  box-shadow: 0 16px 36px rgba(0,0,0,0.5);
   transition: transform 0.2s;
 }
 .sim-device-watch.vibrating {
@@ -593,53 +544,49 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   border-color: #F43F5E;
 }
 @keyframes watchVibrate {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(-3px, 2px) rotate(-1deg); }
-  50% { transform: translate(3px, -2px) rotate(1deg); }
-  75% { transform: translate(-2px, -2px) rotate(-1deg); }
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-3px, 2px); }
+  50% { transform: translate(3px, -2px); }
+  75% { transform: translate(-2px, -2px); }
 }
 .watch-room {
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 900;
   color: #FFF;
   line-height: 1;
   margin-bottom: 2px;
 }
 .watch-type {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
   color: #FB7185;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 .watch-timer {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #38BDF8;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 .watch-ack-btn {
   background: var(--gradient-brand);
   color: #FFF;
   border: none;
   border-radius: var(--radius-full);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
-  padding: 5px 12px;
+  padding: 4px 10px;
   cursor: pointer;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  transition: transform 0.15s;
 }
-.watch-ack-btn:active { transform: scale(0.92); }
 
 /* Wallboard mini ticker */
 .sim-wallboard-strip {
-  margin-top: 20px;
-  padding: 12px 16px;
+  margin-top: 18px;
+  padding: 10px 14px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -652,11 +599,11 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 .sim-wb-time { font-family: var(--font-mono); font-weight: 700; color: var(--primary); }
 
 /* Common Sections */
-.section { padding: 90px 0; background: transparent; }
+.section { padding: 72px 0; background: transparent; }
 .section-head {
   text-align: center;
   max-width: 680px;
-  margin: 0 auto 52px;
+  margin: 0 auto 44px;
 }
 .section-head .sec-tag {
   display: inline-block;
@@ -665,136 +612,178 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--primary);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .section-head h2 {
-  font-size: 40px;
+  font-size: 36px;
   letter-spacing: -0.03em;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 .section-head p {
-  font-size: 17px;
+  font-size: 16px;
   color: var(--text2);
   line-height: 1.55;
 }
 
-/* ================= 2026 BENTO GRID: REVOLUTIONARY COMPARISON ================= */
-.bento-compare-grid {
+/* ================= VISUAL BEFORE VS AFTER SHOWCASE (WITH REAL PHOTOS) ================= */
+.visual-compare-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 24px;
 }
-.compare-col-header {
+.visual-compare-card {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 18px;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
 }
-.compare-badge {
-  padding: 4px 12px;
+.visual-photo-frame {
+  position: relative;
+  width: 100%;
+  height: 230px;
+  overflow: hidden;
+}
+.visual-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s ease;
+}
+.visual-compare-card:hover .visual-photo-img {
+  transform: scale(1.05);
+}
+.visual-photo-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  padding: 6px 14px;
   border-radius: var(--radius-full);
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
-.badge-old { background: var(--rose-light); color: var(--rose); border: 1px solid var(--rose-glow); }
-.badge-new { background: var(--emerald-light); color: var(--emerald); border: 1px solid var(--emerald-glow); }
+.badge-bad { background: rgba(244, 63, 94, 0.85); color: #FFF; }
+.badge-good { background: rgba(16, 185, 129, 0.90); color: #FFF; }
 
-.compare-card {
+.visual-compare-body {
   padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  background: var(--surface-glass);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-bottom-left-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
+  flex-grow: 1;
 }
-.compare-item {
+.visual-compare-body h3 { font-size: 20px; margin-bottom: 4px; }
+.visual-points-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.visual-point {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  padding: 16px;
-  border-radius: var(--radius-md);
-  transition: transform 0.2s;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.45;
 }
-.item-old { background: var(--rose-light); border-left: 3px solid var(--rose); }
-.item-new { background: var(--emerald-light); border-left: 3px solid var(--emerald); }
-.compare-icon {
-  width: 28px;
-  height: 28px;
+.point-bad-icon {
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
+  background: var(--rose-light);
+  color: var(--rose);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 900;
-  font-size: 13px;
+  font-size: 12px;
   flex-shrink: 0;
 }
-.icon-old { background: rgba(244, 63, 94, 0.2); color: var(--rose); }
-.icon-new { background: rgba(16, 185, 129, 0.2); color: var(--emerald); }
-.compare-text h4 { font-size: 15px; margin-bottom: 2px; }
-.compare-text p { font-size: 13px; color: var(--text2); margin: 0; line-height: 1.4; }
-
-/* ================= 2026 ASYMMETRICAL BENTO ECOSYSTEM GRID ================= */
-.bento-ecosystem {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 24px;
-}
-.bento-span-4 { grid-column: span 4; }
-.bento-span-6 { grid-column: span 6; }
-.bento-span-8 { grid-column: span 8; }
-.bento-span-12 { grid-column: span 12; }
-
-.bento-feature {
-  padding: 32px;
-  display: flex;
-  flex-direction: column;
-}
-.bento-feature-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: var(--primary-light);
-  color: var(--primary);
+.point-good-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--emerald-light);
+  color: var(--emerald);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 20px;
+  font-weight: 900;
+  font-size: 12px;
+  flex-shrink: 0;
 }
-.bento-feature h3 { font-size: 22px; margin-bottom: 8px; }
-.bento-feature p { font-size: 14px; color: var(--text2); line-height: 1.55; margin-bottom: 20px; }
-.bento-tags {
+
+/* ================= ECOSYSTEM SHOWCASE (WITH HARDWARE PHOTOS) ================= */
+.ecosystem-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 22px;
+}
+.eco-span-6 { grid-column: span 6; }
+.eco-span-4 { grid-column: span 4; }
+
+.eco-card {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+.eco-photo-box {
+  width: 100%;
+  height: 180px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 18px;
+  position: relative;
+}
+.eco-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+.eco-card:hover .eco-photo-img { transform: scale(1.05); }
+.eco-card h3 { font-size: 19px; margin-bottom: 6px; }
+.eco-card p { font-size: 13px; color: var(--text2); line-height: 1.5; margin-bottom: 16px; }
+.eco-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   margin-top: auto;
 }
-.bento-tag {
+.eco-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
+  gap: 4px;
+  padding: 4px 10px;
   background: var(--bg-subtle);
   border-radius: var(--radius-full);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text1);
 }
-.bento-tag span { color: var(--emerald); font-weight: 900; }
+.eco-chip span { color: var(--emerald); font-weight: 900; }
 
-/* Hero Graphic Bento Highlight */
-.bento-highlight {
-  background: linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(6, 182, 212, 0.04) 100%);
-  border-color: rgba(2, 132, 199, 0.3);
-}
-
-/* ================= CLINICAL ROLES BENTO ================= */
+/* ================= ROLES BENTO ================= */
 .roles-bento {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  gap: 18px;
 }
 .role-bento-card {
-  padding: 28px 24px;
+  padding: 24px 20px;
   display: flex;
   flex-direction: column;
 }
@@ -802,12 +791,12 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 .role-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   background: var(--gradient-brand);
   color: #FFF;
   display: flex;
@@ -815,58 +804,58 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   justify-content: center;
   flex-shrink: 0;
 }
-.role-name { font-size: 17px; font-weight: 800; }
-.role-tag { font-size: 11px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; }
+.role-name { font-size: 16px; font-weight: 800; }
+.role-tag { font-size: 10px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; }
 .role-pills-list {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 14px;
-  padding-top: 14px;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid var(--border);
 }
 .role-pills-list li {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text2);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 .role-pills-list li span { color: var(--emerald); font-weight: 900; }
 
-/* ================= 2026 PRICING & ROI ESTIMATOR ================= */
+/* ================= CALCULATOR ================= */
 .calc-bento-box {
-  padding: 44px;
+  padding: 36px 40px;
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
-  gap: 48px;
+  gap: 40px;
   align-items: center;
 }
 .calc-slider-group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 24px;
+  gap: 8px;
+  margin-bottom: 20px;
 }
 .calc-header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-.calc-title-txt { font-size: 15px; font-weight: 700; color: var(--text1); }
+.calc-title-txt { font-size: 14px; font-weight: 700; color: var(--text1); }
 .calc-numeric-badge {
   font-family: var(--font-mono);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
   color: var(--primary);
   background: var(--bg-subtle);
-  padding: 3px 12px;
+  padding: 2px 10px;
   border-radius: var(--radius-sm);
 }
 .calc-range-bar {
   width: 100%;
-  height: 8px;
+  height: 6px;
   border-radius: 4px;
   background: var(--border);
   outline: none;
@@ -875,44 +864,41 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 }
 .calc-range-bar::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: var(--primary);
   cursor: pointer;
-  box-shadow: 0 0 12px var(--primary-glow);
-  border: 3px solid #FFF;
-}
-[data-theme="dark"] .calc-range-bar::-webkit-slider-thumb {
-  border-color: #070A12;
+  box-shadow: 0 0 10px var(--primary-glow);
+  border: 2px solid #FFF;
 }
 
 .calc-summary-panel {
   background: var(--bg-subtle);
-  padding: 32px;
-  border-radius: var(--radius-lg);
+  padding: 26px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   display: flex;
   flex-direction: column;
 }
-.calc-sum-head { font-size: 18px; margin-bottom: 20px; }
+.calc-sum-head { font-size: 16px; margin-bottom: 16px; }
 .calc-sum-row {
   display: flex;
   justify-content: space-between;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text2);
-  margin-bottom: 12px;
-  padding-bottom: 12px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--border);
 }
 .calc-sum-total {
-  margin-top: 10px;
-  margin-bottom: 24px;
+  margin-top: 6px;
+  margin-bottom: 18px;
 }
-.calc-total-caption { font-size: 12px; color: var(--text3); font-weight: 700; text-transform: uppercase; }
+.calc-total-caption { font-size: 11px; color: var(--text3); font-weight: 800; text-transform: uppercase; }
 .calc-total-num {
   font-family: var(--font-display);
-  font-size: 32px;
+  font-size: 26px;
   font-weight: 900;
   color: var(--primary);
   line-height: 1.1;
@@ -923,11 +909,11 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 .pricing-bento {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  gap: 20px;
   align-items: stretch;
 }
 .price-bento-card {
-  padding: 36px 30px;
+  padding: 30px 24px;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -947,56 +933,48 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.1em;
-  padding: 4px 16px;
+  padding: 3px 14px;
   border-radius: var(--radius-full);
 }
 [data-theme="dark"] .tier-badge { color: #070A12; }
-.tier-name { font-size: 22px; margin-bottom: 6px; }
-.tier-sub { font-size: 13px; color: var(--text3); margin-bottom: 20px; min-height: 38px; }
+.tier-name { font-size: 20px; margin-bottom: 4px; }
+.tier-sub { font-size: 12px; color: var(--text3); margin-bottom: 16px; min-height: 32px; }
 .tier-price {
   font-family: var(--font-display);
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 900;
   color: var(--text1);
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
-.tier-price span { font-size: 14px; font-weight: 500; color: var(--text3); }
+.tier-price span { font-size: 13px; font-weight: 500; color: var(--text3); }
 .tier-features {
   list-style: none;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
   flex-grow: 1;
 }
 .tier-features li {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text2);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 .tier-features li span { color: var(--emerald); font-weight: 900; }
 
-/* ================= 2026 CONTACT & DEMO REQUEST ================= */
+/* ================= CONTACT FORM ================= */
 .contact-bento-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 40px;
+  gap: 36px;
   align-items: center;
 }
-.contact-highlight-box {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-.contact-perk {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
+.contact-highlight-box { display: flex; flex-direction: column; gap: 16px; }
+.contact-perk { display: flex; align-items: center; gap: 14px; }
 .contact-perk-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   background: var(--primary-light);
   color: var(--primary);
   display: flex;
@@ -1004,30 +982,23 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   justify-content: center;
   flex-shrink: 0;
 }
-.contact-perk-txt h4 { font-size: 16px; margin-bottom: 2px; }
-.contact-perk-txt p { font-size: 13px; color: var(--text3); margin: 0; }
+.contact-perk-txt h4 { font-size: 15px; margin-bottom: 1px; }
+.contact-perk-txt p { font-size: 12px; color: var(--text3); margin: 0; }
 
-.form-bento-panel {
-  padding: 36px;
-}
-.form-bento-panel h3 { font-size: 24px; margin-bottom: 6px; }
-.form-bento-panel p { font-size: 14px; color: var(--text3); margin-bottom: 24px; }
-.form-row {
-  margin-bottom: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.form-row label { font-size: 13px; font-weight: 700; color: var(--text1); }
+.form-bento-panel { padding: 30px; }
+.form-bento-panel h3 { font-size: 22px; margin-bottom: 4px; }
+.form-bento-panel p { font-size: 13px; color: var(--text3); margin-bottom: 20px; }
+.form-row { margin-bottom: 14px; display: flex; flex-direction: column; gap: 5px; }
+.form-row label { font-size: 12px; font-weight: 700; color: var(--text1); }
 .form-input {
   width: 100%;
-  padding: 12px 16px;
+  padding: 10px 14px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text1);
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13px;
   outline: none;
   transition: all 0.2s ease;
 }
@@ -1037,23 +1008,23 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 }
 .form-success-box {
   display: none;
-  padding: 14px 18px;
+  padding: 12px 14px;
   background: var(--emerald-light);
   border: 1px solid var(--emerald);
   color: var(--emerald);
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 /* ================= FAQ ================= */
 .faq-bento {
-  max-width: 800px;
+  max-width: 780px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 .faq-row {
   border: 1px solid var(--border);
@@ -1062,8 +1033,8 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   background: var(--surface-glass);
 }
 .faq-head {
-  padding: 18px 24px;
-  font-size: 16px;
+  padding: 16px 20px;
+  font-size: 15px;
   font-weight: 700;
   display: flex;
   justify-content: space-between;
@@ -1071,52 +1042,52 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   cursor: pointer;
   user-select: none;
 }
-.faq-arrow { transition: transform 0.25s ease; color: var(--text3); font-size: 13px; }
+.faq-arrow { transition: transform 0.25s ease; color: var(--text3); font-size: 12px; }
 .faq-row.open .faq-arrow { transform: rotate(180deg); color: var(--primary); }
 .faq-body {
   display: none;
-  padding: 0 24px 18px;
-  font-size: 14px;
+  padding: 0 20px 16px;
+  font-size: 13px;
   color: var(--text2);
-  line-height: 1.6;
+  line-height: 1.55;
 }
 .faq-row.open .faq-body { display: block; }
 
 /* ================= FOOTER ================= */
 .footer {
-  padding: 60px 0 30px;
+  padding: 50px 0 26px;
   border-top: 1px solid var(--border);
   background: var(--bg);
 }
 .footer-grid {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 40px;
-  margin-bottom: 40px;
+  gap: 36px;
+  margin-bottom: 36px;
 }
-.footer-col h4 { font-size: 15px; font-weight: 800; margin-bottom: 16px; }
-.footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
-.footer-links a { color: var(--text3); text-decoration: none; font-size: 14px; transition: color 0.15s; }
+.footer-col h4 { font-size: 14px; font-weight: 800; margin-bottom: 14px; }
+.footer-links { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.footer-links a { color: var(--text3); text-decoration: none; font-size: 13px; transition: color 0.15s; }
 .footer-links a:hover { color: var(--primary); }
 .footer-bottom {
-  padding-top: 24px;
+  padding-top: 20px;
   border-top: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text3);
 }
 
 /* Responsive */
 @media (max-width: 1024px) {
-  .hero-grid { grid-template-columns: 1fr; text-align: center; gap: 40px; }
-  .hero-sub { margin: 0 auto 32px; }
+  .hero-grid { grid-template-columns: 1fr; text-align: center; gap: 36px; }
+  .hero-sub { margin: 0 auto 28px; }
   .hero-ctas { justify-content: center; }
   .hero-badges { justify-content: center; }
-  .bento-ecosystem { grid-template-columns: 1fr; }
-  .bento-span-4, .bento-span-6, .bento-span-8, .bento-span-12 { grid-column: span 1; }
-  .bento-compare-grid { grid-template-columns: 1fr; }
+  .visual-compare-grid { grid-template-columns: 1fr; }
+  .ecosystem-grid { grid-template-columns: 1fr; }
+  .eco-span-6, .eco-span-4 { grid-column: span 1; }
   .roles-bento { grid-template-columns: 1fr 1fr; }
   .pricing-bento { grid-template-columns: 1fr 1fr; }
   .calc-bento-box, .contact-bento-grid { grid-template-columns: 1fr; }
@@ -1125,13 +1096,13 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 @media (max-width: 680px) {
   .nav-links, .header-actions .btn { display: none; }
   .menu-btn { display: flex; }
-  .hero h1 { font-size: 34px; }
+  .hero h1 { font-size: 32px; }
   .sim-interactive-grid { grid-template-columns: 1fr; }
-  .sim-signal-wave { transform: rotate(90deg); margin: 10px 0; }
+  .sim-signal-wave { transform: rotate(90deg); margin: 8px 0; }
   .roles-bento, .pricing-bento { grid-template-columns: 1fr; }
-  .calc-bento-box, .form-bento-panel { padding: 24px; }
+  .calc-bento-box, .form-bento-panel { padding: 20px; }
   .footer-grid { grid-template-columns: 1fr; }
-  .footer-bottom { flex-direction: column; gap: 10px; text-align: center; }
+  .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
 }
 
 /* Mobile Drawer */
@@ -1149,21 +1120,21 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   top: 0;
   right: 0;
   bottom: 0;
-  width: 290px;
+  width: 280px;
   background: var(--surface);
-  padding: 28px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
   box-shadow: -10px 0 30px rgba(0,0,0,0.3);
 }
 .mobile-drawer-links {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 .mobile-drawer-links a {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text1);
   text-decoration: none;
@@ -1211,8 +1182,8 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
           <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/>
         </svg>
       </button>
-      <a href="/login" class="btn btn-outline" style="padding: 9px 18px; font-size: 13px;">Kirish</a>
-      <a href="#aloqa" class="btn btn-primary" style="padding: 9px 18px; font-size: 13px;">14 Kun Bepul Sinash</a>
+      <a href="/login" class="btn btn-outline" style="padding: 8px 16px; font-size: 13px;">Kirish</a>
+      <a href="#aloqa" class="btn btn-primary" style="padding: 8px 16px; font-size: 13px;">14 Kun Bepul Sinash</a>
       <button type="button" class="menu-btn" id="menuToggle" aria-label="Menyu">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
@@ -1257,7 +1228,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 
       <div class="hero-ctas">
         <a href="#aloqa" class="btn btn-primary btn-lg">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           14 Kun Bepul Sinash
         </a>
         <a href="#kalkulyator" class="btn btn-outline btn-lg">
@@ -1267,16 +1238,16 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 
       <div class="hero-badges">
         <div class="hero-badge-pill">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           1 kunda montaj (simsiz)
         </div>
         <div class="hero-badge-pill">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           1 soniyada bilakda tebranish
         </div>
         <div class="hero-badge-pill">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          0 ta o'tkazib yuborilgan chaqiruv
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          0 ta yo'qotilgan chaqiruv
         </div>
       </div>
     </div>
@@ -1334,173 +1305,141 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   </div>
 </section>
 
-<!-- ================= 2026 BENTO: BEFORE VS AFTER ================= -->
+<!-- ================= 2026 VISUAL TAQQOSLASH (REAL PHOTO BEFORE & AFTER) ================= -->
 <section class="section" id="taqqoslash">
   <div class="wrap">
     <div class="section-head">
-      <span class="sec-tag">Taqqoslash</span>
+      <span class="sec-tag">Vizual Taqqoslash</span>
       <h2>Eski Shifoxona vs NurseCall</h2>
-      <p>Klinikangizdagi tartibsizlik va kutishlarga chek qo'ying.</p>
+      <p>Klinikangizdagi noaniqlik va bemorlar xavotiriga chek qo'ying.</p>
     </div>
 
-    <div class="bento-compare-grid">
-      <!-- Old System Card -->
-      <div class="bento-card compare-card">
-        <div class="compare-col-header">
-          <span class="compare-badge badge-old">Eski Tizim</span>
-          <h3>Doimiy kechikish va xaos</h3>
-        </div>
-
-        <div class="compare-item item-old">
-          <div class="compare-icon icon-old">✕</div>
-          <div class="compare-text">
-            <h4>Chaqiruv eshitilmaydi</h4>
-            <p>Bemor og'ir holatda baqirishga yoki eshikka chiqishga majbur.</p>
+    <div class="visual-compare-grid">
+      <!-- 1. Old System Visual Card -->
+      <div class="bento-card visual-compare-card">
+        <div class="visual-photo-frame">
+          <img src="/static/img_old_calling.jpg" alt="Eski tizimda bemor qiyinchiligi" class="visual-photo-img" />
+          <div class="visual-photo-badge badge-bad">
+            <span>✕</span> Eski Tizim (10-15 daqiqa kutish)
           </div>
         </div>
 
-        <div class="compare-item item-old">
-          <div class="compare-icon icon-old">✕</div>
-          <div class="compare-text">
-            <h4>Hamshira postda bo'lmaydi</h4>
-            <p>Boshqa palatada yoki yo'lakda bo'lsa xabarni eshitmaydi.</p>
-          </div>
-        </div>
-
-        <div class="compare-item item-old">
-          <div class="compare-icon icon-old">✕</div>
-          <div class="compare-text">
-            <h4>10-15 daqiqa qimmatli vaqt yo'qoladi</h4>
-            <p>Bemor va yaqinlari norozi bo'ladi, klinika obro'si tushadi.</p>
-          </div>
-        </div>
-
-        <div class="compare-item item-old">
-          <div class="compare-icon icon-old">✕</div>
-          <div class="compare-text">
-            <h4>Nazorat va hisobot yo'q</h4>
-            <p>Kim qachon borgani noma'lum, xodimlar mas'uliyatsiz.</p>
-          </div>
+        <div class="visual-compare-body">
+          <h3>Eski Tizim: Xavotir va Kechikish</h3>
+          <ul class="visual-points-list">
+            <li class="visual-point">
+              <span class="point-bad-icon">✕</span>
+              <span><strong>Chaqiruv eshitilmaydi:</strong> Bemor og'ir holatda eshikka chiqishga yoki qichqirishga majbur.</span>
+            </li>
+            <li class="visual-point">
+              <span class="point-bad-icon">✕</span>
+              <span><strong>Hamshira postda emas:</strong> Yo'lakda yoki muolajada bo'lsa xabar yetib bormaydi.</span>
+            </li>
+            <li class="visual-point">
+              <span class="point-bad-icon">✕</span>
+              <span><strong>Nazorat yo'q:</strong> Kim qachon borgani noma'lum, rahbar uchun hisobot mavjud emas.</span>
+            </li>
+          </ul>
         </div>
       </div>
 
-      <!-- NurseCall System Card -->
-      <div class="bento-card compare-card">
-        <div class="compare-col-header">
-          <span class="compare-badge badge-new">NurseCall 2026</span>
-          <h3>1 soniyada aniq va xotirjam</h3>
-        </div>
-
-        <div class="compare-item item-new">
-          <div class="compare-icon icon-new">✓</div>
-          <div class="compare-text">
-            <h4>1 ta yumshoq tugma</h4>
-            <p>Bemor o'rnidan turmaydi, 1 soniyada xabar jo'natiladi.</p>
+      <!-- 2. NurseCall Visual Card -->
+      <div class="bento-card visual-compare-card">
+        <div class="visual-photo-frame">
+          <img src="/static/img_new_calling.jpg" alt="NurseCall zamonaviy xotirjam palata" class="visual-photo-img" />
+          <div class="visual-photo-badge badge-good">
+            <span>✓</span> NurseCall (1 soniyada bilakda)
           </div>
         </div>
 
-        <div class="compare-item item-new">
-          <div class="compare-icon icon-new">✓</div>
-          <div class="compare-text">
-            <h4>Bilakda kuchli tebranish</h4>
-            <p>Hamshira qayerda bo'lmasin soatida aniq xona raqami ko'rinadi.</p>
-          </div>
-        </div>
-
-        <div class="compare-item item-new">
-          <div class="compare-icon icon-new">✓</div>
-          <div class="compare-text">
-            <h4>1 daqiqada tezkor yordam</h4>
-            <p>Chaqiruv zudlik bilan yopiladi, bemorlar 100% mamnun.</p>
-          </div>
-        </div>
-
-        <div class="compare-item item-new">
-          <div class="compare-icon icon-new">✓</div>
-          <div class="compare-text">
-            <h4>Bosh shifokor uchun jonli tahlil</h4>
-            <p>Har bir soniya hisobda, reyting va Excel/PDF hisobot doim tayyor.</p>
-          </div>
+        <div class="visual-compare-body">
+          <h3>NurseCall: Xotirjamlik va 1-Daqiqada Yordam</h3>
+          <ul class="visual-points-list">
+            <li class="visual-point">
+              <span class="point-good-icon">✓</span>
+              <span><strong>Bitta yumshoq tugma:</strong> Bemor o'rnidan turmaydi, 1 soniyada xabar jo'natiladi.</span>
+            </li>
+            <li class="visual-point">
+              <span class="point-good-icon">✓</span>
+              <span><strong>Bilakda kuchli tebranish:</strong> Hamshira qayerda bo'lmasin soatida aniq xona ko'rinadi.</span>
+            </li>
+            <li class="visual-point">
+              <span class="point-good-icon">✓</span>
+              <span><strong>Jonli tahlil:</strong> Har bir soniya hisobda, bosh shifokor uchun to'liq audit va reyting.</span>
+            </li>
+          </ul>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ================= 2026 ASYMMETRICAL BENTO: HARDWARE & APPS ================= -->
+<!-- ================= 2026 ECOSYSTEM (WITH REAL HARDWARE IMAGES) ================= -->
 <section class="section" id="ekotizim">
   <div class="wrap">
     <div class="section-head">
       <span class="sec-tag">To'liq Ekotizim</span>
-      <h2>Klinikangiz uchun tayyor komplekt</h2>
-      <p>Barcha uskunalar, o'rnatish va dasturlar bitta paketda.</p>
+      <h2>Klinikangiz uchun tayyor to'plam</h2>
+      <p>Barcha uskunalar, o'rnatish va dasturlar bitta to'liq paketda.</p>
     </div>
 
-    <div class="bento-ecosystem">
-      <!-- 1. Smart Watch (Span 8) -->
-      <div class="bento-card bento-feature bento-span-8 bento-highlight">
-        <div class="bento-feature-icon">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/><path d="M12 5V2M12 22v-3"/></svg>
+    <div class="ecosystem-grid">
+      <!-- 1. Smart Watch (Span 6) -->
+      <div class="bento-card eco-card eco-span-6">
+        <div class="eco-photo-box">
+          <img src="/static/img_prod_watch.jpg" alt="Aqlli Hamshira Soati" class="eco-photo-img" />
         </div>
-        <h3>Aqlli Hamshira Soatlari (Wear OS)</h3>
+        <h3>Aqlli Hamshira Soatlari</h3>
         <p>Hamshira qo'li band bo'lsa ham bilagidagi soatdan 1 ta teginish bilan chaqiruvni qabul qiladi. Katta xona raqami va kuchli 3 bosqichli tebranish.</p>
-        <div class="bento-tags">
-          <div class="bento-tag"><span>✓</span> 1 bosishda qabul qilish</div>
-          <div class="bento-tag"><span>✓</span> Katta shrift</div>
-          <div class="bento-tag"><span>✓</span> Butun smenaga yetuvchi batareya</div>
+        <div class="eco-chips">
+          <div class="eco-chip"><span>✓</span> 1 bosishda qabul qilish</div>
+          <div class="eco-chip"><span>✓</span> Katta shrift</div>
+          <div class="eco-chip"><span>✓</span> Butun smenaga yetuvchi batareya</div>
         </div>
       </div>
 
-      <!-- 2. Wireless Bedside Buttons (Span 4) -->
-      <div class="bento-card bento-feature bento-span-4">
-        <div class="bento-feature-icon">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+      <!-- 2. Wallboard TV Panel (Span 6) -->
+      <div class="bento-card eco-card eco-span-6">
+        <div class="eco-photo-box">
+          <img src="/static/img_prod_tv.jpg" alt="Devor TV Wallboard Paneli" class="eco-photo-img" />
         </div>
+        <h3>Devor TV Paneli (Wallboard)</h3>
+        <p>Hamshiralar postidagi 55" televizor uchun. 15 metrdan ko'rinuvchi katta raqamlar, rangli eskalatsiya va ovozli signalizatsiya.</p>
+        <div class="eco-chips">
+          <div class="eco-chip"><span>✓</span> 15 metrdan ko'rinadi</div>
+          <div class="eco-chip"><span>✓</span> Rangli eskalatsiya</div>
+          <div class="eco-chip"><span>✓</span> Ovozli signal</div>
+        </div>
+      </div>
+
+      <!-- 3. Wireless Bedside Buttons (Span 4) -->
+      <div class="bento-card eco-card eco-span-4">
         <h3>Simsiz SOS Tugmalar</h3>
         <p>Palata koykalari va suv o'tkazmaydigan dushlar uchun germetik tugmalar.</p>
-        <div class="bento-tags">
-          <div class="bento-tag"><span>✓</span> Sim tortilmaydi</div>
-          <div class="bento-tag"><span>✓</span> 2 yil batareya</div>
-          <div class="bento-tag"><span>✓</span> IP67 suvga chidamli</div>
-        </div>
-      </div>
-
-      <!-- 3. Wallboard TV Panel (Span 4) -->
-      <div class="bento-card bento-feature bento-span-4">
-        <div class="bento-feature-icon">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-        </div>
-        <h3>Devor TV Paneli</h3>
-        <p>Hamshiralar postidagi 55" televizor uchun. 15 metrdan ko'rinuvchi katta raqamlar va ovozli signal.</p>
-        <div class="bento-tags">
-          <div class="bento-tag"><span>✓</span> 15 metrdan ko'rinadi</div>
-          <div class="bento-tag"><span>✓</span> Rangli eskalatsiya</div>
+        <div class="eco-chips">
+          <div class="eco-chip"><span>✓</span> Sim tortilmaydi</div>
+          <div class="eco-chip"><span>✓</span> 2 yil batareya</div>
+          <div class="eco-chip"><span>✓</span> IP67 suvga chidamli</div>
         </div>
       </div>
 
       <!-- 4. Floor Coverage Station (Span 4) -->
-      <div class="bento-card bento-feature bento-span-4">
-        <div class="bento-feature-icon">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg>
-        </div>
+      <div class="bento-card eco-card eco-span-4">
         <h3>Qavat Stansiyalari</h3>
         <p>Qalin devorlar va liftlardan bemalol o'tib, signalni butun binoga uzatuvchi avtonom stansiya.</p>
-        <div class="bento-tags">
-          <div class="bento-tag"><span>✓</span> 500m qamrov</div>
-          <div class="bento-tag"><span>✓</span> Avtonom ishlaydi</div>
+        <div class="eco-chips">
+          <div class="eco-chip"><span>✓</span> 500m qamrov</div>
+          <div class="eco-chip"><span>✓</span> Avtonom kesh</div>
         </div>
       </div>
 
       <!-- 5. Doctor & Analytics Panel (Span 4) -->
-      <div class="bento-card bento-feature bento-span-4">
-        <div class="bento-feature-icon">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-        </div>
+      <div class="bento-card eco-card eco-span-4">
         <h3>Bosh Shifokor Paneli</h3>
-        <p>Telefon va kompyuterdan kirib, javob berish tezligi va xodimlar reytingini nazorat qilish.</p>
-        <div class="bento-tags">
-          <div class="bento-tag"><span>✓</span> Jonli sekundomer</div>
-          <div class="bento-tag"><span>✓</span> Excel/PDF eksport</div>
+        <p>Telefon va kompyuterdan kirib, javob tezligi va xodimlar reytingini nazorat qilish.</p>
+        <div class="eco-chips">
+          <div class="eco-chip"><span>✓</span> Jonli sekundomer</div>
+          <div class="eco-chip"><span>✓</span> Excel/PDF eksport</div>
         </div>
       </div>
     </div>
@@ -1520,14 +1459,14 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
       <div class="bento-card role-bento-card">
         <div class="role-avatar-wrap">
           <div class="role-avatar">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           </div>
           <div>
             <div class="role-tag">Bemor</div>
             <div class="role-name">Xotirjamlik</div>
           </div>
         </div>
-        <p style="font-size:13px; color:var(--text2); line-height:1.5;">O'rnidan turmasdan 1 ta yumshoq tugma bilan yordam chaqiradi.</p>
+        <p style="font-size:12px; color:var(--text2); line-height:1.5;">O'rnidan turmasdan 1 ta yumshoq tugma bilan yordam chaqiradi.</p>
         <ul class="role-pills-list">
           <li><span>✓</span> O'rnidan turmaydi</li>
           <li><span>✓</span> 100% tezkor yordam</li>
@@ -1537,14 +1476,14 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
       <div class="bento-card role-bento-card">
         <div class="role-avatar-wrap">
           <div class="role-avatar">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/><path d="M12 5V2M12 22v-3"/></svg>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/><path d="M12 5V2M12 22v-3"/></svg>
           </div>
           <div>
             <div class="role-tag">Hamshira</div>
             <div class="role-name">Erkinlik</div>
           </div>
         </div>
-        <p style="font-size:13px; color:var(--text2); line-height:1.5;">Postda o'tirish shart emas, soatida xona raqami darhol ko'rinadi.</p>
+        <p style="font-size:12px; color:var(--text2); line-height:1.5;">Postda o'tirish shart emas, soatida xona raqami darhol ko'rinadi.</p>
         <ul class="role-pills-list">
           <li><span>✓</span> Bilakda tebranish</li>
           <li><span>✓</span> 1 bosishda qabul</li>
@@ -1554,14 +1493,14 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
       <div class="bento-card role-bento-card">
         <div class="role-avatar-wrap">
           <div class="role-avatar">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
           </div>
           <div>
             <div class="role-tag">Post</div>
             <div class="role-name">Katta TV</div>
           </div>
         </div>
-        <p style="font-size:13px; color:var(--text2); line-height:1.5;">Katta monitorda barcha xonalar va kutish vaqti jonli ko'rinadi.</p>
+        <p style="font-size:12px; color:var(--text2); line-height:1.5;">Katta monitorda barcha xonalar va kutish vaqti jonli ko'rinadi.</p>
         <ul class="role-pills-list">
           <li><span>✓</span> 15 metrdan ko'rinadi</li>
           <li><span>✓</span> Ovozli signal</li>
@@ -1571,17 +1510,17 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
       <div class="bento-card role-bento-card">
         <div class="role-avatar-wrap">
           <div class="role-avatar">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
           </div>
           <div>
             <div class="role-tag">Bosh Shifokor</div>
             <div class="role-name">Nazorat</div>
           </div>
         </div>
-        <p style="font-size:13px; color:var(--text2); line-height:1.5;">Kim necha daqiqada borgani va xodimlar reytingi doim qo'lingizda.</p>
+        <p style="font-size:12px; color:var(--text2); line-height:1.5;">Kim necha daqiqada borgani va xodimlar reytingi doim qo'lingizda.</p>
         <ul class="role-pills-list">
           <li><span>✓</span> Jonli sekundomer</li>
-          <li><span>✓</span> To'liq oylik hisobot</li>
+          <li><span>✓</span> Oylik hisobot</li>
         </ul>
       </div>
     </div>
@@ -1719,13 +1658,13 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
         <span>14 Kunlik Bepul Sinov</span>
       </div>
       <h2>Klinikangizda 14 kun bepul o'rnatib beramiz</h2>
-      <p style="font-size:16px; color:var(--text2); line-height:1.6;">
+      <p style="font-size:15px; color:var(--text2); line-height:1.6;">
         Telefon raqamingizni qoldiring — mutaxassisimiz 15 daqiqada bog'lanib, xonalaringizga mos uskunalarning aniq hisobini tayyorlab beradi.
       </p>
 
       <div class="contact-perk">
         <div class="contact-perk-icon">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </div>
         <div class="contact-perk-txt">
           <h4>15 daqiqada tezkor javob</h4>
@@ -1735,7 +1674,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 
       <div class="contact-perk">
         <div class="contact-perk-icon">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         </div>
         <div class="contact-perk-txt">
           <h4>Klinikangizga borib ko'rsatamiz</h4>
@@ -1767,7 +1706,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
           <label for="note">Qo'shimcha ma'lumot (koykalar / qavatlar soni)</label>
           <textarea class="form-input" id="note" name="note" rows="2" placeholder="Masalan: 3 qavatli bino, 30 ta koyka..."></textarea>
         </div>
-        <button type="submit" id="submitBtn" class="btn btn-primary btn-lg" style="width:100%; margin-top:8px;">
+        <button type="submit" id="submitBtn" class="btn btn-primary btn-lg" style="width:100%; margin-top:6px;">
           14 Kunlik Bepul Sinovni Olish
         </button>
       </form>
@@ -1844,7 +1783,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
           <div class="brand-badge">2026 EKOTIZIM</div>
         </div>
       </div>
-      <p style="font-size:13px; color:var(--text3); line-height:1.6; max-width:320px;">
+      <p style="font-size:12px; color:var(--text3); line-height:1.6; max-width:320px;">
         Kasalxonalar va statsionarlar uchun 2026-yilgi zamonaviy simsiz hamshira chaqiruv tizimi.
       </p>
     </div>
@@ -1874,7 +1813,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
       <ul class="footer-links">
         <li><a href="tel:+998712004488">+998 (71) 200-44-88</a></li>
         <li><a href="mailto:info@nursecall.uz">info@nursecall.uz</a></li>
-        <li><span style="font-size:13px; color:var(--text3);">Toshkent sh., Chilonzor tumani</span></li>
+        <li><span style="font-size:12px; color:var(--text3);">Toshkent sh., Chilonzor tumani</span></li>
       </ul>
     </div>
   </div>
@@ -1886,17 +1825,6 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 </footer>
 
 <script>
-  // Mouse Spotlight for Bento Cards
-  document.querySelectorAll('.bento-card').forEach(function(card) {
-    card.addEventListener('mousemove', function(e) {
-      var rect = card.getBoundingClientRect();
-      var x = e.clientX - rect.left;
-      var y = e.clientY - rect.top;
-      card.style.setProperty('--mouse-x', x + 'px');
-      card.style.setProperty('--mouse-y', y + 'px');
-    });
-  });
-
   // Theme Toggle
   document.getElementById('themeToggle')?.addEventListener('click', function () {
     var curr = document.documentElement.getAttribute('data-theme');
@@ -1944,7 +1872,6 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
     sosBtn.classList.add('active');
     setTimeout(function() { sosBtn.classList.remove('active'); }, 300);
 
-    // Trigger radio wave animation
     packet.classList.remove('animating');
     void packet.offsetWidth;
     packet.classList.add('animating');
