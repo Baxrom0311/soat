@@ -44,7 +44,10 @@ class CallsFeed extends ChangeNotifier {
   int _generation = 0;
   int _refreshSequence = 0;
   bool _stopped = false;
+  bool _started = false;
   final Set<int> _pendingAcks = {};
+
+  bool get isRunning => _started && !_stopped;
 
   final ApiClient _api;
 
@@ -126,6 +129,7 @@ class CallsFeed extends ChangeNotifier {
 
   void start({String? token}) {
     stop();
+    _started = true;
     _stopped = false;
     _tick = Timer.periodic(const Duration(seconds: 1), (_) {
       _now = DateTime.now();
@@ -205,6 +209,7 @@ class CallsFeed extends ChangeNotifier {
   }
 
   void stop() {
+    _started = false;
     _stopped = true;
     ++_generation;
     ++_refreshSequence;

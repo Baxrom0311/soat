@@ -58,7 +58,9 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     widget.feed.addListener(_onFeed);
-    widget.feed.start(token: widget.sessions.session?.accessToken);
+    if (!widget.feed.isRunning) {
+      widget.feed.start(token: widget.sessions.session?.accessToken);
+    }
     _syncAlarm();
   }
 

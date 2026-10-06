@@ -70,7 +70,11 @@ class _NurseCallAppState extends State<NurseCallApp> {
     });
     _push.onCallTapped = (_) => _feed.refresh();
     _sessions.addListener(_onSession);
-    _sessions.restore();
+    _sessions.restore().then((_) {
+      if (_sessions.isSignedIn && !_feed.isRunning) {
+        _feed.start(token: _sessions.session?.accessToken);
+      }
+    });
   }
 
   @override
@@ -95,6 +99,9 @@ class _NurseCallAppState extends State<NurseCallApp> {
     if (token != _watchToken) {
       _watchToken = token;
       if (token != null) _wear.sendToken(token);
+    }
+    if (token != null && !_feed.isRunning) {
+      _feed.start(token: token);
     }
     _push.setWanted(token != null && _settings.loaded && _settings.pushEnabled);
     if (mounted) setState(() {});
