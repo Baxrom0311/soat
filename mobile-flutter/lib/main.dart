@@ -10,6 +10,7 @@ import 'calls/calls_screen.dart';
 import 'settings/settings_store.dart';
 import 'wear/wear_service.dart';
 import 'push/push_service.dart';
+import 'splash/video_splash_screen.dart';
 import 'theme/app_icons.dart';
 import 'theme/tokens.dart';
 
@@ -38,6 +39,7 @@ class _NurseCallAppState extends State<NurseCallApp> {
   late final WearService _wear;
   String? _watchToken;
   Timer? _watchRetry;
+  bool _splashDone = false;
 
   @override
   void initState() {
@@ -123,7 +125,13 @@ class _NurseCallAppState extends State<NurseCallApp> {
           child: child!,
         );
       },
-      home: !_sessions.restored
+      home: !_splashDone
+          ? VideoSplashScreen(
+              onFinished: () {
+                if (mounted) setState(() => _splashDone = true);
+              },
+            )
+          : !_sessions.restored
           ? const _Splash()
           : _sessions.isSignedIn
           ? CallsScreen(

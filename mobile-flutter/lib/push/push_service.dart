@@ -57,6 +57,8 @@ NotificationDetails _callDetails() => NotificationDetails(
     priority: Priority.max,
     category: AndroidNotificationCategory.alarm,
     audioAttributesUsage: AudioAttributesUsage.alarm,
+    // Flag 4 = Notification.FLAG_INSISTENT: loops sound & vibration continuously like an alarm clock
+    additionalFlags: Int32List.fromList(<int>[4]),
     // Stays until the call is dealt with rather than being swiped away in a
     // pocket. The alert should end because somebody answered, not because a
     // phone brushed against a uniform.

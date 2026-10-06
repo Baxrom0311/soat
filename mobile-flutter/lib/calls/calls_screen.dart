@@ -12,6 +12,7 @@ import '../settings/settings_store.dart';
 import '../theme/app_icons.dart';
 import '../theme/tokens.dart';
 import '../wear/wear_service.dart';
+import 'alarm_service.dart';
 import 'call_card.dart';
 import 'history_screen.dart';
 import 'calls_feed.dart';
@@ -58,18 +59,32 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     widget.feed.addListener(_onFeed);
     widget.feed.start(token: widget.sessions.session?.accessToken);
+    _syncAlarm();
   }
 
   @override
   void dispose() {
+    AlarmService.instance.stopAlarm();
     WidgetsBinding.instance.removeObserver(this);
     widget.feed.removeListener(_onFeed);
     widget.feed.stop();
     super.dispose();
   }
 
+  void _syncAlarm() {
+    final hasActiveCalls = widget.feed.calls.any((c) => c.status == 'active');
+    if (hasActiveCalls) {
+      AlarmService.instance.startAlarm();
+    } else {
+      AlarmService.instance.stopAlarm();
+    }
+  }
+
   void _onFeed() {
-    if (mounted) setState(() {});
+    if (mounted) {
+      _syncAlarm();
+      setState(() {});
+    }
   }
 
   @override
@@ -83,7 +98,9 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
       // Renew while we are here. Ninety-day tokens expire quietly otherwise, and
       // the first a nurse would know of it is the login screen mid-shift.
       widget.sessions.renew();
+      _syncAlarm();
     } else if (state == AppLifecycleState.paused) {
+      AlarmService.instance.stopAlarm();
       widget.feed.stop();
     }
   }
@@ -98,6 +115,7 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
     setState(() => _busyCallId = call.callId);
     try {
       await widget.feed.acknowledge(call.callId);
+      _syncAlarm();
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -130,11 +148,15 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
                 : _ProfileTab(
                     session: session,
                     stats: feed.stats,
+                    clinicName: feed.clinicName,
                     settings: widget.settings,
                     push: widget.push,
                     api: widget.api,
                     wear: widget.wear,
-                    onSignOut: widget.sessions.signOut,
+                    onSignOut: () async {
+                      await AlarmService.instance.stopAlarm();
+                      await widget.sessions.signOut();
+                    },
                   ),
           ),
         ),
@@ -831,6 +853,7 @@ class _ProfileTab extends StatefulWidget {
   const _ProfileTab({
     required this.session,
     required this.stats,
+    this.clinicName,
     required this.settings,
     required this.push,
     required this.api,
@@ -840,6 +863,7 @@ class _ProfileTab extends StatefulWidget {
 
   final Session? session;
   final ShiftStats stats;
+  final String? clinicName;
   final SettingsStore settings;
   final PushService push;
   final ApiClient api;
@@ -854,12 +878,22 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
   NotificationState _notif = NotificationState.unknown;
   WatchState _watch = WatchState.none;
   bool _sendingToWatch = false;
+  String? _clinicName;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _clinicName = widget.clinicName;
     _refresh();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ProfileTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.clinicName != null && widget.clinicName != _clinicName) {
+      _clinicName = widget.clinicName;
+    }
   }
 
   @override
@@ -883,6 +917,15 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
     // only moment the answer matters is when somebody is looking at this screen.
     final w = await widget.wear.refresh();
     if (mounted) setState(() => _watch = w);
+
+    if (_clinicName == null || _clinicName!.isEmpty) {
+      try {
+        final c = await widget.api.clinic();
+        if (mounted && c.name.isNotEmpty) {
+          setState(() => _clinicName = c.name);
+        }
+      } catch (_) {}
+    }
   }
 
   /// Re-sends the session to the watch, for when it was out of range at sign-in.
@@ -912,6 +955,7 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final p = Palette.of(context);
     final session = widget.session;
+    final clinicDisplay = widget.clinicName ?? _clinicName;
     return ListView(
       padding: const EdgeInsets.only(bottom: 24),
       children: [
@@ -1051,9 +1095,11 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  session?.clinicId != null
-                                      ? 'Markaziy Shifoxona'
-                                      : 'NurseCall Tizimi',
+                                  clinicDisplay?.isNotEmpty == true
+                                      ? clinicDisplay!
+                                      : (session?.clinicId != null
+                                          ? 'Klinika #${session!.clinicId}'
+                                          : 'NurseCall Tizimi'),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
