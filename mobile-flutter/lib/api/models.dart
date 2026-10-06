@@ -21,6 +21,7 @@ class Session {
 
   bool get isNurse => role == 'nurse';
   bool get isAdmin => role == 'admin';
+  bool get isGuest => accessToken == 'demo_guest_token';
 
   factory Session.fromJson(Map<String, dynamic> j) => Session(
     accessToken: j['access_token'] as String,

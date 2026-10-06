@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:lottie/lottie.dart';
 
 import '../admin/admin_screen.dart';
 import '../api/client.dart';
@@ -7,6 +9,7 @@ import '../auth/change_password_screen.dart';
 import '../auth/session_store.dart';
 import '../push/push_service.dart';
 import '../settings/settings_store.dart';
+import '../theme/app_icons.dart';
 import '../theme/tokens.dart';
 import '../wear/wear_service.dart';
 import 'call_card.dart';
@@ -164,7 +167,46 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _Header(name: session?.name ?? '', clinic: feed.clinicName),
-              if (!feed.reachable) ...[
+              if (session?.isGuest == true || feed.isDemo) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: p.accent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: p.accent.withValues(alpha: 0.35)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.play_circle_outline_rounded, size: 18, color: p.accent),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Demo Rejim: Bemor chaqiruvlari simulyatsiyasi',
+                          style: TextStyle(fontSize: 12, color: p.accent, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () {
+                          HapticFeedback.mediumImpact();
+                          feed.addSimulatedCall();
+                        },
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        icon: const Icon(Icons.add_alert_rounded, size: 14),
+                        label: const Text(
+                          '+ Chaqiruv',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              if (!feed.reachable && !feed.isDemo) ...[
                 const SizedBox(height: 12),
                 _Banner(
                   icon: Icons.cloud_off,
@@ -269,12 +311,19 @@ class _Header extends StatelessWidget {
         Container(
           width: 36,
           height: 36,
+          padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
             color: T.sky500.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(color: T.sky400.withValues(alpha: 0.30)),
           ),
-          child: Icon(Icons.local_hospital, size: 19, color: p.accent),
+          child: Center(
+            child: NurseCallLogo(
+              size: 24,
+              color: p.accent,
+              withContainer: false,
+            ),
+          ),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -639,25 +688,43 @@ class _Empty extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = Palette.of(context);
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.check_circle_outline, size: 46, color: T.emerald400),
-          SizedBox(height: 14),
-          Text(
-            'Faol chaqiruv yo‘q',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: p.text1,
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Lottie.asset(
+              'assets/animations/health_online_report.json',
+              width: 190,
+              height: 190,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) => Icon(
+                Icons.check_circle_outline,
+                size: 56,
+                color: T.emerald400,
+              ),
             ),
-          ),
-          SizedBox(height: 6),
-          Text(
-            'Yangi chaqiruv kelsa shu yerda chiqadi',
-            style: TextStyle(fontSize: 13, color: p.text3),
-          ),
-        ],
+            const SizedBox(height: 6),
+            Text(
+              'Faol chaqiruv yo‘q',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: p.text1,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Yangi chaqiruv kelsa shu yerda chiqadi',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13.5,
+                color: p.text3,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -684,8 +751,9 @@ class _BottomNav extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
+        minimum: const EdgeInsets.only(bottom: 6),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [

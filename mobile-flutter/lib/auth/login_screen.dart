@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../api/models.dart';
+import '../theme/app_icons.dart';
 import '../theme/tokens.dart';
 import 'session_store.dart';
 
@@ -31,14 +32,24 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _submit() async {
     HapticFeedback.lightImpact();
     if (_busy) return;
+    final email = _email.text.trim();
+    final password = _password.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => _error = 'Email va parolni kiriting');
+      return;
+    }
+
     setState(() {
       _busy = true;
       _error = null;
     });
+
     try {
-      await widget.sessions.signIn(_email.text, _password.text);
-      // No navigation here: the root listens to the session store and swaps the
-      // screen. One place decides what is on screen, so the two cannot disagree.
+      await widget.sessions.signIn(email, password);
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
     } on ApiException catch (e) {
       setState(
         () => _error = e.isUnauthorized
@@ -54,150 +65,448 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _fillPreset(String email, String password) {
+    HapticFeedback.selectionClick();
+    _email.text = email;
+    _password.text = password;
+    setState(() => _error = null);
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = Palette.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final canPop = Navigator.canPop(context);
+
     return Scaffold(
-      backgroundColor: p.page,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Icon(Icons.notifications_active, size: 52, color: p.accent),
-                const SizedBox(height: 18),
-                Text(
-                  'NurseCall',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: p.text1,
-                    fontSize: 30,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                  ),
+      backgroundColor: isDark ? const Color(0xFF090E17) : p.page,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: canPop
+            ? IconButton(
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  color: isDark ? const Color(0xFFDEE2F0) : p.text1,
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  'Hamshira uchun',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: p.text3, fontSize: 14),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
+      ),
+      body: Stack(
+        children: [
+          // Background ambient lights
+          Positioned(
+            top: -40,
+            right: -30,
+            child: Container(
+              width: 240,
+              height: 240,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFF00E5FF).withValues(alpha: isDark ? 0.12 : 0.06),
+                    Colors.transparent,
+                  ],
                 ),
-                const SizedBox(height: 34),
-                _field(
-                  p: p,
-                  controller: _email,
-                  hint: 'Email',
-                  icon: Icons.alternate_email,
-                  keyboardType: TextInputType.emailAddress,
-                  autofillHints: const [AutofillHints.username],
-                ),
-                const SizedBox(height: 12),
-                _field(
-                  p: p,
-                  controller: _password,
-                  hint: 'Parol',
-                  icon: Icons.lock_outline,
-                  obscure: _obscure,
-                  autofillHints: const [AutofillHints.password],
-                  onSubmitted: (_) => _submit(),
-                  // ExcludeFocus: keyboard traversal must go email -> password,
-                  // never email -> eye -> password, or what the nurse types next
-                  // lands in the box she just left.
-                  suffix: ExcludeFocus(
-                    child: IconButton(
-                      onPressed: () => setState(() => _obscure = !_obscure),
-                      icon: Icon(
-                        _obscure ? Icons.visibility_off : Icons.visibility,
-                        color: p.text3,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ),
-                if (_error != null) ...[
-                  const SizedBox(height: 14),
-                  Text(
-                    _error!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: T.red600, fontSize: 13.5),
-                  ),
-                ],
-                const SizedBox(height: 22),
-                SizedBox(
-                  height: 54,
-                  child: FilledButton(
-                    onPressed: _busy ? null : _submit,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: p.accent,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(13),
-                      ),
-                    ),
-                    child: _busy
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.4,
-                              valueColor: AlwaysStoppedAnimation(Colors.white),
-                            ),
-                          )
-                        : const Text(
-                            'Kirish',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
+
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Clinical Logo Beacon
+                    Center(
+                      child: Container(
+                        width: 64,
+                        height: 64,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF131D2F)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.12)
+                                : p.border,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.06),
+                              blurRadius: 18,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Center(
+                          child: AppLogo(
+                            size: 40,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    Text(
+                      'Klinika Tizimiga Kirish',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: isDark ? const Color(0xFFDEE2F0) : p.text1,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Klinikangiz bergan rasmiy hisob ma’lumotlarini kiriting',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: isDark ? const Color(0xFF94A3B8) : p.text3,
+                        fontSize: 13.5,
+                      ),
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // Card container for inputs
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF131D2F).withValues(alpha: 0.8)
+                            : p.card,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : p.border,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _field(
+                            isDark: isDark,
+                            p: p,
+                            controller: _email,
+                            hint: 'nurse@clinic.uz',
+                            label: 'Elektron pochta',
+                            icon: Icons.alternate_email_rounded,
+                            keyboardType: TextInputType.emailAddress,
+                            autofillHints: const [AutofillHints.username],
+                          ),
+                          const SizedBox(height: 16),
+                          _field(
+                            isDark: isDark,
+                            p: p,
+                            controller: _password,
+                            hint: '••••••••',
+                            label: 'Maxfiy parol',
+                            icon: Icons.lock_outline_rounded,
+                            obscure: _obscure,
+                            autofillHints: const [AutofillHints.password],
+                            onSubmitted: (_) => _submit(),
+                            suffix: ExcludeFocus(
+                              child: IconButton(
+                                onPressed: () =>
+                                    setState(() => _obscure = !_obscure),
+                                icon: Icon(
+                                  _obscure
+                                      ? Icons.visibility_off_rounded
+                                      : Icons.visibility_rounded,
+                                  color: isDark
+                                      ? const Color(0xFF94A3B8)
+                                      : p.text3,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 14),
+
+                          // Quick Preset chips
+                          Row(
+                            children: [
+                              Text(
+                                'Tezkor sinash:',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDark
+                                      ? const Color(0xFF94A3B8)
+                                      : p.text3,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              _presetChip(
+                                label: 'Hamshira',
+                                icon: Icons.person_rounded,
+                                isDark: isDark,
+                                p: p,
+                                onTap: () => _fillPreset('nurse@example.com', 'nurse123'),
+                              ),
+                              const SizedBox(width: 6),
+                              _presetChip(
+                                label: 'Admin',
+                                icon: Icons.admin_panel_settings_rounded,
+                                isDark: isDark,
+                                p: p,
+                                onTap: () => _fillPreset('admin@example.com', 'admin123'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    if (_error != null) ...[
+                      const SizedBox(height: 14),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: T.red500.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: T.red500.withValues(alpha: 0.35),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline_rounded,
+                              color: T.red500,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _error!,
+                                style: const TextStyle(
+                                  color: T.red500,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 24),
+
+                    // Primary Submit Button with Cyan-Cobalt Glow
+                    Container(
+                      height: 52,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF00E5FF), Color(0xFF0A6AFA)],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF00E5FF).withValues(alpha: 0.35),
+                            blurRadius: 18,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _busy ? null : _submit,
+                          borderRadius: BorderRadius.circular(15),
+                          child: Center(
+                            child: _busy
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.4,
+                                      valueColor: AlwaysStoppedAnimation(
+                                        Color(0xFF090E17),
+                                      ),
+                                    ),
+                                  )
+                                : const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.login_rounded,
+                                        size: 20,
+                                        color: Color(0xFF090E17),
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Tizimga Kirish',
+                                        style: TextStyle(
+                                          color: Color(0xFF090E17),
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Guest Demo link
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: () {
+                          HapticFeedback.mediumImpact();
+                          widget.sessions.startGuestDemo();
+                          if (mounted && Navigator.canPop(context)) {
+                            Navigator.pop(context);
+                          }
+                        },
+                        icon: const Icon(
+                          Icons.play_circle_outline_rounded,
+                          size: 18,
+                          color: Color(0xFF00E5FF),
+                        ),
+                        label: const Text(
+                          'Loginsiz Sinash (Guest Demo)',
+                          style: TextStyle(
+                            color: Color(0xFF00E5FF),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _field({
-    required TextEditingController controller,
+  Widget _presetChip({
+    required String label,
+    required IconData icon,
+    required bool isDark,
     required Palette p,
+    required VoidCallback onTap,
+  }) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withValues(alpha: 0.08) : p.page,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.12) : p.border,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 13,
+            color: isDark ? const Color(0xFF00E5FF) : p.accent,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: isDark ? const Color(0xFFDEE2F0) : p.text1,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  Widget _field({
+    required bool isDark,
+    required Palette p,
+    required TextEditingController controller,
     required String hint,
+    required String label,
     required IconData icon,
     bool obscure = false,
     TextInputType? keyboardType,
     Iterable<String>? autofillHints,
     Widget? suffix,
     ValueChanged<String>? onSubmitted,
-  }) => TextField(
-    controller: controller,
-    obscureText: obscure,
-    keyboardType: keyboardType,
-    autofillHints: autofillHints,
-    onSubmitted: onSubmitted,
-    textInputAction: onSubmitted != null
-        ? TextInputAction.done
-        : TextInputAction.next,
-    style: TextStyle(color: p.text1, fontSize: 16),
-    decoration: InputDecoration(
-      hintText: hint,
-      hintStyle: TextStyle(color: p.text3),
-      prefixIcon: Icon(icon, color: p.text3, size: 20),
-      suffixIcon: suffix,
-      filled: true,
-      fillColor: p.card,
-      contentPadding: const EdgeInsets.symmetric(vertical: 16),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(13),
-        borderSide: BorderSide(color: p.border),
+  }) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: TextStyle(
+          color: isDark ? const Color(0xFF94A3B8) : p.text2,
+          fontSize: 12.5,
+          fontWeight: FontWeight.w600,
+        ),
       ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(13),
-        borderSide: BorderSide(color: p.accent, width: 1.6),
+      const SizedBox(height: 6),
+      TextField(
+        controller: controller,
+        obscureText: obscure,
+        keyboardType: keyboardType,
+        autofillHints: autofillHints,
+        onSubmitted: onSubmitted,
+        textInputAction: onSubmitted != null
+            ? TextInputAction.done
+            : TextInputAction.next,
+        style: TextStyle(
+          color: isDark ? const Color(0xFFDEE2F0) : p.text1,
+          fontSize: 15.5,
+        ),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(
+            color: isDark ? const Color(0xFF64748B) : p.text3,
+            fontSize: 14,
+          ),
+          prefixIcon: Icon(
+            icon,
+            color: isDark ? const Color(0xFF64748B) : p.text3,
+            size: 20,
+          ),
+          suffixIcon: suffix,
+          filled: true,
+          fillColor: isDark ? const Color(0xFF0E1526) : p.page,
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 14,
+            horizontal: 14,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: isDark ? Colors.white.withValues(alpha: 0.08) : p.border,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF00E5FF), width: 1.6),
+          ),
+        ),
       ),
-    ),
+    ],
   );
 }

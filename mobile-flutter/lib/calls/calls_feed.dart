@@ -96,6 +96,34 @@ class CallsFeed extends ChangeNotifier {
   /// from a ward where nobody needs anything.
   bool get reachable => _reachable;
 
+  bool _isDemo = false;
+  bool get isDemo => _isDemo;
+  int _nextDemoId = 200;
+
+  void addSimulatedCall({String? roomNumber, int? floor}) {
+    if (!_isDemo) return;
+    final id = _nextDemoId++;
+    final rooms = [
+      '304-XONA (Palata A)',
+      '102-XONA (Reanimatsiya)',
+      '208-XONA (Kardiologiya)',
+      '415-XONA (Muolaja)',
+      '105-XONA (Tug‘ruqxona)',
+    ];
+    final room = roomNumber ?? rooms[id % rooms.length];
+    final fl = floor ?? ((id % 4) + 1);
+    final newCall = Call(
+      callId: id,
+      roomNumber: room,
+      floor: fl,
+      createdAt: DateTime.now(),
+      status: 'active',
+    );
+    _calls = [newCall, ..._calls];
+    onSnapshot?.call(_calls.map((c) => c.callId).toSet());
+    notifyListeners();
+  }
+
   void start({String? token}) {
     stop();
     _stopped = false;
@@ -103,6 +131,39 @@ class CallsFeed extends ChangeNotifier {
       _now = DateTime.now();
       notifyListeners();
     });
+
+    if (token == 'demo_guest_token') {
+      _isDemo = true;
+      _clinicName = 'NurseCall Demo Markazi';
+      _live = true;
+      _reachable = true;
+      _loading = false;
+      _calls = [
+        Call(
+          callId: 101,
+          roomNumber: '304-Palata (Koyka A)',
+          floor: 3,
+          createdAt: DateTime.now().subtract(const Duration(seconds: 16)),
+          status: 'active',
+        ),
+        Call(
+          callId: 102,
+          roomNumber: '102-Palata (Reanimatsiya)',
+          floor: 1,
+          createdAt: DateTime.now().subtract(const Duration(seconds: 5)),
+          status: 'active',
+        ),
+      ];
+      _stats = const ShiftStats(
+        answeredToday: 18,
+        typicalAnswer: Duration(seconds: 12),
+      );
+      onSnapshot?.call(_calls.map((c) => c.callId).toSet());
+      notifyListeners();
+      return;
+    }
+
+    _isDemo = false;
     _startPolling(fallbackPollInterval);
     if (token != null) _connectSocket(token);
     refresh();
@@ -252,6 +313,18 @@ class CallsFeed extends ChangeNotifier {
   /// invites a second nurse to walk to the same room.
   Future<void> acknowledge(int callId) async {
     if (_stopped || !_pendingAcks.add(callId)) return;
+    if (_isDemo) {
+      _calls = _calls.where((c) => c.callId != callId).toList();
+      _stats = ShiftStats(
+        answeredToday: _stats.answeredToday + 1,
+        typicalAnswer: const Duration(seconds: 10),
+      );
+      _pendingAcks.remove(callId);
+      onAcknowledged?.call(callId);
+      notifyListeners();
+      return;
+    }
+
     final generation = _generation;
     ++_refreshSequence;
     final removed = _calls.where((c) => c.callId == callId).toList();

@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'api/client.dart';
-import 'auth/login_screen.dart';
+import 'auth/welcome_screen.dart';
 import 'auth/session_store.dart';
 import 'calls/calls_feed.dart';
 import 'calls/calls_screen.dart';
 import 'settings/settings_store.dart';
 import 'wear/wear_service.dart';
 import 'push/push_service.dart';
+import 'theme/app_icons.dart';
 import 'theme/tokens.dart';
 
 void main() {
@@ -133,7 +134,7 @@ class _NurseCallAppState extends State<NurseCallApp> {
               api: _api,
               wear: _wear,
             )
-          : LoginScreen(sessions: _sessions),
+          : WelcomeScreen(sessions: _sessions),
     );
   }
 }
@@ -148,7 +149,7 @@ class _Splash extends StatelessWidget {
   Widget build(BuildContext context) => const Scaffold(
     backgroundColor: T.page,
     body: Center(
-      child: Icon(Icons.notifications_active, size: 52, color: T.step1),
+      child: AppLogo(size: 64, withGlow: true),
     ),
   );
 }

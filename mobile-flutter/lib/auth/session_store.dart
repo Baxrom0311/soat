@@ -65,6 +65,17 @@ class SessionStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  void startGuestDemo() {
+    _session = const Session(
+      accessToken: 'demo_guest_token',
+      role: 'nurse',
+      name: 'Hamshira (Demo)',
+      clinicId: null,
+    );
+    _api.setToken(null);
+    notifyListeners();
+  }
+
   Future<Session> signIn(String email, String password) async {
     await _signingOut;
     final generation = ++_generation;

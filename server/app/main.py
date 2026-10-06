@@ -113,6 +113,36 @@ def serve_nurse_pic():
     return FileResponse(STATIC_DIR / "nurse_pic.png")
 
 
+@app.get("/download/app", include_in_schema=False)
+@app.get("/app.apk", include_in_schema=False)
+def download_mobile_app():
+    apk_path = STATIC_DIR / "nursecall.apk"
+    if not apk_path.exists():
+        return JSONResponse(status_code=404, content={"detail": "APK topilmadi"})
+    response = FileResponse(
+        apk_path,
+        filename="NurseCall.apk",
+        media_type="application/vnd.android.package-archive",
+    )
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
+
+@app.get("/download/watch", include_in_schema=False)
+@app.get("/watch.apk", include_in_schema=False)
+def download_watch_app():
+    apk_path = STATIC_DIR / "nursecall-watch.apk"
+    if not apk_path.exists():
+        return JSONResponse(status_code=404, content={"detail": "Watch APK topilmadi"})
+    response = FileResponse(
+        apk_path,
+        filename="NurseCall-Watch.apk",
+        media_type="application/vnd.android.package-archive",
+    )
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
+
 def _serve_dashboard() -> FileResponse:
     response = FileResponse(DASHBOARD_DIR / "index.html")
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"

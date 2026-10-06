@@ -55,8 +55,7 @@ NotificationDetails _callDetails() => NotificationDetails(
     channelDescription: _callsChannel.description,
     importance: Importance.max,
     priority: Priority.max,
-    category: AndroidNotificationCategory.call,
-    fullScreenIntent: true,
+    category: AndroidNotificationCategory.alarm,
     audioAttributesUsage: AudioAttributesUsage.alarm,
     // Stays until the call is dealt with rather than being swiped away in a
     // pocket. The alert should end because somebody answered, not because a
