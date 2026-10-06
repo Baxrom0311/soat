@@ -255,21 +255,31 @@ export function UnassignedTab({ signals, refreshSignals, markLocalMutation }: Un
     }
   }
 
-  const boundCodesSet = new Set(buttons.map((b) => String(b.ev1527_code)));
+  const boundCodesSet = new Set((buttons || []).map((b) => String(b.ev1527_code)));
 
-  const filteredSignals = signals.filter(
-    (s) =>
-      !boundCodesSet.has(String(s.ev1527_code)) &&
-      (s.ev1527_code.toLowerCase().includes(search.toLowerCase()) ||
-        s.device_id.toLowerCase().includes(search.toLowerCase()))
-  );
+  const searchLower = (search || '').toLowerCase();
+  const filteredSignals = (signals || []).filter((s) => {
+    if (!s) return false;
+    const codeStr = String(s.ev1527_code ?? '');
+    const devStr = String(s.device_id ?? '');
+    return (
+      !boundCodesSet.has(codeStr) &&
+      (codeStr.toLowerCase().includes(searchLower) || devStr.toLowerCase().includes(searchLower))
+    );
+  });
 
-  const filteredButtons = buttons.filter(
-    (b) =>
-      b.ev1527_code.toLowerCase().includes(btnSearch.toLowerCase()) ||
-      b.room_number.toLowerCase().includes(btnSearch.toLowerCase()) ||
-      String(b.floor).includes(btnSearch)
-  );
+  const btnSearchLower = (btnSearch || '').toLowerCase();
+  const filteredButtons = (buttons || []).filter((b) => {
+    if (!b) return false;
+    const codeStr = String(b.ev1527_code ?? '');
+    const roomStr = String(b.room_number ?? '');
+    const floorStr = String(b.floor ?? '');
+    return (
+      codeStr.toLowerCase().includes(btnSearchLower) ||
+      roomStr.toLowerCase().includes(btnSearchLower) ||
+      floorStr.includes(btnSearchLower)
+    );
+  });
 
   return (
     <section className="tab-panel">
@@ -323,15 +333,23 @@ export function UnassignedTab({ signals, refreshSignals, markLocalMutation }: Un
             </tr>
           </thead>
           <tbody>
-            {filteredSignals.map((s) => (
-              <SignalRow
-                key={s.ev1527_code}
-                signal={s}
-                rooms={rooms}
-                visibleCols={signalVisibleCols}
-                onBound={handleBound}
-              />
-            ))}
+            {filteredSignals.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="empty-msg" style={{ border: 'none', padding: '24px' }}>
+                  {search ? 'Filterga mos keluvchi signal topilmadi' : 'Hozircha biriktirilmagan signal yo\'q'}
+                </td>
+              </tr>
+            ) : (
+              filteredSignals.map((s) => (
+                <SignalRow
+                  key={s.ev1527_code}
+                  signal={s}
+                  rooms={rooms}
+                  visibleCols={signalVisibleCols}
+                  onBound={handleBound}
+                />
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -369,37 +387,45 @@ export function UnassignedTab({ signals, refreshSignals, markLocalMutation }: Un
             </tr>
           </thead>
           <tbody>
-            {filteredButtons.map((b) =>
-              editingId === b.id ? (
-                <EditButtonRoomRow
-                  key={b.id}
-                  binding={b}
-                  rooms={rooms}
-                  visibleCols={boundVisibleCols}
-                  onCancel={() => setEditingId(null)}
-                  onDone={() => {
-                    setEditingId(null);
-                    loadButtons().catch(() => {});
-                  }}
-                />
-              ) : (
-                <tr key={b.id}>
-                  {boundVisibleCols.code && <td data-label="Kod">{b.ev1527_code}</td>}
-                  {boundVisibleCols.room && <td data-label="Xona">{b.room_number}</td>}
-                  {boundVisibleCols.floor && <td data-label="Qavat">{b.floor}</td>}
-                  {boundVisibleCols.actions && (
-                    <td data-label="Amal">
-                      <div className="row-actions">
-                        <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(b.id)} type="button">
-                          Xonani o'zgartirish
-                        </button>
-                        <button className="btn btn-ghost btn-sm" onClick={() => unbind(b)} type="button">
-                          Uzish
-                        </button>
-                      </div>
-                    </td>
-                  )}
-                </tr>
+            {filteredButtons.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="empty-msg" style={{ border: 'none', padding: '24px' }}>
+                  {btnSearch ? 'Filterga mos keluvchi tugma topilmadi' : 'Hali birorta ham tugma xonaga biriktirilmagan'}
+                </td>
+              </tr>
+            ) : (
+              filteredButtons.map((b) =>
+                editingId === b.id ? (
+                  <EditButtonRoomRow
+                    key={b.id}
+                    binding={b}
+                    rooms={rooms}
+                    visibleCols={boundVisibleCols}
+                    onCancel={() => setEditingId(null)}
+                    onDone={() => {
+                      setEditingId(null);
+                      loadButtons().catch(() => {});
+                    }}
+                  />
+                ) : (
+                  <tr key={b.id}>
+                    {boundVisibleCols.code && <td data-label="Kod">{b.ev1527_code}</td>}
+                    {boundVisibleCols.room && <td data-label="Xona">{b.room_number}</td>}
+                    {boundVisibleCols.floor && <td data-label="Qavat">{b.floor}</td>}
+                    {boundVisibleCols.actions && (
+                      <td data-label="Amal">
+                        <div className="row-actions">
+                          <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(b.id)} type="button">
+                            Xonani o'zgartirish
+                          </button>
+                          <button className="btn btn-ghost btn-sm" onClick={() => unbind(b)} type="button">
+                            Uzish
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                )
               )
             )}
           </tbody>

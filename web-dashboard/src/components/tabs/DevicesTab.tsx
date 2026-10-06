@@ -316,7 +316,7 @@ export function DevicesTab({ unassignedSignals = [], refreshUnassigned = async (
               firmware'i /calls endpointiga xavfsiz so'rov yuboradi.
             </p>
             <form onSubmit={handleSubmit} className="form-row">
-              <div className="form-group" style={{ flex: 2 }}>
+              <div className="form-group" style={{ flex: '2 1 260px', minWidth: '220px' }}>
                 <label htmlFor="device_id">Device ID</label>
                 <input
                   type="text"
@@ -327,7 +327,7 @@ export function DevicesTab({ unassignedSignals = [], refreshUnassigned = async (
                   required
                 />
               </div>
-              <div className="form-group" style={{ flex: 1 }}>
+              <div className="form-group" style={{ flex: '1 1 120px', minWidth: '100px' }}>
                 <label htmlFor="floor">Qavat</label>
                 <input
                   type="number"
@@ -340,13 +340,18 @@ export function DevicesTab({ unassignedSignals = [], refreshUnassigned = async (
                   required
                 />
               </div>
-              <div className="form-group" style={{ alignSelf: 'flex-end' }}>
-                <button type="submit" className="btn btn-primary" disabled={submitting}>
-                  {submitting ? '...' : "Qurilma qo'shish"}
+              <div className="form-group form-group--btn">
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={submitting}
+                  style={{ height: '2.5rem', whiteSpace: 'nowrap' }}
+                >
+                  <PlusIcon /> {submitting ? '...' : "Qurilma qo'shish"}
                 </button>
               </div>
             </form>
-            {error && <p className="form-error">{error}</p>}
+            {error && <p className="form-error" style={{ marginTop: '8px' }}>{error}</p>}
           </div>
 
           {loadError && (
