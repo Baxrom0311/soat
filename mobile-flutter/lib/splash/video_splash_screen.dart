@@ -41,49 +41,11 @@ class _VideoSplashScreenState extends State<VideoSplashScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: _finish,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Center(
-              child: Image.asset(
-                'assets/images/splash.gif',
-                fit: BoxFit.contain,
-                gaplessPlayback: true,
-              ),
-            ),
-            // Skip indicator in top right
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 12,
-              right: 16,
-              child: GestureDetector(
-                onTap: _finish,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.50),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.18),
-                    ),
-                  ),
-                  child: const Text(
-                    'O‘tkazib yuborish ›',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+      body: Center(
+        child: Image.asset(
+          'assets/images/splash.gif',
+          fit: BoxFit.contain,
+          gaplessPlayback: true,
         ),
       ),
     );
