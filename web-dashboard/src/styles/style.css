@@ -617,26 +617,161 @@ tbody tr:last-child td { border-bottom: none; }
   gap: 14px;
   margin-bottom: 8px;
 }
-.stat-card { border-radius: 16px; padding: 20px; }
+.stat-card {
+  border-radius: 16px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.stat-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
 .stat-card .stat-label {
   font-family: var(--font-mono);
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-3);
-  margin: 0 0 8px;
+  margin: 0;
 }
+.stat-card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-soft);
+  color: var(--accent);
+}
+.stat-card-icon.ok { background: var(--ok-soft); color: var(--ok); }
+.stat-card-icon.warn { background: var(--warn-soft); color: var(--warn); }
 .stat-card .stat-value {
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: 1.85rem;
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.15;
   color: var(--text-1);
-  margin: 0;
+  margin: 0 0 6px;
   font-variant-numeric: tabular-nums;
 }
 .stat-card .stat-value.stat-ok { color: var(--ok); }
 .stat-card .stat-value.stat-warn { color: var(--warn); }
+.stat-sub {
+  font-size: 0.78rem;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stat-sub .badge-pill {
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.72rem;
+}
+.stat-sub .badge-pill.ok { background: var(--ok-soft); color: var(--ok); }
+.stat-sub .badge-pill.warn { background: var(--warn-soft); color: var(--warn); }
+.stat-sub .badge-pill.info { background: var(--surface-soft); color: var(--text-2); }
+
+/* ================= ANALYTICS & CHARTS ================= */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+  gap: 16px;
+  margin: 18px 0;
+}
+.chart-card {
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+.chart-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chart-title {
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--text-1);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.76rem;
+  color: var(--text-2);
+}
+.chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+.chart-svg-container {
+  width: 100%;
+  position: relative;
+  overflow: visible;
+}
+.chart-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.chart-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--surface-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  box-shadow: var(--shadow-md);
+  z-index: 10;
+  transform: translate(-50%, -100%);
+  margin-top: -8px;
+  white-space: nowrap;
+}
+.chart-bar:hover {
+  opacity: 0.85;
+  filter: brightness(1.2);
+}
+.speed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.speed-badge.fast { background: var(--ok-soft); color: var(--ok); }
+.speed-badge.moderate { background: var(--accent-soft); color: var(--accent); }
+.speed-badge.slow { background: var(--warn-soft); color: var(--warn); }
+.speed-badge.none { background: var(--surface-soft); color: var(--text-3); }
 
 /* ================= SUBSCRIPTION BADGE ================= */
 .sub-pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }

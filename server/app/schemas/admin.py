@@ -5,11 +5,43 @@ from pydantic import BaseModel, EmailStr, Field
 from app.enums import EffectiveStatus, StaffRole, SubscriptionStatus, SuspensionReason
 
 
+class DailyStat(BaseModel):
+    date: str
+    clinics_total: int
+    rooms_total: int
+    calls_count: int
+
+
+class HourlyStat(BaseModel):
+    hour: int
+    calls_count: int
+
+
+class ClinicStat(BaseModel):
+    id: int
+    name: str
+    status: str
+    rooms_count: int
+    buttons_count: int
+    devices_count: int
+    calls_count: int
+    avg_response_seconds: float | None = None
+
+
 class AdminOverviewOut(BaseModel):
     clinics: int
+    clinics_active: int
+    rooms_total: int
+    buttons_total: int
     devices_total: int
     devices_online: int
     active_calls_total: int
+    calls_today: int
+    calls_total: int
+    avg_response_seconds_overall: float | None = None
+    daily_stats: list[DailyStat] = Field(default_factory=list)
+    hourly_stats: list[HourlyStat] = Field(default_factory=list)
+    top_clinics: list[ClinicStat] = Field(default_factory=list)
 
 
 # ---- Plans (tariff rejalari) ----

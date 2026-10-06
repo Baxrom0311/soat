@@ -206,11 +206,43 @@ export interface AckResponse {
   acknowledged_at: string;
 }
 
+export interface DailyStat {
+  date: string;
+  clinics_total: number;
+  rooms_total: number;
+  calls_count: number;
+}
+
+export interface HourlyStat {
+  hour: number;
+  calls_count: number;
+}
+
+export interface ClinicStat {
+  id: number;
+  name: string;
+  status: string;
+  rooms_count: number;
+  buttons_count: number;
+  devices_count: number;
+  calls_count: number;
+  avg_response_seconds: number | null;
+}
+
 export interface AdminOverview {
   clinics: number;
+  clinics_active: number;
+  rooms_total: number;
+  buttons_total: number;
   devices_total: number;
   devices_online: number;
   active_calls_total: number;
+  calls_today: number;
+  calls_total: number;
+  avg_response_seconds_overall: number | null;
+  daily_stats: DailyStat[];
+  hourly_stats: HourlyStat[];
+  top_clinics: ClinicStat[];
 }
 
 export interface AdminClinic {

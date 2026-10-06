@@ -4,9 +4,10 @@ is deliberately NOT clinic-scoped — the /api/v1/admin router gates access with
 require_superadmin."""
 
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -14,7 +15,7 @@ from app.core import billing
 from app.core.deps import CurrentUser
 from app.core.security import hash_password
 from app.enums import StaffRole, SubscriptionStatus, SuspensionReason
-from app.models import Clinic, Device, Plan, Staff
+from app.models import Button, Call, Clinic, Device, Plan, Room, Staff
 from app.repositories import (
     audit_repo,
     call_repo,
@@ -31,6 +32,9 @@ from app.schemas.admin import (
     AdminOverviewOut,
     AuditLogOut,
     ClinicBilling,
+    ClinicStat,
+    DailyStat,
+    HourlyStat,
     PaymentOut,
     PlanOut,
 )
@@ -39,13 +43,100 @@ from app.services.session_service import revoke_staff_sessions
 
 
 def overview(db: Session) -> AdminOverviewOut:
+    now = datetime.now(timezone.utc)
+    cutoff = device_service.online_cutoff()
+    midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    clinics_total = clinic_repo.count_all(db)
+    clinics_active = db.query(func.count(Clinic.id)).filter(
+        Clinic.subscription_status.in_([SubscriptionStatus.TRIAL, SubscriptionStatus.ACTIVE])
+    ).scalar() or 0
+
+    rooms_total = db.query(func.count(Room.id)).scalar() or 0
+    buttons_total = db.query(func.count(Button.id)).scalar() or 0
+    devices_total = device_repo.count_all(db)
+    devices_online = device_repo.count_online_since(db, cutoff)
+    active_calls_total = sum(call_repo.count_active_by_clinic(db).values())
+    calls_total = db.query(func.count(Call.id)).scalar() or 0
+    calls_today = db.query(func.count(Call.id)).filter(Call.created_at >= midnight).scalar() or 0
+
+    avg_resp = db.query(
+        func.avg(func.extract('epoch', Call.acknowledged_at - Call.created_at))
+    ).filter(Call.acknowledged_at.is_not(None)).scalar()
+    avg_response_seconds_overall = round(float(avg_resp), 1) if avg_resp is not None else None
+
+    # Daily Stats for the past 14 days
+    daily_stats: list[DailyStat] = []
+    for i in range(13, -1, -1):
+        day_start = (now - timedelta(days=i)).replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = day_start + timedelta(days=1)
+        d_str = day_start.strftime("%Y-%m-%d")
+
+        c_cum = db.query(func.count(Clinic.id)).filter(Clinic.created_at < day_end).scalar() or 0
+        calls_day = db.query(func.count(Call.id)).filter(
+            Call.created_at >= day_start, Call.created_at < day_end
+        ).scalar() or 0
+
+        daily_stats.append(
+            DailyStat(
+                date=d_str,
+                clinics_total=c_cum,
+                rooms_total=rooms_total,
+                calls_count=calls_day,
+            )
+        )
+
+    # 24h Hourly Stats
+    hourly_counts = {h: 0 for h in range(24)}
+    for r in db.query(
+        func.extract('hour', Call.created_at).label('h'),
+        func.count(Call.id).label('cnt')
+    ).group_by('h').all():
+        if r.h is not None:
+            h_int = int(r.h)
+            if 0 <= h_int < 24:
+                hourly_counts[h_int] = int(r.cnt)
+
+    hourly_stats = [HourlyStat(hour=h, calls_count=cnt) for h, cnt in hourly_counts.items()]
+
+    # Top Clinics Performance
+    top_clinics: list[ClinicStat] = []
+    for cl in db.query(Clinic).order_by(Clinic.created_at.desc()).limit(15).all():
+        r_c = db.query(func.count(Room.id)).filter(Room.clinic_id == cl.id).scalar() or 0
+        b_c = db.query(func.count(Button.id)).filter(Button.clinic_id == cl.id).scalar() or 0
+        d_c = db.query(func.count(Device.id)).filter(Device.clinic_id == cl.id).scalar() or 0
+        calls_c = db.query(func.count(Call.id)).filter(Call.clinic_id == cl.id).scalar() or 0
+        c_avg = db.query(
+            func.avg(func.extract('epoch', Call.acknowledged_at - Call.created_at))
+        ).filter(Call.clinic_id == cl.id, Call.acknowledged_at.is_not(None)).scalar()
+
+        top_clinics.append(
+            ClinicStat(
+                id=cl.id,
+                name=cl.name,
+                status=cl.subscription_status.value if hasattr(cl.subscription_status, 'value') else str(cl.subscription_status),
+                rooms_count=r_c,
+                buttons_count=b_c,
+                devices_count=d_c,
+                calls_count=calls_c,
+                avg_response_seconds=round(float(c_avg), 1) if c_avg is not None else None,
+            )
+        )
+
     return AdminOverviewOut(
-        clinics=clinic_repo.count_all(db),
-        devices_total=device_repo.count_all(db),
-        devices_online=device_repo.count_online_since(db, device_service.online_cutoff()),
-        # Summing the per-clinic grouped counts (already needed elsewhere) instead of a
-        # separate unscoped COUNT(*) avoids a full-table scan with no usable index.
-        active_calls_total=sum(call_repo.count_active_by_clinic(db).values()),
+        clinics=clinics_total,
+        clinics_active=clinics_active,
+        rooms_total=rooms_total,
+        buttons_total=buttons_total,
+        devices_total=devices_total,
+        devices_online=devices_online,
+        active_calls_total=active_calls_total,
+        calls_today=calls_today,
+        calls_total=calls_total,
+        avg_response_seconds_overall=avg_response_seconds_overall,
+        daily_stats=daily_stats,
+        hourly_stats=hourly_stats,
+        top_clinics=top_clinics,
     )
 
 
