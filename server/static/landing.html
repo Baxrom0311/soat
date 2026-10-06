@@ -682,66 +682,81 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   line-height: 1.55;
 }
 
-/* ================= VISUAL BEFORE VS AFTER SHOWCASE (WITH REAL PHOTOS) ================= */
+/* ================= VISUAL BEFORE VS AFTER SHOWCASE (WITH ORGANIC AVANT-GARDE FRAMES) ================= */
 .visual-compare-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
+  gap: 28px;
 }
 .visual-compare-card {
   display: flex;
   flex-direction: column;
+  border-radius: var(--radius-xl);
   overflow: hidden;
-  border-radius: var(--radius-lg);
+  position: relative;
+  border: 1px solid var(--border);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.visual-compare-card.card-bad {
+  border-color: rgba(244, 63, 94, 0.25);
+  background: radial-gradient(circle at 50% 0%, rgba(244, 63, 94, 0.04), transparent 70%), var(--surface-glass);
+}
+.visual-compare-card.card-good {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.06), transparent 70%), var(--surface-glass);
+  box-shadow: 0 12px 36px -8px var(--emerald-glow);
+}
+.visual-compare-card:hover {
+  transform: translateY(-5px);
 }
 .visual-photo-frame {
   position: relative;
-  width: 100%;
-  height: 230px;
+  width: calc(100% - 24px);
+  height: 220px;
   overflow: hidden;
+  margin: 12px 12px 0;
+  border-radius: 20px;
+  background: var(--bg-subtle);
 }
 .visual-photo-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.5s ease;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 20px;
 }
 .visual-compare-card:hover .visual-photo-img {
-  transform: scale(1.05);
+  transform: scale(1.04);
 }
 .visual-photo-badge {
   position: absolute;
-  top: 14px;
-  left: 14px;
+  top: 12px;
+  left: 12px;
   padding: 6px 14px;
   border-radius: var(--radius-full);
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
 }
-.badge-bad { background: rgba(244, 63, 94, 0.85); color: #FFF; }
-.badge-good { background: rgba(16, 185, 129, 0.90); color: #FFF; }
+.badge-bad { background: rgba(225, 29, 72, 0.90); color: #FFF; border: 1px solid rgba(255,255,255,0.2); }
+.badge-good { background: rgba(5, 150, 105, 0.92); color: #FFF; border: 1px solid rgba(255,255,255,0.2); }
 
 .visual-compare-body {
-  padding: 24px;
+  padding: 22px 24px 24px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  background: var(--surface-glass);
-  border: 1px solid var(--border);
-  border-top: none;
-  border-bottom-left-radius: var(--radius-lg);
-  border-bottom-right-radius: var(--radius-lg);
   flex-grow: 1;
 }
-.visual-compare-body h3 { font-size: 20px; margin-bottom: 4px; }
+.visual-compare-body h3 { font-size: 20px; margin-bottom: 2px; }
 .visual-points-list {
   list-style: none;
   display: flex;
@@ -783,11 +798,11 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   flex-shrink: 0;
 }
 
-/* ================= ECOSYSTEM SHOWCASE (WITH HARDWARE PHOTOS) ================= */
+/* ================= ECOSYSTEM SHOWCASE (WITH TRANSPARENT FLOATING HARDWARE PNGs) ================= */
 .ecosystem-grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  gap: 22px;
+  gap: 24px;
 }
 .eco-span-6 { grid-column: span 6; }
 .eco-span-4 { grid-column: span 4; }
@@ -796,22 +811,32 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   padding: 24px;
   display: flex;
   flex-direction: column;
+  border-radius: var(--radius-xl);
 }
-.eco-photo-box {
+.eco-product-stage {
   width: 100%;
-  height: 180px;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  margin-bottom: 18px;
+  height: 200px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
+  margin-bottom: 18px;
+  background: radial-gradient(circle at 50% 60%, var(--primary-glow), transparent 72%), var(--bg-subtle);
+  overflow: hidden;
+  border: 1px solid var(--border);
 }
-.eco-photo-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.4s ease;
+.eco-product-img {
+  max-width: 85%;
+  max-height: 175px;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.16));
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.eco-card:hover .eco-photo-img { transform: scale(1.05); }
+.eco-card:hover .eco-product-img {
+  transform: translateY(-6px) scale(1.05);
+}
 .eco-card h3 { font-size: 19px; margin-bottom: 6px; }
 .eco-card p { font-size: 13px; color: var(--text2); line-height: 1.5; margin-bottom: 16px; }
 .eco-chips {
@@ -1364,7 +1389,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 
     <div class="visual-compare-grid" style="margin-bottom: 24px;">
       <!-- 1. Old System Visual Card - Calling -->
-      <div class="bento-card visual-compare-card">
+      <div class="bento-card visual-compare-card card-bad">
         <div class="visual-photo-frame">
           <img src="/static/img_old_calling.png" alt="Eski tizimda bemor qiyinchiligi" class="visual-photo-img" />
           <div class="visual-photo-badge badge-bad">
@@ -1388,7 +1413,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
       </div>
 
       <!-- 2. NurseCall Visual Card - Calling -->
-      <div class="bento-card visual-compare-card">
+      <div class="bento-card visual-compare-card card-good">
         <div class="visual-photo-frame">
           <img src="/static/img_new_calling.png" alt="NurseCall zamonaviy xotirjam palata" class="visual-photo-img" />
           <div class="visual-photo-badge badge-good">
@@ -1414,7 +1439,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 
     <div class="visual-compare-grid">
       <!-- 3. Old System Visual Card - Nurse -->
-      <div class="bento-card visual-compare-card">
+      <div class="bento-card visual-compare-card card-bad">
         <div class="visual-photo-frame">
           <img src="/static/img_old_nurse.png" alt="Eski tizimda postda hamshira yo'qligi" class="visual-photo-img" />
           <div class="visual-photo-badge badge-bad">
@@ -1438,7 +1463,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
       </div>
 
       <!-- 4. NurseCall Visual Card - Nurse -->
-      <div class="bento-card visual-compare-card">
+      <div class="bento-card visual-compare-card card-good">
         <div class="visual-photo-frame">
           <img src="/static/img_new_nurse.png" alt="NurseCall zamonaviy hamshira soati bilan" class="visual-photo-img" />
           <div class="visual-photo-badge badge-good">
@@ -1464,7 +1489,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   </div>
 </section>
 
-<!-- ================= 2026 ECOSYSTEM (WITH REAL HARDWARE IMAGES) ================= -->
+<!-- ================= 2026 ECOSYSTEM (WITH TRANSPARENT HARDWARE PNGs) ================= -->
 <section class="section" id="ekotizim">
   <div class="wrap">
     <div class="section-head">
@@ -1476,8 +1501,8 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
     <div class="ecosystem-grid">
       <!-- 1. Smart Watch (Span 6) -->
       <div class="bento-card eco-card eco-span-6">
-        <div class="eco-photo-box">
-          <img src="/static/img_prod_watch.png" alt="Aqlli Hamshira Soati" class="eco-photo-img" />
+        <div class="eco-product-stage">
+          <img src="/static/cutout_smartwatch.png" alt="Aqlli Hamshira Soati" class="eco-product-img" />
         </div>
         <h3>Aqlli Hamshira Soatlari</h3>
         <p>Hamshira qo'li band bo'lsa ham bilagidagi soatdan 1 ta teginish bilan chaqiruvni qabul qiladi. Katta xona raqami va kuchli 3 bosqichli tebranish.</p>
@@ -1490,8 +1515,8 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 
       <!-- 2. Wallboard TV Panel (Span 6) -->
       <div class="bento-card eco-card eco-span-6">
-        <div class="eco-photo-box">
-          <img src="/static/img_prod_tv.png" alt="Devor TV Wallboard Paneli" class="eco-photo-img" />
+        <div class="eco-product-stage">
+          <img src="/static/cutout_tv_wallboard.png" alt="Devor TV Wallboard Paneli" class="eco-product-img" />
         </div>
         <h3>Devor TV Paneli (Wallboard)</h3>
         <p>Hamshiralar postidagi 55" televizor uchun. 15 metrdan ko'rinuvchi katta raqamlar, rangli eskalatsiya va ovozli signalizatsiya.</p>
@@ -1504,6 +1529,9 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 
       <!-- 3. Wireless Bedside Buttons (Span 4) -->
       <div class="bento-card eco-card eco-span-4">
+        <div class="eco-product-stage">
+          <img src="/static/cutout_sos_button.png" alt="Simsiz SOS Chaqiruv Tugmasi" class="eco-product-img" />
+        </div>
         <h3>Simsiz SOS Tugmalar</h3>
         <p>Palata koykalari va suv o'tkazmaydigan dushlar uchun germetik tugmalar.</p>
         <div class="eco-chips">
@@ -1515,6 +1543,9 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 
       <!-- 4. Floor Coverage Station (Span 4) -->
       <div class="bento-card eco-card eco-span-4">
+        <div class="eco-product-stage">
+          <img src="/static/cutout_gateway.png" alt="Qavatlararo Qamrov Stansiyasi" class="eco-product-img" />
+        </div>
         <h3>Qavat Stansiyalari</h3>
         <p>Qalin devorlar va liftlardan bemalol o'tib, signalni butun binoga uzatuvchi avtonom stansiya.</p>
         <div class="eco-chips">
@@ -1525,6 +1556,9 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 
       <!-- 5. Doctor & Analytics Panel (Span 4) -->
       <div class="bento-card eco-card eco-span-4">
+        <div class="eco-product-stage">
+          <img src="/static/cutout_analytics_tablet.png" alt="Bosh Shifokor Paneli" class="eco-product-img" />
+        </div>
         <h3>Bosh Shifokor Paneli</h3>
         <p>Telefon va kompyuterdan kirib, javob tezligi va xodimlar reytingini nazorat qilish.</p>
         <div class="eco-chips">
