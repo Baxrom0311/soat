@@ -934,81 +934,11 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
             ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: Column(
-            children: [
-              // Badge Ribbon Header
-              Container(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
-                decoration: BoxDecoration(
-                  color: p.accent.withValues(alpha: 0.08),
-                  border: Border(
-                    bottom: BorderSide(color: p.border.withValues(alpha: 0.5)),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const AppLogo(size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          'TIBBIY XODIM GUVOHNOMASI',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5,
-                            color: p.accent,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: T.emerald400.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(
-                          color: T.emerald400.withValues(alpha: 0.4),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: T.emerald400,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 5),
-                          const Text(
-                            'FAOL NAVBATCHI',
-                            style: TextStyle(
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.3,
-                              color: T.emerald400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Staff details with gender-neutral medical design
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 22),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 22),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
                     // Gender-neutral medical badge (Clean silhouette & clinical cross)
                     Container(
                       width: 76,
@@ -1161,9 +1091,7 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
           child: _StatsStrip(stats: widget.stats),
