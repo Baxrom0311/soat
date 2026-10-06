@@ -20,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _password = TextEditingController();
   bool _busy = false;
   bool _obscure = true;
+  bool _rememberMe = true;
   String? _error;
 
   @override
@@ -27,6 +28,15 @@ class _LoginScreenState extends State<LoginScreen> {
     _email.dispose();
     _password.dispose();
     super.dispose();
+  }
+
+  void _fillSavedAccount(SavedAccount acc) {
+    HapticFeedback.selectionClick();
+    _email.text = acc.email;
+    if (acc.savedPassword != null) {
+      _password.text = acc.savedPassword!;
+    }
+    setState(() => _error = null);
   }
 
   Future<void> _submit() async {
@@ -46,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await widget.sessions.signIn(email, password);
+      await widget.sessions.signIn(email, password, remember: _rememberMe);
       if (mounted && Navigator.canPop(context)) {
         Navigator.pop(context);
       }
@@ -177,6 +187,62 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 28),
 
+                    // Saved Accounts Section
+                    if (widget.sessions.savedAccounts.isNotEmpty) ...[
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Saqlangan hisoblar:',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark
+                                      ? const Color(0xFFDEE2F0)
+                                      : p.text1,
+                                ),
+                              ),
+                              Text(
+                                'Bir bosishda kirish',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isDark
+                                      ? const Color(0xFF94A3B8)
+                                      : p.text3,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            height: 52,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: widget.sessions.savedAccounts.length,
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(width: 8),
+                              itemBuilder: (context, idx) {
+                                final acc = widget.sessions.savedAccounts[idx];
+                                final isSelected =
+                                    _email.text.trim().toLowerCase() ==
+                                    acc.email.toLowerCase();
+                                return _savedAccountCard(
+                                  acc,
+                                  isSelected: isSelected,
+                                  isDark: isDark,
+                                  p: p,
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+                    ],
+
                     // Card container for inputs
                     Container(
                       padding: const EdgeInsets.all(20),
@@ -232,7 +298,44 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
 
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 12),
+
+                          // Remember credentials checkbox
+                          Row(
+                            children: [
+                              SizedBox(
+                                height: 22,
+                                width: 22,
+                                child: Checkbox(
+                                  value: _rememberMe,
+                                  activeColor: const Color(0xFF00E5FF),
+                                  checkColor: const Color(0xFF090E17),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  onChanged: (v) =>
+                                      setState(() => _rememberMe = v ?? true),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () =>
+                                    setState(() => _rememberMe = !_rememberMe),
+                                child: Text(
+                                  'Hisobni eslab qolish',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark
+                                        ? const Color(0xFFDEE2F0)
+                                        : p.text1,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 12),
 
                           // Quick Preset chips
                           Row(
@@ -252,7 +355,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                 icon: Icons.person_rounded,
                                 isDark: isDark,
                                 p: p,
-                                onTap: () => _fillPreset('nurse@example.com', 'nurse123'),
+                                onTap: () => _fillPreset(
+                                  'nurse@example.com',
+                                  'nurse123',
+                                ),
                               ),
                               const SizedBox(width: 6),
                               _presetChip(
@@ -260,7 +366,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                 icon: Icons.admin_panel_settings_rounded,
                                 isDark: isDark,
                                 p: p,
-                                onTap: () => _fillPreset('admin@example.com', 'admin123'),
+                                onTap: () => _fillPreset(
+                                  'admin@example.com',
+                                  'admin123',
+                                ),
                               ),
                             ],
                           ),
@@ -509,4 +618,101 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     ],
   );
+
+  Widget _savedAccountCard(
+    SavedAccount acc, {
+    required bool isSelected,
+    required bool isDark,
+    required Palette p,
+  }) {
+    return GestureDetector(
+      onTap: () => _fillSavedAccount(acc),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDark
+                  ? const Color(0xFF1E2D4A)
+                  : T.sky500.withValues(alpha: 0.15))
+              : (isDark ? const Color(0xFF131D2F) : p.card),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF00E5FF)
+                : (isDark ? Colors.white.withValues(alpha: 0.10) : p.border),
+            width: isSelected ? 1.6 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF00E5FF), width: 1.5),
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/images/nurse_pic.png',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: T.sky500.withValues(alpha: 0.20),
+                    alignment: Alignment.center,
+                    child: Text(
+                      acc.name.isNotEmpty ? acc.name[0].toUpperCase() : 'H',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF00E5FF),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  acc.name.isNotEmpty ? acc.name : 'Hamshira',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? const Color(0xFFDEE2F0) : p.text1,
+                  ),
+                ),
+                Text(
+                  acc.email,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isDark ? const Color(0xFF94A3B8) : p.text3,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 6),
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                widget.sessions.removeSavedAccount(acc.email);
+                setState(() {});
+              },
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Icon(
+                  Icons.close_rounded,
+                  size: 14,
+                  color: isDark ? const Color(0xFF64748B) : p.text3,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

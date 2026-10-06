@@ -95,4 +95,41 @@ void main() {
 
     expect(find.text('nurse@example.com'), findsOneWidget);
   });
+
+  testWidgets('LoginScreen shows and selects saved accounts', (tester) async {
+    final api = ApiClient(
+      httpClient: MockClient(
+        (r) async => http.Response(
+          '{"access_token":"token_123","role":"nurse","name":"Hamshira Nilufar"}',
+          200,
+        ),
+      ),
+    );
+    final store = SessionStore(api);
+    await store.restore();
+
+    // Sign in with nurse credentials to populate saved accounts
+    await store.signIn('nurse1@hospital.uz', 'pass123', remember: true);
+    await store.signOut();
+
+    expect(store.savedAccounts.length, 1);
+    expect(store.savedAccounts.first.email, 'nurse1@hospital.uz');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: T.theme(),
+        home: LoginScreen(sessions: store),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Saqlangan hisoblar:'), findsOneWidget);
+    expect(find.text('nurse1@hospital.uz'), findsOneWidget);
+
+    // Tap the saved account card to auto-fill
+    await tester.tap(find.text('nurse1@hospital.uz'));
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('nurse1@hospital.uz'), findsWidgets);
+  });
 }

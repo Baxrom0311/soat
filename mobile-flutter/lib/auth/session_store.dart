@@ -7,6 +7,40 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../api/client.dart';
 import '../api/models.dart';
 
+/// Holds information about an account previously signed in on this device.
+class SavedAccount {
+  const SavedAccount({
+    required this.email,
+    required this.name,
+    required this.role,
+    this.savedPassword,
+    required this.lastUsed,
+  });
+
+  final String email;
+  final String name;
+  final String role;
+  final String? savedPassword;
+  final DateTime lastUsed;
+
+  Map<String, dynamic> toJson() => {
+    'email': email,
+    'name': name,
+    'role': role,
+    if (savedPassword != null) 'saved_password': savedPassword,
+    'last_used': lastUsed.toIso8601String(),
+  };
+
+  factory SavedAccount.fromJson(Map<String, dynamic> j) => SavedAccount(
+    email: j['email'] as String? ?? '',
+    name: j['name'] as String? ?? '',
+    role: j['role'] as String? ?? 'nurse',
+    savedPassword: j['saved_password'] as String?,
+    lastUsed:
+        DateTime.tryParse(j['last_used'] as String? ?? '') ?? DateTime.now(),
+  );
+}
+
 /// Holds the signed-in nurse for the life of the app and across restarts.
 ///
 /// The token goes into the platform keystore rather than plain preferences: it
@@ -23,11 +57,13 @@ class SessionStore extends ChangeNotifier {
     : _storage = storage ?? const FlutterSecureStorage();
 
   static const _key = 'nursecall.session';
+  static const _savedAccountsKey = 'nursecall.saved_accounts';
 
   final ApiClient _api;
   final FlutterSecureStorage _storage;
 
   Session? _session;
+  List<SavedAccount> _savedAccounts = [];
   bool _restored = false;
   int _generation = 0;
   Future<void>? _signingOut;
@@ -41,6 +77,7 @@ class SessionStore extends ChangeNotifier {
 
   Session? get session => _session;
   bool get isSignedIn => _session != null;
+  List<SavedAccount> get savedAccounts => List.unmodifiable(_savedAccounts);
 
   /// True once the stored session has been looked for, whether or not one was
   /// found. The UI waits for this before deciding which screen to show, so a
@@ -61,6 +98,19 @@ class SessionStore extends ChangeNotifier {
       _session = null;
       _api.setToken(null);
     }
+
+    try {
+      final savedRaw = await _storage.read(key: _savedAccountsKey);
+      if (savedRaw != null) {
+        final list = (jsonDecode(savedRaw) as List<dynamic>?)
+            ?.map((e) => SavedAccount.fromJson(e as Map<String, dynamic>))
+            .toList();
+        if (list != null) {
+          _savedAccounts = list..sort((a, b) => b.lastUsed.compareTo(a.lastUsed));
+        }
+      }
+    } catch (_) {}
+
     _restored = true;
     notifyListeners();
   }
@@ -76,12 +126,59 @@ class SessionStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<Session> signIn(String email, String password) async {
+  Future<Session> signIn(
+    String email,
+    String password, {
+    bool remember = true,
+  }) async {
     await _signingOut;
     final generation = ++_generation;
     final s = await _api.login(email, password);
-    if (generation == _generation) await _persist(s, generation);
+    if (generation == _generation) {
+      await _persist(s, generation);
+      if (remember) {
+        await _saveAccount(
+          SavedAccount(
+            email: email,
+            name: s.name,
+            role: s.role,
+            savedPassword: password,
+            lastUsed: DateTime.now(),
+          ),
+        );
+      }
+    }
     return s;
+  }
+
+  Future<void> _saveAccount(SavedAccount account) async {
+    _savedAccounts.removeWhere(
+      (a) => a.email.toLowerCase() == account.email.toLowerCase(),
+    );
+    _savedAccounts.insert(0, account);
+    if (_savedAccounts.length > 6) {
+      _savedAccounts = _savedAccounts.sublist(0, 6);
+    }
+    await _store(
+      () => _storage.write(
+        key: _savedAccountsKey,
+        value: jsonEncode(_savedAccounts.map((a) => a.toJson()).toList()),
+      ),
+    );
+    notifyListeners();
+  }
+
+  Future<void> removeSavedAccount(String email) async {
+    _savedAccounts.removeWhere(
+      (a) => a.email.toLowerCase() == email.toLowerCase(),
+    );
+    await _store(
+      () => _storage.write(
+        key: _savedAccountsKey,
+        value: jsonEncode(_savedAccounts.map((a) => a.toJson()).toList()),
+      ),
+    );
+    notifyListeners();
   }
 
   /// Trades the current token for a fresh one, silently.

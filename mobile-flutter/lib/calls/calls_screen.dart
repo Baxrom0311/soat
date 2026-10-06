@@ -308,23 +308,7 @@ class _Header extends StatelessWidget {
     final p = Palette.of(context);
     return Row(
       children: [
-        Container(
-          width: 36,
-          height: 36,
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: T.sky500.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: T.sky400.withValues(alpha: 0.30)),
-          ),
-          child: Center(
-            child: NurseCallLogo(
-              size: 24,
-              color: p.accent,
-              withContainer: false,
-            ),
-          ),
-        ),
+        const AppLogo(size: 36, withGlow: true),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
@@ -347,7 +331,7 @@ class _Header extends StatelessWidget {
                   // in duty mode, which is the one thing a nurse glancing at
                   // the top of the screen needs to be sure of.
                   _Dot(),
-                  SizedBox(width: 5),
+                  const SizedBox(width: 5),
                   Text(
                     'Navbatchilik rejimi',
                     style: TextStyle(fontSize: 11, color: p.text3),
@@ -358,7 +342,7 @@ class _Header extends StatelessWidget {
           ),
         ),
         Container(
-          padding: const EdgeInsets.fromLTRB(6, 4, 12, 4),
+          padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
           decoration: BoxDecoration(
             color: p.card,
             borderRadius: BorderRadius.circular(999),
@@ -368,20 +352,29 @@ class _Header extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 24,
-                height: 24,
-                alignment: Alignment.center,
+                width: 26,
+                height: 26,
                 decoration: BoxDecoration(
-                  color: T.sky500.withValues(alpha: 0.20),
                   shape: BoxShape.circle,
-                  border: Border.all(color: T.sky400.withValues(alpha: 0.30)),
+                  border: Border.all(color: p.accent.withValues(alpha: 0.5), width: 1.5),
                 ),
-                child: Text(
-                  _initials,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: p.accent,
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/images/nurse_pic.png',
+                    fit: BoxFit.cover,
+                    filterQuality: FilterQuality.high,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: T.sky500.withValues(alpha: 0.20),
+                      alignment: Alignment.center,
+                      child: Text(
+                        _initials,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: p.accent,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -757,8 +750,41 @@ class _BottomNav extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _item(p, 0, Icons.notifications_active, 'Chaqiruvlar', badge),
-              _item(p, 1, Icons.account_circle, 'Profil', 0),
+              _item(
+                p,
+                0,
+                icon: const Icon(Icons.notifications_active_rounded, size: 26),
+                label: 'Chaqiruvlar',
+                count: badge,
+              ),
+              _item(
+                p,
+                1,
+                icon: Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: index == 1 ? T.sky400 : Colors.transparent,
+                      width: 2,
+                    ),
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/images/nurse_pic.png',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.account_circle,
+                        size: 24,
+                        color: index == 1 ? T.sky400 : T.slate500,
+                      ),
+                    ),
+                  ),
+                ),
+                label: 'Profil',
+                count: 0,
+              ),
             ],
           ),
         ),
@@ -766,7 +792,13 @@ class _BottomNav extends StatelessWidget {
     );
   }
 
-  Widget _item(Palette p, int i, IconData icon, String label, int count) {
+  Widget _item(
+    Palette p,
+    int i, {
+    required Widget icon,
+    required String label,
+    required int count,
+  }) {
     final on = index == i;
     final tint = on ? T.sky400 : T.slate500;
     return GestureDetector(
@@ -778,7 +810,10 @@ class _BottomNav extends StatelessWidget {
           Stack(
             clipBehavior: Clip.none,
             children: [
-              Icon(icon, size: 26, color: tint),
+              IconTheme(
+                data: IconThemeData(color: tint, size: 26),
+                child: icon,
+              ),
               if (count > 0)
                 Positioned(
                   right: -6,
@@ -928,38 +963,138 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       children: [
-        Center(
-          child: Container(
-            width: 76,
-            height: 76,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: p.accent.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-              border: Border.all(color: p.accent.withValues(alpha: 0.35)),
-            ),
-            child: Icon(Icons.person, size: 38, color: p.accent),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+          decoration: BoxDecoration(
+            color: p.card,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: p.border),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.12),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 14),
-        Text(
-          session?.name.isNotEmpty == true ? session!.name : 'Hamshira',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-            color: p.text1,
+          child: Column(
+            children: [
+              // Avatar with glow ring and active duty indicator
+              Stack(
+                alignment: Alignment.bottomRight,
+                children: [
+                  Container(
+                    width: 86,
+                    height: 86,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF00E5FF).withValues(alpha: 0.35),
+                          blurRadius: 20,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                      border: Border.all(
+                        color: p.accent,
+                        width: 2.5,
+                      ),
+                    ),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/images/nurse_pic.png',
+                        fit: BoxFit.cover,
+                        filterQuality: FilterQuality.high,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: p.accent.withValues(alpha: 0.15),
+                          alignment: Alignment.center,
+                          child: Icon(Icons.person_rounded, size: 44, color: p.accent),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: T.emerald400,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: p.card, width: 2.5),
+                    ),
+                    child: const Icon(Icons.check, size: 13, color: T.slate950),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                session?.name.isNotEmpty == true ? session!.name : 'Hamshira',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 21,
+                  fontWeight: FontWeight.w800,
+                  color: p.text1,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: p.accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: p.accent.withValues(alpha: 0.30)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      session?.isAdmin == true
+                          ? Icons.admin_panel_settings_rounded
+                          : Icons.medical_services_rounded,
+                      size: 14,
+                      color: p.accent,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      switch (session?.role) {
+                        'nurse' => 'Hamshira',
+                        'admin' => 'Klinika administratori',
+                        _ => 'Hamshira',
+                      },
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: p.accent,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: const BoxDecoration(
+                      color: T.emerald400,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Navbatchilikda • Jonli aloqa',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: p.text3,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          switch (session?.role) {
-            'nurse' => 'Hamshira',
-            'admin' => 'Klinika administratori',
-            _ => '',
-          },
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 13, color: p.text3),
         ),
         const SizedBox(height: 22),
         _StatsStrip(stats: widget.stats),
