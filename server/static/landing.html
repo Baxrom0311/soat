@@ -776,53 +776,6 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 }
 .eco-chip span { color: var(--emerald); font-weight: 900; }
 
-/* ================= ROLES BENTO ================= */
-.roles-bento {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
-}
-.role-bento-card {
-  padding: 24px 20px;
-  display: flex;
-  flex-direction: column;
-}
-.role-avatar-wrap {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-.role-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: var(--gradient-brand);
-  color: #FFF;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.role-name { font-size: 16px; font-weight: 800; }
-.role-tag { font-size: 10px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; }
-.role-pills-list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-}
-.role-pills-list li {
-  font-size: 12px;
-  color: var(--text2);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.role-pills-list li span { color: var(--emerald); font-weight: 900; }
 
 /* ================= CALCULATOR ================= */
 .calc-bento-box {
@@ -1170,7 +1123,6 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
       <a href="#simulyator" class="nav-link">Jonli Sinov</a>
       <a href="#taqqoslash" class="nav-link">Taqqoslash</a>
       <a href="#ekotizim" class="nav-link">Uskunalar</a>
-      <a href="#qulayliklar" class="nav-link">Qulayliklar</a>
       <a href="#kalkulyator" class="nav-link">Kalkulyator</a>
       <a href="#narxlar" class="nav-link">Tariflar</a>
       <a href="#faq" class="nav-link">Savol-Javob</a>
@@ -1202,7 +1154,6 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
       <a href="#simulyator" onclick="closeDrawer()">Jonli Sinov</a>
       <a href="#taqqoslash" onclick="closeDrawer()">Taqqoslash</a>
       <a href="#ekotizim" onclick="closeDrawer()">Uskunalar</a>
-      <a href="#qulayliklar" onclick="closeDrawer()">Qulayliklar</a>
       <a href="#kalkulyator" onclick="closeDrawer()">Kalkulyator</a>
       <a href="#narxlar" onclick="closeDrawer()">Tariflar</a>
       <a href="#faq" onclick="closeDrawer()">Savol-Javob</a>
@@ -1488,86 +1439,6 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   </div>
 </section>
 
-<!-- ================= ROLES BENTO ================= -->
-<section class="section" id="qulayliklar">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="sec-tag">Kimga Nima Foyda?</span>
-      <h2>Har bir ishtirokchi uchun qulaylik</h2>
-      <p>Bemordan tortib bosh shifokorgacha butun jamoa ishini osonlashtiradi.</p>
-    </div>
-
-    <div class="roles-bento">
-      <div class="bento-card role-bento-card">
-        <div class="role-avatar-wrap">
-          <div class="role-avatar">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          </div>
-          <div>
-            <div class="role-tag">Bemor</div>
-            <div class="role-name">Xotirjamlik</div>
-          </div>
-        </div>
-        <p style="font-size:12px; color:var(--text2); line-height:1.5;">O'rnidan turmasdan 1 ta yumshoq tugma bilan yordam chaqiradi.</p>
-        <ul class="role-pills-list">
-          <li><span>✓</span> O'rnidan turmaydi</li>
-          <li><span>✓</span> 100% tezkor yordam</li>
-        </ul>
-      </div>
-
-      <div class="bento-card role-bento-card">
-        <div class="role-avatar-wrap">
-          <div class="role-avatar">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/><path d="M12 5V2M12 22v-3"/></svg>
-          </div>
-          <div>
-            <div class="role-tag">Hamshira</div>
-            <div class="role-name">Erkinlik</div>
-          </div>
-        </div>
-        <p style="font-size:12px; color:var(--text2); line-height:1.5;">Postda o'tirish shart emas, soatida xona raqami darhol ko'rinadi.</p>
-        <ul class="role-pills-list">
-          <li><span>✓</span> Bilakda tebranish</li>
-          <li><span>✓</span> 1 bosishda qabul</li>
-        </ul>
-      </div>
-
-      <div class="bento-card role-bento-card">
-        <div class="role-avatar-wrap">
-          <div class="role-avatar">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          </div>
-          <div>
-            <div class="role-tag">Post</div>
-            <div class="role-name">Katta TV</div>
-          </div>
-        </div>
-        <p style="font-size:12px; color:var(--text2); line-height:1.5;">Katta monitorda barcha xonalar va kutish vaqti jonli ko'rinadi.</p>
-        <ul class="role-pills-list">
-          <li><span>✓</span> 15 metrdan ko'rinadi</li>
-          <li><span>✓</span> Ovozli signal</li>
-        </ul>
-      </div>
-
-      <div class="bento-card role-bento-card">
-        <div class="role-avatar-wrap">
-          <div class="role-avatar">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          </div>
-          <div>
-            <div class="role-tag">Bosh Shifokor</div>
-            <div class="role-name">Nazorat</div>
-          </div>
-        </div>
-        <p style="font-size:12px; color:var(--text2); line-height:1.5;">Kim necha daqiqada borgani va xodimlar reytingi doim qo'lingizda.</p>
-        <ul class="role-pills-list">
-          <li><span>✓</span> Jonli sekundomer</li>
-          <li><span>✓</span> Oylik hisobot</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</section>
 
 <!-- ================= CALCULATOR ================= -->
 <section class="section" id="kalkulyator">
