@@ -649,27 +649,16 @@ class _LoginScreenState extends State<LoginScreen> {
             Container(
               width: 32,
               height: 32,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
+                color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
                 shape: BoxShape.circle,
                 border: Border.all(color: const Color(0xFF00E5FF), width: 1.5),
               ),
-              child: ClipOval(
-                child: Image.asset(
-                  'assets/images/nurse_pic.png',
-                  fit: BoxFit.cover,
-                  alignment: const Alignment(0, -0.92),
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: T.sky500.withValues(alpha: 0.20),
-                    alignment: Alignment.center,
-                    child: Text(
-                      acc.name.isNotEmpty ? acc.name[0].toUpperCase() : 'H',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF00E5FF),
-                      ),
-                    ),
-                  ),
-                ),
+              child: const Icon(
+                Icons.person_rounded,
+                size: 18,
+                color: Color(0xFF00E5FF),
               ),
             ),
             const SizedBox(width: 8),

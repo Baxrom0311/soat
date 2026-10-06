@@ -292,17 +292,6 @@ class _Header extends StatelessWidget {
   final String name;
   final String? clinic;
 
-  /// Two letters from the nurse's name, as the design's avatar chip shows.
-  String get _initials {
-    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
-    if (parts.isEmpty) return '—';
-    if (parts.length == 1) {
-      return parts.first.characters.take(2).toString().toUpperCase();
-    }
-    return (parts.first.characters.first + parts.last.characters.first)
-        .toUpperCase();
-  }
-
   @override
   Widget build(BuildContext context) {
     final p = Palette.of(context);
@@ -354,30 +343,13 @@ class _Header extends StatelessWidget {
               Container(
                 width: 26,
                 height: 26,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
+                  color: p.accent.withValues(alpha: 0.16),
                   shape: BoxShape.circle,
-                  border: Border.all(color: p.accent.withValues(alpha: 0.5), width: 1.5),
+                  border: Border.all(color: p.accent.withValues(alpha: 0.40), width: 1.5),
                 ),
-                child: ClipOval(
-                  child: Image.asset(
-                    'assets/images/nurse_pic.png',
-                    fit: BoxFit.cover,
-                    alignment: const Alignment(0, -0.92),
-                    filterQuality: FilterQuality.high,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: T.sky500.withValues(alpha: 0.20),
-                      alignment: Alignment.center,
-                      child: Text(
-                        _initials,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: p.accent,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                child: Icon(Icons.person_rounded, size: 16, color: p.accent),
               ),
               const SizedBox(width: 8),
               ConstrainedBox(
@@ -761,29 +733,7 @@ class _BottomNav extends StatelessWidget {
               _item(
                 p,
                 1,
-                icon: Container(
-                  width: 26,
-                  height: 26,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: index == 1 ? T.sky400 : Colors.transparent,
-                      width: 2,
-                    ),
-                  ),
-                  child: ClipOval(
-                    child: Image.asset(
-                      'assets/images/nurse_pic.png',
-                      fit: BoxFit.cover,
-                      alignment: const Alignment(0, -0.92),
-                      errorBuilder: (context, error, stackTrace) => Icon(
-                        Icons.account_circle,
-                        size: 24,
-                        color: index == 1 ? T.sky400 : T.slate500,
-                      ),
-                    ),
-                  ),
-                ),
+                icon: const Icon(Icons.person_rounded, size: 26),
                 label: 'Profil',
                 count: 0,
               ),
@@ -963,18 +913,23 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
     final p = Palette.of(context);
     final session = widget.session;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+      padding: const EdgeInsets.only(bottom: 24),
       children: [
+        // Top profile hero container - merged seamlessly with the top, with rounded bottom
         Container(
           decoration: BoxDecoration(
-            color: p.card,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: p.border),
+            color: p.navBar,
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(30),
+            ),
+            border: Border(
+              bottom: BorderSide(color: p.border, width: 1.5),
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 20,
-                offset: const Offset(0, 6),
+                color: Colors.black.withValues(alpha: 0.16),
+                blurRadius: 22,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
@@ -983,11 +938,11 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
             children: [
               // Badge Ribbon Header
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
                 decoration: BoxDecoration(
                   color: p.accent.withValues(alpha: 0.08),
                   border: Border(
-                    bottom: BorderSide(color: p.border.withValues(alpha: 0.6)),
+                    bottom: BorderSide(color: p.border.withValues(alpha: 0.5)),
                   ),
                 ),
                 child: Row(
@@ -1048,51 +1003,67 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
                 ),
               ),
 
-              // Staff details with rectangular portrait photo
+              // Staff details with gender-neutral medical design
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 22),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Rectangular medical portrait card (Full head & face visible)
+                    // Gender-neutral medical badge (Clean silhouette & clinical cross)
                     Container(
-                      width: 95,
-                      height: 122,
+                      width: 76,
+                      height: 76,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            p.accent.withValues(alpha: 0.22),
+                            p.accent.withValues(alpha: 0.08),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: p.accent.withValues(alpha: 0.45),
-                          width: 1.5,
+                          width: 1.8,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF00E5FF).withValues(alpha: 0.18),
-                            blurRadius: 14,
+                            color: const Color(0xFF00E5FF).withValues(alpha: 0.16),
+                            blurRadius: 16,
                             offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(14.5),
-                        child: Image.asset(
-                          'assets/images/nurse_pic.png',
-                          fit: BoxFit.cover,
-                          alignment: const Alignment(0, -0.92),
-                          filterQuality: FilterQuality.high,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(
-                                color: p.accent.withValues(alpha: 0.15),
-                                alignment: Alignment.center,
-                                child: Icon(
-                                  Icons.person_rounded,
-                                  size: 48,
-                                  color: p.accent,
-                                ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Icon(
+                            Icons.person_rounded,
+                            size: 46,
+                            color: p.accent,
+                          ),
+                          Positioned(
+                            right: 6,
+                            bottom: 6,
+                            child: Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                color: p.card,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: p.accent, width: 1.5),
                               ),
-                        ),
+                              child: Icon(
+                                Icons.medical_services_rounded,
+                                size: 12,
+                                color: p.accent,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 16),
 
                     // Staff metadata
                     Expanded(
@@ -1106,7 +1077,7 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: 19,
                               fontWeight: FontWeight.w800,
                               color: p.text1,
                               letterSpacing: -0.3,
@@ -1139,7 +1110,7 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
                           Row(
                             children: [
                               Icon(
@@ -1164,7 +1135,7 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 4),
                           Row(
                             children: [
                               Icon(
@@ -1193,9 +1164,15 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
             ],
           ),
         ),
-        const SizedBox(height: 22),
-        _StatsStrip(stats: widget.stats),
-        const SizedBox(height: 22),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+          child: _StatsStrip(stats: widget.stats),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
         _Section(
           title: 'Bildirishnomalar',
           children: [
@@ -1374,6 +1351,9 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
           'Chiqsangiz bu telefon chaqiruv bildirishnomalarini olmay qoladi.',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 11.5, color: p.text3),
+        ),
+            ],
+          ),
         ),
       ],
     );
