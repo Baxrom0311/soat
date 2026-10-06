@@ -316,15 +316,15 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   justify-content: center;
 }
 
-/* ================= HERO SECTION ================= */
+/* ================= HERO SECTION (WITH NURSE VISUAL) ================= */
 .hero {
   padding: 50px 0 70px;
   position: relative;
 }
 .hero-grid {
   display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  gap: 44px;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 48px;
   align-items: center;
 }
 .hero-tag {
@@ -394,85 +394,117 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 }
 .hero-badge-pill svg { color: var(--emerald); }
 
-/* ================= 2026 LIVE INTERACTIVE SIMULATOR ================= */
-.sim-container {
+/* Nurse Visual in Hero */
+.hero-visual-card {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.hero-visual-frame {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  border-radius: var(--radius-xl);
+}
+.hero-nurse-img {
+  width: 100%;
+  max-height: 480px;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 20px 40px rgba(2, 132, 199, 0.22));
+  transition: transform 0.3s ease;
+}
+.hero-nurse-img:hover {
+  transform: scale(1.02);
+}
+.float-card {
+  position: absolute;
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.12);
+  background: var(--surface-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  animation: floatSlow 4s ease-in-out infinite alternate;
+}
+.float-card-top {
+  top: 15px;
+  right: -10px;
+}
+.float-card-bottom {
+  bottom: 20px;
+  left: -10px;
+  animation-delay: 2s;
+}
+@keyframes floatSlow {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-8px); }
+}
+.float-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.float-icon-blue { background: var(--primary-light); color: var(--primary); }
+.float-icon-emerald { background: var(--emerald-light); color: var(--emerald); }
+.float-text h5 { font-size: 13px; font-weight: 800; margin-bottom: 2px; }
+.float-text p { font-size: 11px; color: var(--text3); margin: 0; }
+
+/* ================= 2026 DEDICATED LIVE SIMULATOR SECTION ================= */
+.sim-section-box {
+  padding: 40px;
   background: var(--surface-glass);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  padding: 28px;
   box-shadow: var(--shadow-card);
-  position: relative;
 }
-.sim-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--border);
-}
-.sim-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--emerald);
-  text-transform: uppercase;
-}
-.sim-status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--emerald);
-  box-shadow: 0 0 8px var(--emerald);
-  animation: pulseBeacon 1.5s infinite;
-}
-.sim-title {
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--text3);
-  text-transform: uppercase;
-}
-
-.sim-interactive-grid {
+.sim-grid-4 {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 16px;
+  grid-template-columns: 1.2fr auto 1.2fr 1.6fr;
+  gap: 24px;
   align-items: center;
 }
 
-/* Simulated Bedside Button */
-.sim-device-bedside {
+/* 1. Bedside Button */
+.sim-node-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 20px 16px;
+  padding: 24px 20px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-.sim-bed-label {
-  font-size: 10px;
+.sim-node-label {
+  font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
   color: var(--text3);
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+  letter-spacing: 0.05em;
 }
 .sim-sos-button {
-  width: 84px;
-  height: 84px;
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
   background: radial-gradient(circle at 30% 30%, #F43F5E, #BE123C);
-  border: 3px solid #FFF;
-  box-shadow: 0 8px 20px rgba(244, 63, 94, 0.4), inset 0 2px 5px rgba(255,255,255,0.4);
+  border: 4px solid #FFF;
+  box-shadow: 0 10px 24px rgba(244, 63, 94, 0.4), inset 0 3px 6px rgba(255,255,255,0.4);
   color: #FFF;
   font-family: var(--font-display);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 900;
   display: flex;
   flex-direction: column;
@@ -487,9 +519,9 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   transform: scale(0.92);
 }
 .sim-sos-sub { font-size: 8px; font-weight: 700; opacity: 0.9; margin-top: 1px; }
-.sim-hint { font-size: 11px; font-weight: 700; color: var(--primary); margin-top: 12px; }
+.sim-hint { font-size: 11px; font-weight: 700; color: var(--primary); margin-top: 14px; }
 
-/* Signal Wave */
+/* 2. Wave Propagation */
 .sim-signal-wave {
   display: flex;
   flex-direction: column;
@@ -498,7 +530,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   color: var(--text3);
 }
 .sim-wave-line {
-  width: 40px;
+  width: 48px;
   height: 3px;
   background: var(--border);
   border-radius: 2px;
@@ -522,15 +554,15 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   100% { left: 100%; }
 }
 
-/* Simulated Nurse Watch */
+/* 3. Smartwatch */
 .sim-device-watch {
   background: #090E17;
   border: 4px solid #1E293B;
   border-radius: 50%;
-  width: 160px;
-  height: 160px;
+  width: 170px;
+  height: 170px;
   margin: 0 auto;
-  padding: 14px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -551,7 +583,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 }
 .watch-room {
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 900;
   color: #FFF;
   line-height: 1;
@@ -566,7 +598,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
 }
 .watch-timer {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: #38BDF8;
   margin-bottom: 6px;
@@ -576,27 +608,52 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   color: #FFF;
   border: none;
   border-radius: var(--radius-full);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
-  padding: 4px 10px;
+  padding: 5px 12px;
   cursor: pointer;
   text-transform: uppercase;
 }
 
-/* Wallboard mini ticker */
-.sim-wallboard-strip {
-  margin-top: 18px;
-  padding: 10px 14px;
+/* 4. Wallboard Station Display */
+.sim-wallboard-hud {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sim-hud-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
 }
-.sim-wb-room { font-family: var(--font-mono); font-weight: 800; color: var(--text1); }
-.sim-wb-time { font-family: var(--font-mono); font-weight: 700; color: var(--primary); }
+.sim-hud-title { font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--text3); }
+.sim-hud-status {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--emerald);
+}
+.sim-hud-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text2);
+}
+.sim-hud-row strong { font-family: var(--font-mono); color: var(--text1); }
+.sim-audit-log {
+  font-size: 11px;
+  color: var(--text3);
+  background: var(--bg-subtle);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  margin-top: 4px;
+}
 
 /* Common Sections */
 .section { padding: 72px 0; background: transparent; }
@@ -775,7 +832,6 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   color: var(--text1);
 }
 .eco-chip span { color: var(--emerald); font-weight: 900; }
-
 
 /* ================= CALCULATOR ================= */
 .calc-bento-box {
@@ -1038,10 +1094,10 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   .hero-sub { margin: 0 auto 28px; }
   .hero-ctas { justify-content: center; }
   .hero-badges { justify-content: center; }
+  .sim-grid-4 { grid-template-columns: 1fr 1fr; }
   .visual-compare-grid { grid-template-columns: 1fr; }
   .ecosystem-grid { grid-template-columns: 1fr; }
   .eco-span-6, .eco-span-4 { grid-column: span 1; }
-  .roles-bento { grid-template-columns: 1fr 1fr; }
   .pricing-bento { grid-template-columns: 1fr 1fr; }
   .calc-bento-box, .contact-bento-grid { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr 1fr; }
@@ -1050,10 +1106,12 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   .nav-links, .header-actions .btn { display: none; }
   .menu-btn { display: flex; }
   .hero h1 { font-size: 32px; }
-  .sim-interactive-grid { grid-template-columns: 1fr; }
+  .hero-nurse-img { max-height: 320px; }
+  .float-card { display: none; }
+  .sim-grid-4 { grid-template-columns: 1fr; }
   .sim-signal-wave { transform: rotate(90deg); margin: 8px 0; }
-  .roles-bento, .pricing-bento { grid-template-columns: 1fr; }
-  .calc-bento-box, .form-bento-panel { padding: 20px; }
+  .pricing-bento { grid-template-columns: 1fr; }
+  .calc-bento-box, .form-bento-panel, .sim-section-box { padding: 20px; }
   .footer-grid { grid-template-columns: 1fr; }
   .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
 }
@@ -1163,8 +1221,8 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
   </div>
 </div>
 
-<!-- ================= HERO WITH LIVE PRODUCT SIMULATION ================= -->
-<section class="hero" id="simulyator">
+<!-- ================= HERO SECTION (WITH REAL NURSE CREATIVE VISUAL) ================= -->
+<section class="hero">
   <div class="wrap hero-grid">
     <!-- Hero Text -->
     <div>
@@ -1182,8 +1240,8 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           14 Kun Bepul Sinash
         </a>
-        <a href="#kalkulyator" class="btn btn-outline btn-lg">
-          Narxni Hisoblash
+        <a href="#simulyator" class="btn btn-outline btn-lg">
+          Jonli Sinab Ko'rish
         </a>
       </div>
 
@@ -1203,20 +1261,49 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
       </div>
     </div>
 
-    <!-- 2026 Live Sandbox Simulator -->
-    <div class="sim-container">
-      <div class="sim-header">
-        <div class="sim-status">
-          <span class="sim-status-dot"></span>
-          <span>Jonli Tizim Simulyatori</span>
-        </div>
-        <span class="sim-title">Tugmani bosing va sinang</span>
-      </div>
+    <!-- Nurse Creative Visual with Floating Trust Highlights -->
+    <div class="hero-visual-card">
+      <div class="hero-visual-frame">
+        <img src="/static/nurse_pic.png" alt="NurseCall Hamshira va Tibbiy Xizmat" class="hero-nurse-img" />
 
-      <div class="sim-interactive-grid">
-        <!-- Bedside Button -->
-        <div class="sim-device-bedside">
-          <div class="sim-bed-label">304-Palata • Koyka A</div>
+        <div class="float-card float-card-top">
+          <div class="float-icon float-icon-blue">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/></svg>
+          </div>
+          <div class="float-text">
+            <h5>Bilakda 1 soniyada</h5>
+            <p>Aqlli soatda tebranish</p>
+          </div>
+        </div>
+
+        <div class="float-card float-card-bottom">
+          <div class="float-icon float-icon-emerald">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="float-text">
+            <h5>0 ta yo'qotilgan chaqiruv</h5>
+            <p>100% nazorat va xotirjamlik</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= DEDICATED 2026 LIVE CLINICAL SIMULATOR ================= -->
+<section class="section" id="simulyator">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="sec-tag">Jonli Sinab Ko'ring</span>
+      <h2>Klinika Telemetriya Simulyatori</h2>
+      <p>Bemor tugmasini bosing va signal qanday tezlikda yetib borishini o'zingiz ko'ring.</p>
+    </div>
+
+    <div class="sim-section-box">
+      <div class="sim-grid-4">
+        <!-- 1. Bedside Button -->
+        <div class="sim-node-card">
+          <div class="sim-node-label">304-Palata • Koyka A</div>
           <button type="button" class="sim-sos-button" id="demoSosBtn" onclick="triggerSimulatorCall()">
             <span>SOS</span>
             <span class="sim-sos-sub">BOSING</span>
@@ -1224,16 +1311,16 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
           <div class="sim-hint">👆 Bemor tugmasi</div>
         </div>
 
-        <!-- Signal Wave -->
+        <!-- 2. Wireless Transmission -->
         <div class="sim-signal-wave">
           <span style="font-size:10px; font-weight:800; color:var(--primary);">0.4s</span>
           <div class="sim-wave-line">
             <div class="sim-wave-packet" id="simPacket"></div>
           </div>
-          <span style="font-size:10px;">Simsiz</span>
+          <span style="font-size:10px; font-weight:700;">433MHz Simsiz</span>
         </div>
 
-        <!-- Nurse Watch -->
+        <!-- 3. Smartwatch On Wrist -->
         <div class="sim-device-watch" id="demoWatch">
           <div class="watch-room" id="watchRoomTxt">304-XONA</div>
           <div class="watch-type" id="watchTypeTxt">TINCH REJIM</div>
@@ -1242,15 +1329,25 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
             Kutmoqda
           </button>
         </div>
-      </div>
 
-      <!-- Station Wallboard Strip -->
-      <div class="sim-wallboard-strip">
-        <div>
-          <span style="color:var(--text3); font-size:11px; text-transform:uppercase; font-weight:700;">Navbatchi TV Paneli:</span>
-          <strong class="sim-wb-room" id="wbStatusTxt"> Hammasi joyida</strong>
+        <!-- 4. Wallboard & Chief Doctor HUD -->
+        <div class="sim-wallboard-hud">
+          <div class="sim-hud-top">
+            <span class="sim-hud-title">Navbatchi TV Paneli (55")</span>
+            <span class="sim-hud-status" id="wbStatusTxt">🟢 Hammasi joyida</span>
+          </div>
+          <div class="sim-hud-row">
+            <span>Jonli sekundomer:</span>
+            <strong id="wbTimeTxt">0 soniya</strong>
+          </div>
+          <div class="sim-hud-row">
+            <span>Oxirgi javob vaqti:</span>
+            <strong id="wbLastSpeedTxt">0.8s (a'lo)</strong>
+          </div>
+          <div class="sim-audit-log" id="wbAuditTxt">
+            Audit: Tizim kutish rejimida. Bemor tugmasini bosing.
+          </div>
         </div>
-        <div class="sim-wb-time" id="wbTimeTxt">Sekundomer: 0s</div>
       </div>
     </div>
   </div>
@@ -1438,7 +1535,6 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
     </div>
   </div>
 </section>
-
 
 <!-- ================= CALCULATOR ================= -->
 <section class="section" id="kalkulyator">
@@ -1766,12 +1862,36 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
     row.classList.toggle('open');
   }
 
+  // Web Audio Soft Chime Generator
+  var audioCtx = null;
+  function playAudioTone(freq, type, duration) {
+    try {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.setValueAtTime(freq || 880, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (duration || 0.3));
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + (duration || 0.3));
+    } catch(e) {}
+  }
+
   // Live Interactive Simulator Logic
   var simInterval = null;
   var simSecs = 0;
   var simActive = false;
 
   function triggerSimulatorCall() {
+    playAudioTone(880, 'sine', 0.25);
     var sosBtn = document.getElementById('demoSosBtn');
     var packet = document.getElementById('simPacket');
     var watch = document.getElementById('demoWatch');
@@ -1781,6 +1901,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
     var ackBtn = document.getElementById('watchAckBtn');
     var wbStatus = document.getElementById('wbStatusTxt');
     var wbTime = document.getElementById('wbTimeTxt');
+    var wbAudit = document.getElementById('wbAuditTxt');
 
     sosBtn.classList.add('active');
     setTimeout(function() { sosBtn.classList.remove('active'); }, 300);
@@ -1801,13 +1922,16 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
       ackBtn.textContent = "Qabul Qilish";
       ackBtn.style.background = "#EF4444";
       wbStatus.innerHTML = "🔴 <span style='color:#EF4444;'>304-xona chaqirmoqda!</span>";
+      wbAudit.innerHTML = "<strong>Audit:</strong> 304-xonadan favqulodda SOS keldi. Hamshira soati tebranmoqda...";
+
+      playAudioTone(660, 'sine', 0.35);
 
       simInterval = setInterval(function() {
         simSecs++;
         var mm = String(Math.floor(simSecs / 60)).padStart(2, '0');
         var ss = String(simSecs % 60).padStart(2, '0');
         timerTxt.textContent = mm + ":" + ss;
-        wbTime.textContent = "Kutish: " + simSecs + " soniya";
+        wbTime.textContent = simSecs + " soniya";
       }, 1000);
     }, 400);
   }
@@ -1820,29 +1944,36 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 800; line-he
     clearInterval(simInterval);
     simActive = false;
 
+    playAudioTone(1200, 'triangle', 0.4);
+
     var watch = document.getElementById('demoWatch');
     var typeTxt = document.getElementById('watchTypeTxt');
     var ackBtn = document.getElementById('watchAckBtn');
     var wbStatus = document.getElementById('wbStatusTxt');
     var wbTime = document.getElementById('wbTimeTxt');
+    var wbAudit = document.getElementById('wbAuditTxt');
+    var wbLastSpeed = document.getElementById('wbLastSpeedTxt');
 
     watch.classList.remove('vibrating');
     typeTxt.textContent = "QABUL QILINDI";
     typeTxt.style.color = "#34D399";
     ackBtn.textContent = "Bajarildi (" + simSecs + "s)";
     ackBtn.style.background = "#10B981";
-    wbStatus.innerHTML = "🟢 <span style='color:#10B981;'>304-xona qabul qilindi (" + simSecs + " soniya)</span>";
-    wbTime.textContent = "Javob tezligi: a'lo";
+    wbStatus.innerHTML = "🟢 <span style='color:#10B981;'>304-xona qabul qilindi</span>";
+    wbTime.textContent = simSecs + "s da yetib borildi";
+    wbLastSpeed.textContent = simSecs + " soniya";
+    wbAudit.innerHTML = "<strong>Audit:</strong> 304-xona chaqiruvi " + simSecs + " soniyada qabul qilindi. Hamshira: Dilnoza X.";
 
     setTimeout(function() {
       typeTxt.textContent = "TINCH REJIM";
       typeTxt.style.color = "var(--text3)";
       ackBtn.textContent = "Kutmoqda";
       ackBtn.style.background = "var(--gradient-brand)";
-      wbStatus.textContent = " Hammasi joyida";
-      wbTime.textContent = "Sekundomer: 0s";
+      wbStatus.innerHTML = "🟢 Hammasi joyida";
+      wbTime.textContent = "0 soniya";
       document.getElementById('watchTimerTxt').textContent = "00:00";
-    }, 3500);
+      wbAudit.innerHTML = "Audit: Tizim kutish rejimida. Bemor tugmasini bosing.";
+    }, 4000);
   }
 
   // Interactive Pricing Calculator
