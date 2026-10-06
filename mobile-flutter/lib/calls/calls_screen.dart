@@ -362,6 +362,7 @@ class _Header extends StatelessWidget {
                   child: Image.asset(
                     'assets/images/nurse_pic.png',
                     fit: BoxFit.cover,
+                    alignment: const Alignment(0, -0.92),
                     filterQuality: FilterQuality.high,
                     errorBuilder: (context, error, stackTrace) => Container(
                       color: T.sky500.withValues(alpha: 0.20),
@@ -774,6 +775,7 @@ class _BottomNav extends StatelessWidget {
                     child: Image.asset(
                       'assets/images/nurse_pic.png',
                       fit: BoxFit.cover,
+                      alignment: const Alignment(0, -0.92),
                       errorBuilder: (context, error, stackTrace) => Icon(
                         Icons.account_circle,
                         size: 24,
@@ -964,134 +966,229 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
           decoration: BoxDecoration(
             color: p.card,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(color: p.border),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.12),
-                blurRadius: 18,
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 20,
                 offset: const Offset(0, 6),
               ),
             ],
           ),
+          clipBehavior: Clip.antiAlias,
           child: Column(
             children: [
-              // Avatar with glow ring and active duty indicator
-              Stack(
-                alignment: Alignment.bottomRight,
-                children: [
-                  Container(
-                    width: 86,
-                    height: 86,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF00E5FF).withValues(alpha: 0.35),
-                          blurRadius: 20,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                      border: Border.all(
-                        color: p.accent,
-                        width: 2.5,
-                      ),
-                    ),
-                    child: ClipOval(
-                      child: Image.asset(
-                        'assets/images/nurse_pic.png',
-                        fit: BoxFit.cover,
-                        filterQuality: FilterQuality.high,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          color: p.accent.withValues(alpha: 0.15),
-                          alignment: Alignment.center,
-                          child: Icon(Icons.person_rounded, size: 44, color: p.accent),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      color: T.emerald400,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: p.card, width: 2.5),
-                    ),
-                    child: const Icon(Icons.check, size: 13, color: T.slate950),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Text(
-                session?.name.isNotEmpty == true ? session!.name : 'Hamshira',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 21,
-                  fontWeight: FontWeight.w800,
-                  color: p.text1,
-                  letterSpacing: -0.3,
-                ),
-              ),
-              const SizedBox(height: 6),
+              // Badge Ribbon Header
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: p.accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: p.accent.withValues(alpha: 0.30)),
+                  color: p.accent.withValues(alpha: 0.08),
+                  border: Border(
+                    bottom: BorderSide(color: p.border.withValues(alpha: 0.6)),
+                  ),
                 ),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(
-                      session?.isAdmin == true
-                          ? Icons.admin_panel_settings_rounded
-                          : Icons.medical_services_rounded,
-                      size: 14,
-                      color: p.accent,
+                    Row(
+                      children: [
+                        const AppLogo(size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'TIBBIY XODIM GUVOHNOMASI',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                            color: p.accent,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      switch (session?.role) {
-                        'nurse' => 'Hamshira',
-                        'admin' => 'Klinika administratori',
-                        _ => 'Hamshira',
-                      },
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: p.accent,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: T.emerald400.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: T.emerald400.withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: T.emerald400,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          const Text(
+                            'FAOL NAVBATCHI',
+                            style: TextStyle(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.3,
+                              color: T.emerald400,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 7,
-                    height: 7,
-                    decoration: const BoxDecoration(
-                      color: T.emerald400,
-                      shape: BoxShape.circle,
+
+              // Staff details with rectangular portrait photo
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Rectangular medical portrait card (Full head & face visible)
+                    Container(
+                      width: 95,
+                      height: 122,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: p.accent.withValues(alpha: 0.45),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF00E5FF).withValues(alpha: 0.18),
+                            blurRadius: 14,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(14.5),
+                        child: Image.asset(
+                          'assets/images/nurse_pic.png',
+                          fit: BoxFit.cover,
+                          alignment: const Alignment(0, -0.92),
+                          filterQuality: FilterQuality.high,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                color: p.accent.withValues(alpha: 0.15),
+                                alignment: Alignment.center,
+                                child: Icon(
+                                  Icons.person_rounded,
+                                  size: 48,
+                                  color: p.accent,
+                                ),
+                              ),
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Navbatchilikda • Jonli aloqa',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: p.text3,
+                    const SizedBox(width: 14),
+
+                    // Staff metadata
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            session?.name.isNotEmpty == true
+                                ? session!.name
+                                : 'Hamshira',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: p.text1,
+                              letterSpacing: -0.3,
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 9,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: p.accent.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: p.accent.withValues(alpha: 0.30),
+                              ),
+                            ),
+                            child: Text(
+                              switch (session?.role) {
+                                'nurse' => 'Hamshira (Navbatchi)',
+                                'admin' => 'Klinika administratori',
+                                _ => 'Tibbiy xodim',
+                              },
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: p.accent,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.local_hospital_outlined,
+                                size: 14,
+                                color: p.text3,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  session?.clinicId != null
+                                      ? 'Markaziy Shifoxona'
+                                      : 'NurseCall Tizimi',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: p.text2,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.badge_outlined,
+                                size: 14,
+                                color: p.text3,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Xodim ID: #${(session?.name.hashCode ?? 1024).abs() % 9000 + 1000}',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontFamily: T.mono,
+                                  color: p.text3,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),

@@ -657,6 +657,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Image.asset(
                   'assets/images/nurse_pic.png',
                   fit: BoxFit.cover,
+                  alignment: const Alignment(0, -0.92),
                   errorBuilder: (context, error, stackTrace) => Container(
                     color: T.sky500.withValues(alpha: 0.20),
                     alignment: Alignment.center,
