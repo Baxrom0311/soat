@@ -21,8 +21,6 @@ threadpool via run_in_threadpool so a button press can never stall the event loo
 and with it every other request and websocket -- for the duration of a bcrypt check.
 """
 
-import asyncio
-
 from fastapi import BackgroundTasks, HTTPException
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
@@ -177,7 +175,7 @@ async def create_call_from_device(
         # and stay clinic-wide; new_call carries its room's floor so per-connection
         # floor filtering (registered at ws connect time) applies to it.
         floor = event["call"]["floor"] if event["type"] == "new_call" else None
-        asyncio.create_task(manager.broadcast(clinic_id, event, floor=floor))
+        manager.broadcast_soon(clinic_id, event, floor=floor)
     if out is None:
         raise HTTPException(status_code=404, detail="Unknown code")
     if push_args is not None and background_tasks is not None:
@@ -247,5 +245,5 @@ async def acknowledge_call(
     out = await run_in_threadpool(
         _ack_sync, db, clinic_id, call_id, acknowledged_by=acknowledged_by, staff_id=staff_id, role=role
     )
-    asyncio.create_task(manager.broadcast(clinic_id, {"type": "ack", "call_id": out.call_id}))
+    manager.broadcast_soon(clinic_id, {"type": "ack", "call_id": out.call_id})
     return out

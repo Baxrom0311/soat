@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -21,7 +22,7 @@ def list_buttons(db: Session, clinic_id: int) -> list[ButtonOut]:
     ]
 
 
-async def create_button(db: Session, clinic_id: int, *, room_id: int, ev1527_code: int) -> ButtonOut:
+def _create_button_sync(db: Session, clinic_id: int, *, room_id: int, ev1527_code: int) -> ButtonOut:
     room = room_repo.get(db, clinic_id, room_id)
     if room is None:
         raise HTTPException(status_code=404, detail="Room not found")
@@ -37,10 +38,6 @@ async def create_button(db: Session, clinic_id: int, *, room_id: int, ev1527_cod
     unassigned_repo.delete_by_code(db, clinic_id, ev1527_code)
     db.commit()
     db.refresh(button)
-
-    # after commit, so dashboards never drop a signal the DB still holds
-    await manager.broadcast(clinic_id, {"type": "unassigned_removed", "ev1527_code": ev1527_code})
-
     return ButtonOut(
         id=button.id,
         room_id=room.id,
@@ -48,6 +45,17 @@ async def create_button(db: Session, clinic_id: int, *, room_id: int, ev1527_cod
         floor=room.floor,
         ev1527_code=button.ev1527_code,
     )
+
+
+async def create_button(db: Session, clinic_id: int, *, room_id: int, ev1527_code: int) -> ButtonOut:
+    # The DB work runs in the threadpool: this coroutine runs on the event loop, and a
+    # blocking query there stalls every socket and every patient call along with it.
+    out = await run_in_threadpool(
+        _create_button_sync, db, clinic_id, room_id=room_id, ev1527_code=ev1527_code
+    )
+    # After commit, so dashboards never drop a signal the DB still holds.
+    manager.broadcast_soon(clinic_id, {"type": "unassigned_removed", "ev1527_code": ev1527_code})
+    return out
 
 
 def update_button(db: Session, clinic_id: int, button_id: int, *, room_id: int) -> ButtonOut:

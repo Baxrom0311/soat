@@ -30,6 +30,10 @@ class ConnectionManager:
         # have changed since they were last checked (see mark_staff_dirty).
         self.staff_of: dict[WebSocket, int] = {}
         self.dirty: set[WebSocket] = set()
+        # Broadcasts started with broadcast_soon. The event loop only keeps a weak
+        # reference to a task, so one nobody holds can be garbage-collected mid-send
+        # -- an event that silently never reaches the board.
+        self._pending: set[asyncio.Task] = set()
 
     def register(
         self,
@@ -105,6 +109,13 @@ class ConnectionManager:
         if not floors:
             return True
         return floor in floors
+
+    def broadcast_soon(self, clinic_id: int, message: dict, *, floor: int | None = None) -> None:
+        """Starts a broadcast without waiting for it, so a slow socket never holds up the
+        HTTP response that caused the event. Must be called from the event loop."""
+        task = asyncio.create_task(self.broadcast(clinic_id, message, floor=floor))
+        self._pending.add(task)
+        task.add_done_callback(self._pending.discard)
 
     async def broadcast(self, clinic_id: int, message: dict, *, floor: int | None = None) -> None:
         """Fans out concurrently with a per-socket timeout so one stuck dashboard

@@ -8,6 +8,7 @@ take down or delay the main /api/v1/calls ingestion flow.
 """
 
 import logging
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 from sqlalchemy.orm import Session
@@ -23,6 +24,16 @@ EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send"
 
 # Expo rejects requests with more than 100 messages, so large clinics must be chunked.
 EXPO_PUSH_CHUNK_SIZE = 100
+
+# FCM v1 has no multicast, so a clinic's nurses are messaged in parallel rather than
+# one after another: in sequence the last phone on a 30-nurse floor heard about the
+# call several seconds after the first.
+FCM_PARALLEL_SENDS = 8
+
+
+def _mask(token: str) -> str:
+    """Enough of a push token to tell two apart in a log, not enough to send to it."""
+    return f"{token[:12]}…{token[-4:]}" if len(token) > 20 else "…"
 
 
 def send_new_call_notifications(
@@ -155,11 +166,14 @@ def _cleanup_invalid_tokens(db: Session, payload: dict, tokens: list[PushToken])
             continue
         error_type = (ticket.get("details") or {}).get("error")
         logger.warning(
-            "Expo push error for token=%s: %s (%s)", token.expo_push_token, ticket.get("message"), error_type
+            "Expo push error for token=%s: %s (%s)",
+            _mask(token.expo_push_token),
+            ticket.get("message"),
+            error_type,
         )
         if error_type == "DeviceNotRegistered":
             push_token_repo.delete_by_token(db, token.expo_push_token)
-            logger.info("Removed dead push token=%s", token.expo_push_token)
+            logger.info("Removed dead push token=%s", _mask(token.expo_push_token))
 
 
 def _send_fcm(
@@ -172,9 +186,9 @@ def _send_fcm(
     clinic_id: int,
     call_id: int,
 ) -> None:
-    """One request per token: FCM HTTP v1 has no multicast. A clinic has a handful of
-    nurses, so the loop is cheap -- and a failure on one nurse's phone must not stop the
-    message reaching the others, which a batch would risk.
+    """One request per token, FCM_PARALLEL_SENDS at a time: FCM HTTP v1 has no
+    multicast. A failure on one nurse's phone never stops the message reaching the
+    others. The DB session is only touched here, on this thread, after the sends.
     """
     if not fcm_service.is_configured():
         logger.warning(
@@ -185,14 +199,26 @@ def _send_fcm(
         )
         return
 
+    def _one(token: PushToken) -> str | None:
+        try:
+            return fcm_service.send(
+                token.expo_push_token,
+                title=title,
+                body=body,
+                data={**data, "clinic_id": clinic_id, "staff_id": token.staff_id},
+            )
+        except Exception:
+            logger.exception("FCM send crashed")
+            return None
+
+    if len(tokens) == 1:
+        results = [_one(tokens[0])]
+    else:
+        with ThreadPoolExecutor(max_workers=min(FCM_PARALLEL_SENDS, len(tokens))) as pool:
+            results = list(pool.map(_one, tokens))
+
     sent = 0
-    for token in tokens:
-        error = fcm_service.send(
-            token.expo_push_token,
-            title=title,
-            body=body,
-            data={**data, "clinic_id": clinic_id, "staff_id": token.staff_id},
-        )
+    for token, error in zip(tokens, results, strict=True):
         if error is None:
             sent += 1
             continue
