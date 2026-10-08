@@ -54,6 +54,18 @@ def _field_type(prop: dict) -> str:
     return f"{kind}:{prop['format']}" if "format" in prop else kind
 
 
+def _all_routes(routes) -> list[APIRoute]:
+    """Flattens included routers. Recent FastAPI keeps an included router as one lazy
+    entry (holding `original_router`) instead of copying its routes onto the app."""
+    found: list[APIRoute] = []
+    for route in routes:
+        if isinstance(route, APIRoute):
+            found.append(route)
+        elif hasattr(route, "original_router"):
+            found.extend(_all_routes(route.original_router.routes))
+    return found
+
+
 def build_contract() -> dict:
     spec = app.openapi()
 
@@ -92,15 +104,11 @@ def build_contract() -> dict:
         }
 
     # Routes left out of the schema still have callers: the dashboard SPA paths, APK
-    # downloads the phones update from, /health for the uptime monitor. All of them are
-    # declared on the app itself. The live call socket (/ws/calls) is not listed here --
-    # it is held to its behaviour by test_review_regressions instead.
+    # downloads the phones update from, /health for the uptime monitor. The live call
+    # socket (/ws/calls) is held to its behaviour by test_review_regressions instead.
     hidden = sorted(
-        f"{','.join(sorted(r.methods))} {r.path}"
-        for r in app.routes
-        if isinstance(r, APIRoute) and not r.include_in_schema
+        f"{','.join(sorted(r.methods))} {r.path}" for r in _all_routes(app.routes) if not r.include_in_schema
     )
-
     return {
         "operations": dict(sorted(operations.items())),
         "models": dict(sorted(models.items())),
