@@ -86,16 +86,16 @@ Buni 1-qadamdan boshlab **kontrakt testi** ushlab turadi: OpenAPI sxemasining su
 
 ## 4. Bosqichlar (har biri alohida PR)
 
-| Qadam | Nima | Klientlarga ta'siri |
+| Qadam | Nima | Holati |
 |---|---|---|
-| 1 | Shu reja + API kontrakt testi (barcha yo'llar, maydonlar, majburiy/ixtiyoriy belgisi surati) | yo'q |
-| 2 | `Settings` obyekti, `create_app()`, `main.py`dan web/APK yo'llarini ajratish, eski skriptlarni olib tashlash (A4, A10) | yo'q |
-| 3 | `DomainError` va bitta xato xaritasi, servislar HTTP'dan ajraladi (A5) | yo'q (status/matnlar bir xil) |
-| 4 | `realtime/` paketi: outbox jadvali + LISTEN/NOTIFY dispatcher, push qayta urinish bilan, `expired` hodisasi (A1, A3) | yangi `expired` hodisasi; eski klientlar uni e'tiborsiz qoldiradi |
-| 5 | Deploy: API unit fayli repoga, `--proxy-headers`, root bo'lmagan foydalanuvchi, 2 ta worker; autentifikatsiya keshi va WS siklini yengillatish (A2, A9) | yo'q |
-| 6 | Ma'lumotlar modeli tozalash migratsiyalari (A7) | yo'q |
-| 7 | Admin overview: `GROUP BY` bilan 3–4 query, mahalliy vaqt, servisni bo'lish (A8) | grafiklar to'g'ri vaqtda |
-| 8 | Refresh token + veb cookie (A6) | ilovalar yangi versiyasi kerak, eskilari ishlayveradi |
+| 1 | Shu reja + API kontrakt testi | ✓ PR #6 |
+| 2 | `create_app()`, web/APK yo'llari `routers/web.py`ga, eski `migrate_v*.py`/`reset_db.py` olib tashlandi (A10). Sozlamalar hozircha `core/config.py`da qoladi: ular allaqachon bitta joyda, pydantic-settings'ga ko'chirish foydasidan ko'ra ko'p o'zgarish | ✓ PR #6 |
+| 3 | `app/core/errors.py`: servislar `DomainError` tashlaydi, javoblar o'zgarmagan (A5) | ✓ PR #6 |
+| 4 | `outbox_events` + LISTEN/NOTIFY dispatcher, push restartdan keyin ham yuboriladi, expired chaqiruv ekran va telefonlarga `ack` (`status: "expired"`) bo'lib boradi (A1, A3) | ✓ PR #6, migratsiya 0012 |
+| 5 | `deploy/nursecall-api.service` repoda, real IP tekshiruvi qo'llanmasi (A9). Ikkinchi worker hali yo'q: rate limiterlar jarayon xotirasida | ✓ PR #6 |
+| 6 | `calls.acknowledged_by_staff_id` (A7). `push_tokens` nomini o'zgartirish va klinika vaqt mintaqasi kerak emas: token turi shaklidan aniq, hamma klinika UTC+5 da (`REPORT_UTC_OFFSET_HOURS`) | ✓ PR #6, migratsiya 0013 |
+| 7 | Admin overview `GROUP BY` va Toshkent vaqti bilan (A8) | ✓ PR #3'da qilingan |
+| 8 | Refresh token + veb cookie (A6). Server, veb, telefon, soat birga o'zgarishi kerak | ○ qaror kutilmoqda |
 
 Qilinmaydigan narsalar va sababi:
 - **Async SQLAlchemy'ga o'tish.** Bloklovchi ish allaqachon threadpool'da; foydasi kichik, xavfi katta.
