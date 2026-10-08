@@ -1,6 +1,7 @@
 """Revocable staff sessions and proof of possession for device provisioning."""
-from alembic import op
+
 import sqlalchemy as sa
+from alembic import op
 
 revision = "0011_session_provisioning"
 down_revision = "0010_call_expired"
