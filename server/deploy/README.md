@@ -237,3 +237,41 @@ purely so a local job could read a page of numbers.
 
 Below 20 samples the budget is not applied: the p95 of six requests is noise, and
 alerting on it would teach the reader to ignore the message.
+
+## nursecall-api.service
+
+The API process. `deploy.sh` restarts it after each release. Until 2026-10-08 this unit
+existed only on the server.
+
+Install or update (first compare with `systemctl cat nursecall-api` and keep anything
+the live unit has that this one lacks):
+
+```
+cp deploy/nursecall-api.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl restart nursecall-api
+```
+
+**Real client IPs.** Every rate limit (login, `/announce`, device auth, call ingest
+per IP) keys on the client address. Check it once after install:
+
+```
+journalctl -u nursecall-api -n 50 | grep -E '"(GET|POST)'
+```
+
+The addresses there must be real ones, not all `127.0.0.1`. If they are all
+`127.0.0.1`, nginx is not forwarding the address. In the nginx `location` that proxies
+to `127.0.0.1:8002` add:
+
+```
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
+```
+
+and, when the site sits behind Cloudflare, make nginx trust it for the real address
+(`real_ip_header CF-Connecting-IP;` plus `set_real_ip_from` for Cloudflare's ranges).
+
+**Live events.** Since migration 0012 the API keeps one extra Postgres connection open
+(LISTEN for events from other processes) and sweeps unsent pushes every 10 seconds. It
+logs `Event listener lost its connection` if that connection drops; it reconnects on
+its own.

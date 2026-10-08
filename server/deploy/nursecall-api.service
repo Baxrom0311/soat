@@ -1,0 +1,33 @@
+# The API itself. deploy.sh restarts this unit; until now it was the one unit that
+# existed only on the server, so nobody could tell from the repo how the API runs.
+#
+# Before installing, diff it against the live one:
+#   systemctl cat nursecall-api
+# and keep anything the server has that this file lacks.
+[Unit]
+Description=NurseCall API (FastAPI/uvicorn)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+WorkingDirectory=/root/nursecall_backend
+EnvironmentFile=-/root/nursecall_backend/.env
+# One worker. The live-event dispatcher (app/realtime) now makes a second one
+# correct for websockets, but the login/announce/ingest rate limiters are still per
+# process, so two workers would double every limit. Raise this only together with
+# moving those limiters into Postgres.
+#
+# --proxy-headers / --forwarded-allow-ips: every rate limit keys on the client IP.
+# Without them every request looks like 127.0.0.1 (nginx), and all clinics' receivers
+# share one 120/min device-auth budget. nginx must pass the real address in
+# X-Forwarded-For (behind Cloudflare: from CF-Connecting-IP), see deploy/README.md.
+ExecStart=/root/nursecall_backend/.venv/bin/uvicorn app.main:app \
+    --host 127.0.0.1 --port 8002 --workers 1 \
+    --proxy-headers --forwarded-allow-ips 127.0.0.1
+Restart=always
+RestartSec=2
+# Lets in-flight requests and the outbox dispatcher finish before a restart kills them.
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target
