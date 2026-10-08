@@ -53,6 +53,10 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
   int? _busyCallId;
   int _tab = 0;
 
+  /// Calls the nurse has silenced with the banner button. A call arriving
+  /// after that is not in here, so it rings again.
+  final Set<int> _silenced = {};
+
   @override
   void initState() {
     super.initState();
@@ -74,12 +78,22 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
   }
 
   void _syncAlarm() {
-    final hasActiveCalls = widget.feed.calls.any((c) => c.status == 'active');
-    if (hasActiveCalls) {
+    final calls = widget.feed.calls;
+    _silenced.retainWhere((id) => calls.any((c) => c.callId == id));
+    if (shouldRing(calls, _silenced, DateTime.now())) {
       AlarmService.instance.startAlarm();
     } else {
       AlarmService.instance.stopAlarm();
     }
+  }
+
+  void _silence() {
+    HapticFeedback.mediumImpact();
+    _silenced.addAll(
+      widget.feed.calls.where((c) => c.status == 'active').map((c) => c.callId),
+    );
+    AlarmService.instance.stopAlarm();
+    setState(() {});
   }
 
   void _onFeed() {
@@ -229,6 +243,10 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
                     ],
                   ),
                 ),
+              ],
+              if (shouldRing(feed.calls, _silenced, DateTime.now())) ...[
+                const SizedBox(height: 10),
+                _SilenceBar(onSilence: _silence),
               ],
               if (!feed.reachable && !feed.isDemo) ...[
                 const SizedBox(height: 12),
@@ -410,6 +428,48 @@ class _Dot extends StatelessWidget {
       width: 6,
       height: 6,
       decoration: BoxDecoration(color: p.accentOk, shape: BoxShape.circle),
+    );
+  }
+}
+
+/// Stops the alarm without acknowledging anything. The calls stay on the
+/// board; only a new call makes the phone ring again.
+class _SilenceBar extends StatelessWidget {
+  const _SilenceBar({required this.onSilence});
+
+  final VoidCallback onSilence;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
+      decoration: BoxDecoration(
+        color: p.bannerBg(p.dangerInk).withValues(alpha: 0.30),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: p.dangerInk.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.notifications_active, size: 18, color: p.dangerInk),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Signal chalinmoqda',
+              style: TextStyle(fontSize: 12.5, color: p.text2),
+            ),
+          ),
+          TextButton.icon(
+            key: const Key('silence-alarm'),
+            onPressed: onSilence,
+            icon: const Icon(Icons.volume_off_rounded, size: 16),
+            label: const Text(
+              'Ovozni o‘chirish',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

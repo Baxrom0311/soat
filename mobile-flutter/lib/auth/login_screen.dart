@@ -33,9 +33,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void _fillSavedAccount(SavedAccount acc) {
     HapticFeedback.selectionClick();
     _email.text = acc.email;
-    if (acc.savedPassword != null) {
-      _password.text = acc.savedPassword!;
-    }
+    // Only the email: passwords are never stored (see SavedAccount).
+    _password.clear();
     setState(() => _error = null);
   }
 

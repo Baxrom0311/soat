@@ -7,11 +7,12 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException
-from sqlalchemy import func
+from sqlalchemy import func, literal, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core import billing
+from app.core.config import REPORT_UTC_OFFSET_HOURS
 from app.core.deps import CurrentUser
 from app.core.security import hash_password
 from app.enums import StaffRole, SubscriptionStatus, SuspensionReason
@@ -41,87 +42,139 @@ from app.schemas.admin import (
 from app.services import audit_service, device_service, staff_service
 from app.services.session_service import revoke_staff_sessions
 
+# The clinics are all in Uzbekistan (UTC+5, no daylight saving), and "today" and "at
+# 14:00" on this screen mean what they mean on a wall clock there -- not in UTC, where a
+# Tashkent day starts at 19:00 the evening before. A fixed offset rather than a tz
+# database lookup on purpose: it cannot fail on a box without tzdata.
+_REPORT_OFFSET = timedelta(hours=REPORT_UTC_OFFSET_HOURS)
+_REPORT_TZ = timezone(_REPORT_OFFSET)
+
+
+def _local_ts(column):
+    """`column` (timestamptz) as a naive wall-clock timestamp in the report timezone."""
+    return func.timezone("UTC", column) + literal(_REPORT_OFFSET)
+
+
+def _avg_response_seconds():
+    return func.avg(func.extract("epoch", Call.acknowledged_at - Call.created_at))
+
 
 def overview(db: Session) -> AdminOverviewOut:
-    now = datetime.now(timezone.utc)
+    """Platform overview for the superadmin. A fixed handful of grouped queries: the
+    previous version issued one COUNT per day and five per clinic (~105 round trips)."""
+    now_local = datetime.now(_REPORT_TZ)
     cutoff = device_service.online_cutoff()
-    midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    midnight = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
+    first_day = midnight - timedelta(days=13)
 
     clinics_total = clinic_repo.count_all(db)
-    clinics_active = db.query(func.count(Clinic.id)).filter(
-        Clinic.subscription_status.in_([SubscriptionStatus.TRIAL, SubscriptionStatus.ACTIVE])
-    ).scalar() or 0
+    clinics_active = (
+        db.scalar(
+            select(func.count(Clinic.id)).where(
+                Clinic.subscription_status.in_([SubscriptionStatus.TRIAL, SubscriptionStatus.ACTIVE])
+            )
+        )
+        or 0
+    )
 
-    rooms_total = db.query(func.count(Room.id)).scalar() or 0
-    buttons_total = db.query(func.count(Button.id)).scalar() or 0
+    rooms_total = db.scalar(select(func.count(Room.id))) or 0
+    buttons_total = db.scalar(select(func.count(Button.id))) or 0
     devices_total = device_repo.count_all(db)
     devices_online = device_repo.count_online_since(db, cutoff)
     active_calls_total = sum(call_repo.count_active_by_clinic(db).values())
-    calls_total = db.query(func.count(Call.id)).scalar() or 0
-    calls_today = db.query(func.count(Call.id)).filter(Call.created_at >= midnight).scalar() or 0
+    calls_total = db.scalar(select(func.count(Call.id))) or 0
+    calls_today = db.scalar(select(func.count(Call.id)).where(Call.created_at >= midnight)) or 0
 
-    avg_resp = db.query(
-        func.avg(func.extract('epoch', Call.acknowledged_at - Call.created_at))
-    ).filter(Call.acknowledged_at.is_not(None)).scalar()
+    avg_resp = db.scalar(select(_avg_response_seconds()).where(Call.acknowledged_at.is_not(None)))
     avg_response_seconds_overall = round(float(avg_resp), 1) if avg_resp is not None else None
 
-    # Daily Stats for the past 14 days
+    # Daily stats for the past 14 local days: one grouped query per series.
+    call_day = func.date(_local_ts(Call.created_at))
+    calls_by_day = {
+        day: count
+        for day, count in db.execute(
+            select(call_day, func.count(Call.id)).where(Call.created_at >= first_day).group_by(call_day)
+        ).all()
+    }
+    clinic_day = func.date(_local_ts(Clinic.created_at))
+    clinics_before = db.scalar(select(func.count(Clinic.id)).where(Clinic.created_at < first_day)) or 0
+    new_clinics_by_day = {
+        day: count
+        for day, count in db.execute(
+            select(clinic_day, func.count(Clinic.id))
+            .where(Clinic.created_at >= first_day)
+            .group_by(clinic_day)
+        ).all()
+    }
+
     daily_stats: list[DailyStat] = []
-    for i in range(13, -1, -1):
-        day_start = (now - timedelta(days=i)).replace(hour=0, minute=0, second=0, microsecond=0)
-        day_end = day_start + timedelta(days=1)
-        d_str = day_start.strftime("%Y-%m-%d")
-
-        c_cum = db.query(func.count(Clinic.id)).filter(Clinic.created_at < day_end).scalar() or 0
-        calls_day = db.query(func.count(Call.id)).filter(
-            Call.created_at >= day_start, Call.created_at < day_end
-        ).scalar() or 0
-
+    clinics_cumulative = clinics_before
+    for i in range(14):
+        day = (first_day + timedelta(days=i)).date()
+        clinics_cumulative += new_clinics_by_day.get(day, 0)
         daily_stats.append(
             DailyStat(
-                date=d_str,
-                clinics_total=c_cum,
+                date=day.isoformat(),
+                clinics_total=clinics_cumulative,
+                # Rooms carry no creation date, so this is today's total on every day.
                 rooms_total=rooms_total,
-                calls_count=calls_day,
+                calls_count=calls_by_day.get(day, 0),
             )
         )
 
-    # 24h Hourly Stats
+    # Calls by local hour of day, all time.
     hourly_counts = {h: 0 for h in range(24)}
-    for r in db.query(
-        func.extract('hour', Call.created_at).label('h'),
-        func.count(Call.id).label('cnt')
-    ).group_by('h').all():
-        if r.h is not None:
-            h_int = int(r.h)
-            if 0 <= h_int < 24:
-                hourly_counts[h_int] = int(r.cnt)
-
+    call_hour = func.extract("hour", _local_ts(Call.created_at))
+    for hour, count in db.execute(select(call_hour, func.count(Call.id)).group_by(call_hour)).all():
+        if hour is not None and 0 <= int(hour) < 24:
+            hourly_counts[int(hour)] = int(count)
     hourly_stats = [HourlyStat(hour=h, calls_count=cnt) for h, cnt in hourly_counts.items()]
 
-    # Top Clinics Performance
-    top_clinics: list[ClinicStat] = []
-    for cl in db.query(Clinic).order_by(Clinic.created_at.desc()).limit(15).all():
-        r_c = db.query(func.count(Room.id)).filter(Room.clinic_id == cl.id).scalar() or 0
-        b_c = db.query(func.count(Button.id)).filter(Button.clinic_id == cl.id).scalar() or 0
-        d_c = db.query(func.count(Device.id)).filter(Device.clinic_id == cl.id).scalar() or 0
-        calls_c = db.query(func.count(Call.id)).filter(Call.clinic_id == cl.id).scalar() or 0
-        c_avg = db.query(
-            func.avg(func.extract('epoch', Call.acknowledged_at - Call.created_at))
-        ).filter(Call.clinic_id == cl.id, Call.acknowledged_at.is_not(None)).scalar()
+    # Top clinics: the 15 newest, with their counts fetched in one grouped query each.
+    clinics = list(db.scalars(select(Clinic).order_by(Clinic.created_at.desc()).limit(15)).all())
+    ids = [c.id for c in clinics]
 
-        top_clinics.append(
-            ClinicStat(
-                id=cl.id,
-                name=cl.name,
-                status=cl.subscription_status.value if hasattr(cl.subscription_status, 'value') else str(cl.subscription_status),
-                rooms_count=r_c,
-                buttons_count=b_c,
-                devices_count=d_c,
-                calls_count=calls_c,
-                avg_response_seconds=round(float(c_avg), 1) if c_avg is not None else None,
-            )
+    def _counts(model) -> dict[int, int]:
+        if not ids:
+            return {}
+        rows = db.execute(
+            select(model.clinic_id, func.count(model.id))
+            .where(model.clinic_id.in_(ids))
+            .group_by(model.clinic_id)
+        ).all()
+        return dict(rows)
+
+    rooms_by, buttons_by, devices_by, calls_by = (
+        _counts(Room),
+        _counts(Button),
+        _counts(Device),
+        _counts(Call),
+    )
+    avg_by = (
+        dict(
+            db.execute(
+                select(Call.clinic_id, _avg_response_seconds())
+                .where(Call.clinic_id.in_(ids), Call.acknowledged_at.is_not(None))
+                .group_by(Call.clinic_id)
+            ).all()
         )
+        if ids
+        else {}
+    )
+
+    top_clinics = [
+        ClinicStat(
+            id=cl.id,
+            name=cl.name,
+            status=str(cl.subscription_status),
+            rooms_count=rooms_by.get(cl.id, 0),
+            buttons_count=buttons_by.get(cl.id, 0),
+            devices_count=devices_by.get(cl.id, 0),
+            calls_count=calls_by.get(cl.id, 0),
+            avg_response_seconds=round(float(avg_by[cl.id]), 1) if avg_by.get(cl.id) is not None else None,
+        )
+        for cl in clinics
+    ]
 
     return AdminOverviewOut(
         clinics=clinics_total,

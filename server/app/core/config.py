@@ -96,6 +96,10 @@ BILLING_GRACE_PERIOD_DAYS = int(os.getenv("BILLING_GRACE_PERIOD_DAYS", "3"))
 # overdue the conversation is already an awkward one.
 BILLING_WARN_BEFORE_DAYS = int(os.getenv("BILLING_WARN_BEFORE_DAYS", "5"))
 
+# Wall-clock offset for date/hour bucketing on the superadmin overview ("calls today",
+# calls by hour). Every clinic is in Uzbekistan, which is UTC+5 all year.
+REPORT_UTC_OFFSET_HOURS = int(os.getenv("REPORT_UTC_OFFSET_HOURS", "5"))
+
 # Vendor identity printed on the clinic-facing bill (GET /api/v1/clinic/bill).
 # All empty by default and the template omits any empty block: there is no registered
 # legal entity yet, so the page must stay a plain bill ("Hisob") and must not print

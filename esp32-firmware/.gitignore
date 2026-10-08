@@ -1,2 +1,5 @@
 .pio/
 .vscode/
+
+# Real device config (AP password, keys). Copy config.h.example to config.h.
+src/config.h

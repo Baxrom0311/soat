@@ -30,11 +30,11 @@ from sqlalchemy.orm import Session
 if __package__ in (None, ""):
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.core.config import CALL_EXPIRE_HOURS  # noqa: E402
+from app.core.config import CALL_EXPIRE_HOURS, KEY_DELIVERY_WINDOW_MINUTES  # noqa: E402
 from app.database import SessionLocal  # noqa: E402
 from app.enums import CallStatus  # noqa: E402
 from app.models import Call, Clinic, Room  # noqa: E402
-from app.repositories import call_repo  # noqa: E402
+from app.repositories import call_repo, device_repo  # noqa: E402
 
 logger = logging.getLogger("jobs.expire_stale_calls")
 
@@ -67,6 +67,11 @@ def run(dry_run: bool = False) -> int:
             return 0
 
         closed = call_repo.expire_stale(db, older_than=cutoff)
+        # Piggybacked housekeeping: provisioning keys still stored in plaintext after
+        # their delivery window. Not worth a timer of its own.
+        device_repo.clear_expired_pending_keys(
+            db, claimed_before=datetime.now(timezone.utc) - timedelta(minutes=KEY_DELIVERY_WINDOW_MINUTES)
+        )
         db.commit()
     except Exception:
         # An unreachable DB means this run did nothing, which is safe: the next run
