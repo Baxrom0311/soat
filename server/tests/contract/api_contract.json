@@ -1,0 +1,985 @@
+{
+  "operations": {
+    "DELETE /api/v1/admin/devices/{device_pk}": {
+      "params": [
+        "path:device_pk"
+      ],
+      "body": null,
+      "responses": {
+        "204": null
+      }
+    },
+    "DELETE /api/v1/admin/plans/{plan_id}": {
+      "params": [
+        "path:plan_id"
+      ],
+      "body": null,
+      "responses": {
+        "204": null
+      }
+    },
+    "DELETE /api/v1/buttons/{button_id}": {
+      "params": [
+        "path:button_id"
+      ],
+      "body": null,
+      "responses": {
+        "204": null
+      }
+    },
+    "DELETE /api/v1/devices/{device_pk}": {
+      "params": [
+        "path:device_pk"
+      ],
+      "body": null,
+      "responses": {
+        "204": null
+      }
+    },
+    "DELETE /api/v1/push-tokens": {
+      "params": [],
+      "body": "PushTokenIn",
+      "responses": {
+        "200": "PushTokenOut"
+      }
+    },
+    "DELETE /api/v1/rooms/{room_id}": {
+      "params": [
+        "path:room_id"
+      ],
+      "body": null,
+      "responses": {
+        "204": null
+      }
+    },
+    "DELETE /api/v1/staff/{staff_id}": {
+      "params": [
+        "path:staff_id"
+      ],
+      "body": null,
+      "responses": {
+        "204": null
+      }
+    },
+    "DELETE /api/v1/unassigned-signals": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "204": null
+      }
+    },
+    "DELETE /api/v1/unassigned-signals/{signal_id}": {
+      "params": [
+        "path:signal_id"
+      ],
+      "body": null,
+      "responses": {
+        "204": null
+      }
+    },
+    "GET /": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "200": null
+      }
+    },
+    "GET /api/v1/admin/audit-logs": {
+      "params": [
+        "query:limit?",
+        "query:offset?"
+      ],
+      "body": null,
+      "responses": {
+        "200": "list[AuditLogOut]"
+      }
+    },
+    "GET /api/v1/admin/clinics": {
+      "params": [
+        "query:limit?",
+        "query:offset?"
+      ],
+      "body": null,
+      "responses": {
+        "200": "list[AdminClinicListItem]"
+      }
+    },
+    "GET /api/v1/admin/clinics/{clinic_id}/payments": {
+      "params": [
+        "path:clinic_id"
+      ],
+      "body": null,
+      "responses": {
+        "200": "list[PaymentOut]"
+      }
+    },
+    "GET /api/v1/admin/clinics/{clinic_id}/staff": {
+      "params": [
+        "path:clinic_id"
+      ],
+      "body": null,
+      "responses": {
+        "200": "list[AdminClinicStaffOut]"
+      }
+    },
+    "GET /api/v1/admin/devices": {
+      "params": [
+        "query:clinic_id?",
+        "query:limit?",
+        "query:offset?"
+      ],
+      "body": null,
+      "responses": {
+        "200": "list[AdminDeviceOut]"
+      }
+    },
+    "GET /api/v1/admin/discovered-devices": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "200": "list[DiscoveredDeviceOut]"
+      }
+    },
+    "GET /api/v1/admin/overview": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "200": "AdminOverviewOut"
+      }
+    },
+    "GET /api/v1/admin/plans": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "200": "list[PlanOut]"
+      }
+    },
+    "GET /api/v1/buttons": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "200": "list[ButtonOut]"
+      }
+    },
+    "GET /api/v1/calls/active": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "200": "list[ActiveCallOut]"
+      }
+    },
+    "GET /api/v1/calls/history": {
+      "params": [
+        "query:limit?"
+      ],
+      "body": null,
+      "responses": {
+        "200": "list[HistoryCallOut]"
+      }
+    },
+    "GET /api/v1/clinic/bill": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "200": "string"
+      }
+    },
+    "GET /api/v1/clinic/billing": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "200": "ClinicBillingOut"
+      }
+    },
+    "GET /api/v1/clinic/billing-notice": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "200": "ClinicBillingNotice"
+      }
+    },
+    "GET /api/v1/clinic/me": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "200": "ClinicOut"
+      }
+    },
+    "GET /api/v1/contact-requests": {
+      "params": [
+        "query:limit?"
+      ],
+      "body": null,
+      "responses": {
+        "200": "list[ContactRequestOut]"
+      }
+    },
+    "GET /api/v1/devices": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "200": "list[DeviceOut]"
+      }
+    },
+    "GET /api/v1/meta/latency": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "200": null
+      }
+    },
+    "GET /api/v1/meta/version": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "200": null
+      }
+    },
+    "GET /api/v1/rooms": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "200": "list[RoomOut]"
+      }
+    },
+    "GET /api/v1/staff": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "200": "list[StaffOut]"
+      }
+    },
+    "GET /api/v1/unassigned-signals": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "200": "list[UnassignedSignalOut]"
+      }
+    },
+    "GET /nurse_pic.png": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "200": null
+      }
+    },
+    "HEAD /": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "200": null
+      }
+    },
+    "HEAD /nurse_pic.png": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "200": null
+      }
+    },
+    "PATCH /api/v1/admin/clinics/{clinic_id}": {
+      "params": [
+        "path:clinic_id"
+      ],
+      "body": "AdminClinicUpdate",
+      "responses": {
+        "200": "AdminClinicListItem"
+      }
+    },
+    "PATCH /api/v1/admin/devices/{device_pk}": {
+      "params": [
+        "path:device_pk"
+      ],
+      "body": "AdminDeviceUpdate",
+      "responses": {
+        "200": "AdminDeviceOut"
+      }
+    },
+    "PATCH /api/v1/admin/plans/{plan_id}": {
+      "params": [
+        "path:plan_id"
+      ],
+      "body": "PlanUpdate",
+      "responses": {
+        "200": "PlanOut"
+      }
+    },
+    "PATCH /api/v1/buttons/{button_id}": {
+      "params": [
+        "path:button_id"
+      ],
+      "body": "ButtonUpdate",
+      "responses": {
+        "200": "ButtonOut"
+      }
+    },
+    "PATCH /api/v1/devices/{device_pk}": {
+      "params": [
+        "path:device_pk"
+      ],
+      "body": "DeviceUpdate",
+      "responses": {
+        "200": "DeviceOut"
+      }
+    },
+    "PATCH /api/v1/rooms/{room_id}": {
+      "params": [
+        "path:room_id"
+      ],
+      "body": "RoomUpdate",
+      "responses": {
+        "200": "RoomOut"
+      }
+    },
+    "PATCH /api/v1/staff/{staff_id}": {
+      "params": [
+        "path:staff_id"
+      ],
+      "body": "StaffUpdate",
+      "responses": {
+        "200": "StaffOut"
+      }
+    },
+    "POST /api/v1/admin/clinics": {
+      "params": [],
+      "body": "AdminClinicCreate",
+      "responses": {
+        "201": "AdminClinicListItem"
+      }
+    },
+    "POST /api/v1/admin/clinics/{clinic_id}/admins": {
+      "params": [
+        "path:clinic_id"
+      ],
+      "body": "AdminClinicAdminCreate",
+      "responses": {
+        "201": "AdminClinicAdminOut"
+      }
+    },
+    "POST /api/v1/admin/clinics/{clinic_id}/payments": {
+      "params": [
+        "path:clinic_id"
+      ],
+      "body": "PaymentCreate",
+      "responses": {
+        "201": "PaymentOut"
+      }
+    },
+    "POST /api/v1/admin/clinics/{clinic_id}/staff/{staff_id}/reset-password": {
+      "params": [
+        "path:clinic_id",
+        "path:staff_id"
+      ],
+      "body": null,
+      "responses": {
+        "200": "AdminPasswordResetOut"
+      }
+    },
+    "POST /api/v1/admin/clinics/{clinic_id}/start-billing": {
+      "params": [
+        "path:clinic_id"
+      ],
+      "body": null,
+      "responses": {
+        "200": "AdminClinicListItem"
+      }
+    },
+    "POST /api/v1/admin/devices": {
+      "params": [],
+      "body": "AdminDeviceCreate",
+      "responses": {
+        "201": "DeviceCreateOut"
+      }
+    },
+    "POST /api/v1/admin/discovered-devices/{chip_id}/claim": {
+      "params": [
+        "path:chip_id"
+      ],
+      "body": "ClaimDeviceIn",
+      "responses": {
+        "200": "ClaimDeviceOut"
+      }
+    },
+    "POST /api/v1/admin/plans": {
+      "params": [],
+      "body": "PlanCreate",
+      "responses": {
+        "201": "PlanOut"
+      }
+    },
+    "POST /api/v1/auth/change-password": {
+      "params": [],
+      "body": "ChangePasswordIn",
+      "responses": {
+        "204": null
+      }
+    },
+    "POST /api/v1/auth/login": {
+      "params": [],
+      "body": "LoginIn",
+      "responses": {
+        "200": "LoginOut"
+      }
+    },
+    "POST /api/v1/auth/refresh": {
+      "params": [],
+      "body": null,
+      "responses": {
+        "200": "LoginOut"
+      }
+    },
+    "POST /api/v1/buttons": {
+      "params": [],
+      "body": "ButtonCreate",
+      "responses": {
+        "201": "ButtonOut"
+      }
+    },
+    "POST /api/v1/calls": {
+      "params": [
+        "header:x-device-key?"
+      ],
+      "body": "CallCreate",
+      "responses": {
+        "201": "CallCreateOut"
+      }
+    },
+    "POST /api/v1/calls/{call_id}/ack": {
+      "params": [
+        "path:call_id"
+      ],
+      "body": "AckIn",
+      "responses": {
+        "200": "AckOut"
+      }
+    },
+    "POST /api/v1/contact-requests": {
+      "params": [],
+      "body": "ContactRequestIn",
+      "responses": {
+        "201": "ContactRequestAck"
+      }
+    },
+    "POST /api/v1/contact-requests/{request_id}/handled": {
+      "params": [
+        "path:request_id"
+      ],
+      "body": null,
+      "responses": {
+        "200": "ContactRequestOut"
+      }
+    },
+    "POST /api/v1/devices": {
+      "params": [],
+      "body": "DeviceCreate",
+      "responses": {
+        "201": "DeviceCreateOut"
+      }
+    },
+    "POST /api/v1/devices/announce": {
+      "params": [],
+      "body": "AnnounceIn",
+      "responses": {
+        "200": "AnnounceOut"
+      }
+    },
+    "POST /api/v1/devices/heartbeat": {
+      "params": [
+        "header:x-device-key?"
+      ],
+      "body": "HeartbeatIn",
+      "responses": {
+        "200": "HeartbeatOut"
+      }
+    },
+    "POST /api/v1/push-tokens": {
+      "params": [],
+      "body": "PushTokenIn",
+      "responses": {
+        "200": "PushTokenOut"
+      }
+    },
+    "POST /api/v1/rooms": {
+      "params": [],
+      "body": "RoomCreate",
+      "responses": {
+        "201": "RoomOut"
+      }
+    },
+    "POST /api/v1/staff": {
+      "params": [],
+      "body": "StaffCreate",
+      "responses": {
+        "201": "StaffOut"
+      }
+    }
+  },
+  "models": {
+    "AckIn": {
+      "acknowledged_by": "null | string?"
+    },
+    "AckOut": {
+      "acknowledged_at": "string:date-time",
+      "call_id": "integer",
+      "status": "CallStatus"
+    },
+    "ActiveCallOut": {
+      "call_id": "integer",
+      "created_at": "string:date-time",
+      "floor": "integer",
+      "room_number": "string",
+      "status": "CallStatus"
+    },
+    "AdminClinicAdminCreate": {
+      "email": "string:email",
+      "name": "string",
+      "password": "string"
+    },
+    "AdminClinicAdminOut": {
+      "email": "string",
+      "id": "integer",
+      "name": "string",
+      "role": "StaffRole"
+    },
+    "AdminClinicCreate": {
+      "name": "string"
+    },
+    "AdminClinicListItem": {
+      "active_calls": "integer",
+      "billing": "ClinicBilling",
+      "created_at": "string:date-time",
+      "device_count": "integer",
+      "id": "integer",
+      "name": "string",
+      "room_count": "integer",
+      "staff_count": "integer",
+      "subscription_status": "SubscriptionStatus"
+    },
+    "AdminClinicStaffOut": {
+      "created_at": "string:date-time",
+      "email": "string",
+      "id": "integer",
+      "name": "string",
+      "role": "StaffRole"
+    },
+    "AdminClinicUpdate": {
+      "billing_period_months": "integer | null?",
+      "clear_custom_price": "boolean?",
+      "clear_discount": "boolean?",
+      "clear_plan": "boolean?",
+      "clear_trial_end": "boolean?",
+      "custom_price_amount": "integer | null?",
+      "discount_months": "integer | null?",
+      "discount_percent": "integer | null?",
+      "enforcement_enabled": "boolean | null?",
+      "name": "null | string?",
+      "plan_id": "integer | null?",
+      "subscription_status": "SubscriptionStatus | null?",
+      "trial_ends_at": "null | string:date-time?"
+    },
+    "AdminDeviceCreate": {
+      "clinic_id": "integer",
+      "device_id": "string",
+      "floor": "integer"
+    },
+    "AdminDeviceOut": {
+      "clinic_id": "integer",
+      "clinic_name": "string",
+      "created_at": "string:date-time",
+      "device_id": "string",
+      "floor": "integer",
+      "id": "integer",
+      "last_seen_at": "null | string:date-time",
+      "online": "boolean"
+    },
+    "AdminDeviceUpdate": {
+      "floor": "integer"
+    },
+    "AdminOverviewOut": {
+      "active_calls_total": "integer",
+      "avg_response_seconds_overall": "null | number?",
+      "buttons_total": "integer",
+      "calls_today": "integer",
+      "calls_total": "integer",
+      "clinics": "integer",
+      "clinics_active": "integer",
+      "daily_stats": "list[DailyStat]?",
+      "devices_online": "integer",
+      "devices_total": "integer",
+      "hourly_stats": "list[HourlyStat]?",
+      "rooms_total": "integer",
+      "top_clinics": "list[ClinicStat]?"
+    },
+    "AdminPasswordResetOut": {
+      "new_password": "string"
+    },
+    "AnnounceIn": {
+      "chip_id": "string",
+      "provisioning_secret": "string"
+    },
+    "AnnounceOut": {
+      "claimed": "boolean",
+      "device_id": "null | string?",
+      "device_key": "null | string?"
+    },
+    "AuditLogOut": {
+      "action": "string",
+      "actor_email": "string",
+      "actor_name": "string",
+      "actor_role": "string",
+      "after": "null | object",
+      "before": "null | object",
+      "created_at": "string:date-time",
+      "id": "integer",
+      "ip_address": "null | string",
+      "target_id": "integer | null",
+      "target_type": "string"
+    },
+    "ButtonCreate": {
+      "ev1527_code": "integer",
+      "room_id": "integer"
+    },
+    "ButtonOut": {
+      "ev1527_code": "integer",
+      "floor": "integer",
+      "id": "integer",
+      "room_id": "integer",
+      "room_number": "string"
+    },
+    "ButtonUpdate": {
+      "room_id": "integer"
+    },
+    "CallCreate": {
+      "device_id": "string",
+      "ev1527_code": "integer",
+      "press_id": "null | string?"
+    },
+    "CallCreateOut": {
+      "call_id": "integer",
+      "created_at": "string:date-time",
+      "deduplicated": "boolean?",
+      "floor": "integer",
+      "room_number": "string"
+    },
+    "CallStatus": {
+      "enum": [
+        "active",
+        "acknowledged",
+        "expired"
+      ]
+    },
+    "ChangePasswordIn": {
+      "current_password": "string",
+      "new_password": "string"
+    },
+    "ClaimDeviceIn": {
+      "clinic_id": "integer",
+      "device_id": "null | string?",
+      "floor": "integer",
+      "pairing_code": "string"
+    },
+    "ClaimDeviceOut": {
+      "clinic_id": "integer",
+      "device_id": "string"
+    },
+    "ClinicBilling": {
+      "billing_period_months": "integer",
+      "blocked_at": "null | string:date-time",
+      "currency": "string",
+      "custom_price_amount": "integer | null",
+      "days_until_expiry": "integer | null",
+      "device_count": "integer",
+      "discount_ends_at": "null | string:date-time",
+      "discount_months": "integer | null",
+      "discount_percent": "integer | null",
+      "effective_price": "integer | null",
+      "effective_status": "EffectiveStatus",
+      "enforcement_enabled": "boolean",
+      "list_price": "integer | null",
+      "paid_until": "null | string:date-time",
+      "plan_id": "integer | null",
+      "plan_name": "null | string",
+      "suspension_reason": "SuspensionReason | null"
+    },
+    "ClinicBillingNotice": {
+      "blocked": "boolean",
+      "days_left": "integer | null",
+      "warn": "boolean"
+    },
+    "ClinicBillingOut": {
+      "billing_period_months": "integer",
+      "blocked_at": "null | string:date-time",
+      "currency": "string",
+      "days_until_expiry": "integer | null",
+      "device_count": "integer",
+      "discount_ends_at": "null | string:date-time",
+      "discount_percent": "integer | null",
+      "effective_price": "integer | null",
+      "effective_status": "EffectiveStatus",
+      "is_blocked": "boolean",
+      "is_in_grace": "boolean",
+      "list_price": "integer | null",
+      "needs_warning": "boolean",
+      "paid_until": "null | string:date-time",
+      "plan_name": "null | string"
+    },
+    "ClinicOut": {
+      "created_at": "string:date-time",
+      "effective_status": "EffectiveStatus",
+      "id": "integer",
+      "name": "string",
+      "subscription_status": "SubscriptionStatus"
+    },
+    "ClinicStat": {
+      "avg_response_seconds": "null | number?",
+      "buttons_count": "integer",
+      "calls_count": "integer",
+      "devices_count": "integer",
+      "id": "integer",
+      "name": "string",
+      "rooms_count": "integer",
+      "status": "string"
+    },
+    "ContactRequestAck": {
+      "ok": "boolean"
+    },
+    "ContactRequestIn": {
+      "clinic_name": "null | string?",
+      "message": "null | string?",
+      "name": "string",
+      "phone": "string"
+    },
+    "ContactRequestOut": {
+      "clinic_name": "null | string",
+      "created_at": "string:date-time",
+      "handled": "boolean",
+      "id": "integer",
+      "message": "null | string",
+      "name": "string",
+      "phone": "string",
+      "source_ip": "null | string"
+    },
+    "DailyStat": {
+      "calls_count": "integer",
+      "clinics_total": "integer",
+      "date": "string",
+      "rooms_total": "integer"
+    },
+    "DeviceCreate": {
+      "device_id": "string",
+      "floor": "integer"
+    },
+    "DeviceCreateOut": {
+      "device_api_key": "string",
+      "device_id": "string"
+    },
+    "DeviceOut": {
+      "created_at": "string:date-time",
+      "device_id": "string",
+      "floor": "integer",
+      "id": "integer",
+      "last_seen_at": "null | string:date-time",
+      "online": "boolean"
+    },
+    "DeviceUpdate": {
+      "floor": "integer"
+    },
+    "DiscoveredDeviceOut": {
+      "chip_id": "string",
+      "first_seen_at": "string:date-time",
+      "last_seen_at": "string:date-time"
+    },
+    "EffectiveStatus": {
+      "enum": [
+        "trial",
+        "active",
+        "suspended",
+        "grace",
+        "overdue"
+      ]
+    },
+    "HeartbeatIn": {
+      "device_id": "string"
+    },
+    "HeartbeatOut": {
+      "ok": "boolean"
+    },
+    "HistoryCallOut": {
+      "acknowledged_at": "null | string:date-time",
+      "acknowledged_by": "null | string",
+      "call_id": "integer",
+      "created_at": "string:date-time",
+      "device_id": "null | string",
+      "floor": "integer",
+      "room_number": "string",
+      "status": "CallStatus"
+    },
+    "HourlyStat": {
+      "calls_count": "integer",
+      "hour": "integer"
+    },
+    "LoginIn": {
+      "email": "string:email",
+      "password": "string"
+    },
+    "LoginOut": {
+      "access_token": "string",
+      "clinic_id": "integer | null",
+      "name": "string",
+      "role": "StaffRole"
+    },
+    "PaymentCreate": {
+      "allow_amount_mismatch": "boolean?",
+      "amount": "integer",
+      "idempotency_key": "null | string?",
+      "note": "null | string?",
+      "period_months": "integer | null?"
+    },
+    "PaymentOut": {
+      "amount": "integer",
+      "clinic_id": "integer",
+      "id": "integer",
+      "note": "null | string",
+      "paid_at": "string:date-time",
+      "paid_until_after": "null | string:date-time",
+      "period_months": "integer",
+      "recorded_by": "null | string"
+    },
+    "PlanCreate": {
+      "currency": "string?",
+      "min_price_annual": "integer?",
+      "min_price_monthly": "integer?",
+      "name": "string",
+      "price_per_device_annual": "integer",
+      "price_per_device_monthly": "integer"
+    },
+    "PlanOut": {
+      "created_at": "string:date-time",
+      "currency": "string",
+      "id": "integer",
+      "is_active": "boolean",
+      "min_price_annual": "integer",
+      "min_price_monthly": "integer",
+      "name": "string",
+      "price_per_device_annual": "integer",
+      "price_per_device_monthly": "integer"
+    },
+    "PlanUpdate": {
+      "currency": "null | string?",
+      "is_active": "boolean | null?",
+      "min_price_annual": "integer | null?",
+      "min_price_monthly": "integer | null?",
+      "name": "null | string?",
+      "price_per_device_annual": "integer | null?",
+      "price_per_device_monthly": "integer | null?"
+    },
+    "PushTokenIn": {
+      "expo_push_token": "string"
+    },
+    "PushTokenOut": {
+      "ok": "boolean?"
+    },
+    "RoomCreate": {
+      "floor": "integer",
+      "room_number": "string"
+    },
+    "RoomOut": {
+      "floor": "integer",
+      "id": "integer",
+      "room_number": "string"
+    },
+    "RoomUpdate": {
+      "floor": "integer | null?",
+      "room_number": "null | string?"
+    },
+    "StaffCreate": {
+      "email": "string:email",
+      "floors": "list[integer]?",
+      "name": "string",
+      "password": "string",
+      "role": "StaffRole"
+    },
+    "StaffOut": {
+      "created_at": "string:date-time",
+      "email": "string",
+      "floors": "list[integer]",
+      "id": "integer",
+      "name": "string",
+      "role": "StaffRole"
+    },
+    "StaffRole": {
+      "enum": [
+        "superadmin",
+        "admin",
+        "nurse"
+      ]
+    },
+    "StaffUpdate": {
+      "email": "null | string:email?",
+      "floors": "list[integer] | null?",
+      "name": "null | string?",
+      "password": "null | string?",
+      "role": "StaffRole | null?"
+    },
+    "SubscriptionStatus": {
+      "enum": [
+        "trial",
+        "active",
+        "suspended"
+      ]
+    },
+    "SuspensionReason": {
+      "enum": [
+        "payment_lapse",
+        "manual"
+      ]
+    },
+    "UnassignedSignalOut": {
+      "device_id": "string",
+      "ev1527_code": "integer",
+      "first_seen_at": "string:date-time",
+      "id": "integer",
+      "last_seen_at": "string:date-time",
+      "seen_count": "integer"
+    }
+  },
+  "hidden_routes": [
+    "GET /admin",
+    "GET /admin/{rest:path}",
+    "GET /app",
+    "GET /app/{rest:path}",
+    "GET /billing",
+    "GET /billing/{rest:path}",
+    "GET /calls",
+    "GET /calls/{rest:path}",
+    "GET /clinics",
+    "GET /clinics/{rest:path}",
+    "GET /devices",
+    "GET /devices/{rest:path}",
+    "GET /health",
+    "GET /login",
+    "GET /login/{rest:path}",
+    "GET /overview",
+    "GET /overview/{rest:path}",
+    "GET /plans",
+    "GET /plans/{rest:path}",
+    "GET /requests",
+    "GET /requests/{rest:path}",
+    "GET /rooms",
+    "GET /rooms/{rest:path}",
+    "GET /staff",
+    "GET /staff/{rest:path}",
+    "GET /wall",
+    "GET /wall/{rest:path}",
+    "GET,HEAD /app-v3.apk",
+    "GET,HEAD /app-watch.apk",
+    "GET,HEAD /app.apk",
+    "GET,HEAD /download/NurseCall.apk",
+    "GET,HEAD /download/app",
+    "GET,HEAD /download/watch",
+    "GET,HEAD /nursecall-v3.apk",
+    "GET,HEAD /nursecall-watch.apk",
+    "GET,HEAD /nursecall.apk",
+    "GET,HEAD /watch.apk"
+  ]
+}
