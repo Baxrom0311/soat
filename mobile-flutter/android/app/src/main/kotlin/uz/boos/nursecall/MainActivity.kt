@@ -3,14 +3,7 @@ package uz.boos.nursecall
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
-import android.media.AudioAttributes
-import android.media.MediaPlayer
-import android.media.RingtoneManager
-import android.net.Uri
 import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -30,11 +23,9 @@ class MainActivity : FlutterActivity() {
     private val wearChannel = "uz.boos.nursecall/wear"
     private val alarmChannel = "uz.boos.nursecall/alarm"
 
-    private var mediaPlayer: MediaPlayer? = null
-    private var isAlarmPlaying = false
-
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        CallChannel.ensure(this)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channel)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -48,21 +39,20 @@ class MainActivity : FlutterActivity() {
                 }
             }
 
-        // Alarm channel for continuous alarm sound and vibration until acknowledged
+        // The alarm that rings while a call waits. Lives in CallAlarmService, not
+        // here, so that leaving the app no longer silences it.
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, alarmChannel)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "startAlarm" -> {
-                        startContinuousAlarm()
-                        result.success(true)
+                        val ids = call.argument<List<Number>>("callIds")?.map { it.toLong() } ?: emptyList()
+                        result.success(CallAlarmService.start(applicationContext, ids))
                     }
                     "stopAlarm" -> {
-                        stopContinuousAlarm()
+                        CallAlarmService.stop(applicationContext)
                         result.success(true)
                     }
-                    "isAlarmPlaying" -> {
-                        result.success(isAlarmPlaying)
-                    }
+                    "isAlarmPlaying" -> result.success(CallAlarmService.isRinging)
                     else -> result.notImplemented()
                 }
             }
@@ -83,89 +73,6 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
-    }
-
-    private fun startContinuousAlarm() {
-        if (isAlarmPlaying) return
-        isAlarmPlaying = true
-
-        try {
-            val alarmUri: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-
-            mediaPlayer?.release()
-            mediaPlayer = MediaPlayer().apply {
-                setDataSource(applicationContext, alarmUri)
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build()
-                )
-                isLooping = true
-                prepare()
-                start()
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-
-        try {
-            val pattern = longArrayOf(0, 1000, 600, 1000, 600)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-                vibratorManager?.defaultVibrator?.vibrate(
-                    VibrationEffect.createWaveform(pattern, 0)
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator?.vibrate(VibrationEffect.createWaveform(pattern, 0))
-                } else {
-                    @Suppress("DEPRECATION")
-                    vibrator?.vibrate(pattern, 0)
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun stopContinuousAlarm() {
-        if (!isAlarmPlaying && mediaPlayer == null) return
-        isAlarmPlaying = false
-
-        try {
-            mediaPlayer?.let {
-                if (it.isPlaying) {
-                    it.stop()
-                }
-                it.release()
-            }
-            mediaPlayer = null
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-                vibratorManager?.defaultVibrator?.cancel()
-            } else {
-                @Suppress("DEPRECATION")
-                val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-                vibrator?.cancel()
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    override fun onDestroy() {
-        stopContinuousAlarm()
-        super.onDestroy()
     }
 
     /** Deep-links to the channel itself where possible; falls back to the app's
@@ -206,7 +113,7 @@ class MainActivity : FlutterActivity() {
             "canBypassDnd" to true,
         )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val ch = manager.getNotificationChannel("nursecall_calls")
+            val ch = manager.getNotificationChannel(CallChannel.ID)
             if (ch != null) {
                 state["channelExists"] = true
                 state["channelImportance"] = ch.importance

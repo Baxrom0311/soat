@@ -36,4 +36,14 @@ void main() {
       isFalse,
     );
   });
+
+  test('the alarm is told exactly which calls it rings for', () {
+    final calls = [
+      call(1, const Duration(minutes: 1)),
+      call(2, const Duration(hours: 3)),
+      call(3, const Duration(seconds: 10)),
+      call(4, Duration.zero, status: 'acknowledged'),
+    ];
+    expect(ringingIds(calls, {3}, now), {1});
+  });
 }
