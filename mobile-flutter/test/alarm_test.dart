@@ -46,4 +46,66 @@ void main() {
     ];
     expect(ringingIds(calls, {3}, now), {1});
   });
+
+  group('backend', backendTests);
+}
+
+class _FakeBackend implements AlarmBackend {
+  final starts = <(Set<int>, List<int>)>[];
+  int stops = 0;
+
+  @override
+  Future<void> start(Set<int> callIds, List<Call> arrived) async =>
+      starts.add((callIds, [for (final c in arrived) c.callId]));
+
+  @override
+  Future<void> stop() async => stops++;
+}
+
+void backendTests() {
+  late _FakeBackend backend;
+  setUp(() {
+    backend = _FakeBackend();
+    AlarmService.instance.backend = backend;
+  });
+  tearDown(() => AlarmService.instance.stopAlarm());
+
+  test('a backend hears only the calls that just arrived', () async {
+    final a = call(1, const Duration(seconds: 5));
+    final b = call(2, const Duration(seconds: 1));
+    await AlarmService.instance.sync({1}, calls: [a]);
+    await AlarmService.instance.sync({1}, calls: [a]);
+    await AlarmService.instance.sync({1, 2}, calls: [a, b]);
+    expect(backend.starts.map((s) => s.$2), [
+      [1],
+      [2],
+    ]);
+    expect(AlarmService.instance.isPlaying, isTrue);
+  });
+
+  test('an empty set stops the backend once', () async {
+    await AlarmService.instance.sync({1}, calls: [call(1, Duration.zero)]);
+    await AlarmService.instance.sync({});
+    await AlarmService.instance.sync({});
+    expect(backend.stops, 1);
+    expect(AlarmService.instance.isPlaying, isFalse);
+  });
+
+  test('a backend that throws does not break the next sync', () async {
+    AlarmService.instance.backend = _ThrowingBackend();
+    await AlarmService.instance.sync({1}, calls: [call(1, Duration.zero)]);
+    await AlarmService.instance.stopAlarm();
+    AlarmService.instance.backend = backend;
+    await AlarmService.instance.sync({2}, calls: [call(2, Duration.zero)]);
+    expect(backend.starts.single.$2, [2]);
+  });
+}
+
+class _ThrowingBackend implements AlarmBackend {
+  @override
+  Future<void> start(Set<int> callIds, List<Call> arrived) =>
+      Future.error(Exception('no audio device'));
+
+  @override
+  Future<void> stop() => Future.error(Exception('no audio device'));
 }
