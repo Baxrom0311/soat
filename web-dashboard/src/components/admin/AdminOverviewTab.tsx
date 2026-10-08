@@ -44,13 +44,13 @@ export function AdminOverviewTab() {
   }, [overview?.top_clinics, clinicFilter]);
 
   // Max values for chart scaling
-  const dailyStats = overview?.daily_stats || [];
+  const dailyStats = useMemo(() => overview?.daily_stats ?? [], [overview?.daily_stats]);
   const maxRooms = useMemo(() => {
     if (!dailyStats.length) return 10;
     return Math.max(...dailyStats.map((d) => d.rooms_total), 5);
   }, [dailyStats]);
 
-  const hourlyStats = overview?.hourly_stats || [];
+  const hourlyStats = useMemo(() => overview?.hourly_stats ?? [], [overview?.hourly_stats]);
   const maxHourlyCalls = useMemo(() => {
     if (!hourlyStats.length) return 10;
     return Math.max(...hourlyStats.map((h) => h.calls_count), 5);

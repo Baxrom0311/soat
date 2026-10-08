@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { CallCard } from '../components/calls/CallCard';
 import { elapsedLabel } from '../lib/ageStep';
 import { useCallsFeed } from '../hooks/useCallsFeed';
+import { useWakeLock } from '../hooks/useWakeLock';
 import { useAuth } from '../context/AuthContext';
 import type { ActiveCall } from '../api/types';
 import './wall.css';
@@ -57,6 +58,7 @@ export function WallView() {
   const { token } = useAuth();
   const { activeCalls, connStatus, audioBlocked, unlockAudio, testSound } = useCallsFeed(token);
   const [now, setNow] = useState(() => new Date());
+  useWakeLock();
 
   useEffect(() => {
     const root = document.documentElement;
