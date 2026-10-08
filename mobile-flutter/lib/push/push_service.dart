@@ -11,14 +11,15 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../api/client.dart';
 import '../settings/settings_store.dart';
 
-/// Must match `android.notification.channel_id` in the backend's FCM payload.
+/// Must match CallChannel.ID in android/.../CallAlarm.kt, which creates the
+/// same channel natively at startup. Whichever side runs first wins, so the two
+/// definitions must agree.
 ///
-/// If the two ever drift, Android does not fail: it quietly applies default
-/// importance, and the alert arrives without sound or heads-up. Silent delivery
-/// is the failure mode this product cannot afford, so the constant is named on
-/// both sides and this comment is the pointer between them
-/// (server/app/services/fcm_service.py).
-const String callsChannelId = 'nursecall_calls';
+/// v2 because a channel's sound is frozen at creation: the first channel used
+/// the system default sound, and existing installs only get the new default
+/// chime under a new id. The old channel is deleted on init.
+const String callsChannelId = 'nursecall_calls_v2';
+const String _legacyCallsChannelId = 'nursecall_calls';
 
 /// Android channel settings are fixed at creation. Changing them later has no
 /// effect on phones where the channel already exists — the only way to raise
@@ -36,6 +37,10 @@ const AndroidNotificationChannel _callsChannel = AndroidNotificationChannel(
   description: 'Palatadan kelgan chaqiruvlar',
   importance: Importance.max,
   playSound: true,
+  // The default: a chime, not the system alarm ringtone. The nurse picks any
+  // other sound in Android's settings for this channel, and the in-app alarm
+  // (CallAlarmService) plays the same choice.
+  sound: RawResourceAndroidNotificationSound('nursecall_chime'),
   enableVibration: true,
   audioAttributesUsage: AudioAttributesUsage.alarm,
 );
@@ -48,7 +53,11 @@ const AndroidNotificationChannel _callsChannel = AndroidNotificationChannel(
 /// works for a notification this app posts itself, which is why the server sends
 /// data-only messages: a `notification` payload is rendered by the system, and
 /// the system does not know to do this.
-NotificationDetails _callDetails() => NotificationDetails(
+///
+/// [silent] is for a notification posted while the app is open: the alarm
+/// service is already ringing for that call, and a second sound on top of it
+/// would only be noise.
+NotificationDetails _callDetails({bool silent = false}) => NotificationDetails(
   android: AndroidNotificationDetails(
     _callsChannel.id,
     _callsChannel.name,
@@ -57,8 +66,9 @@ NotificationDetails _callDetails() => NotificationDetails(
     priority: Priority.max,
     category: AndroidNotificationCategory.alarm,
     audioAttributesUsage: AudioAttributesUsage.alarm,
+    silent: silent,
     // Flag 4 = Notification.FLAG_INSISTENT: loops sound & vibration continuously like an alarm clock
-    additionalFlags: Int32List.fromList(<int>[4]),
+    additionalFlags: silent ? null : Int32List.fromList(<int>[4]),
     // Stays until the call is dealt with rather than being swiped away in a
     // pocket. The alert should end because somebody answered, not because a
     // phone brushed against a uniform.
@@ -187,11 +197,16 @@ class PushService {
       ),
       onDidReceiveNotificationResponse: (r) => _handlePayload(r.payload),
     );
-    await _local
+    final android = _local
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
-        >()
-        ?.createNotificationChannel(_callsChannel);
+        >();
+    await android?.createNotificationChannel(_callsChannel);
+    try {
+      await android?.deleteNotificationChannel(
+        channelId: _legacyCallsChannelId,
+      );
+    } catch (_) {}
 
     // Android 13+ refuses to show anything without this, and refuses silently.
     await FirebaseMessaging.instance.requestPermission();
@@ -319,7 +334,7 @@ class PushService {
       id: int.tryParse(m.data['call_id']?.toString() ?? '') ?? m.hashCode,
       title: m.data['title'] ?? 'Xona $room chaqirdi!',
       body: m.data['body'] ?? (floor == null ? null : '$floor-qavat'),
-      notificationDetails: _callDetails(),
+      notificationDetails: _callDetails(silent: true),
       payload: m.data['call_id']?.toString(),
     );
   }

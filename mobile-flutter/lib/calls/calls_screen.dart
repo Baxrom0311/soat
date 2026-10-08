@@ -77,13 +77,18 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
     super.dispose();
   }
 
+  /// True between leaving the app and coming back to it.
+  bool _backgrounded = false;
+
   void _syncAlarm() {
     final calls = widget.feed.calls;
     _silenced.retainWhere((id) => calls.any((c) => c.callId == id));
-    if (shouldRing(calls, _silenced, DateTime.now())) {
-      AlarmService.instance.startAlarm();
-    } else {
-      AlarmService.instance.stopAlarm();
+    final ids = ringingIds(calls, _silenced, DateTime.now());
+    AlarmService.instance.sync(ids);
+    // In the background the feed runs only to learn when to stop ringing: once
+    // nothing rings, it stops too, and the push path takes over again.
+    if (_backgrounded && ids.isEmpty && widget.feed.isRunning) {
+      widget.feed.stop();
     }
   }
 
@@ -110,14 +115,18 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
     // shift -- and an open socket on a sleeping phone is a battery cost that
     // buys nothing, because the push path is what wakes a backgrounded app.
     if (state == AppLifecycleState.resumed) {
+      _backgrounded = false;
       widget.feed.start(token: widget.sessions.session?.accessToken);
       // Renew while we are here. Ninety-day tokens expire quietly otherwise, and
       // the first a nurse would know of it is the login screen mid-shift.
       widget.sessions.renew();
       _syncAlarm();
     } else if (state == AppLifecycleState.paused) {
-      AlarmService.instance.stopAlarm();
-      widget.feed.stop();
+      _backgrounded = true;
+      // Leaving the app used to silence a waiting call. Now the alarm keeps
+      // ringing (it is a foreground service), and the feed keeps running while
+      // it does, so another nurse answering the call still stops it here.
+      if (!AlarmService.instance.isPlaying) widget.feed.stop();
     }
   }
 
@@ -1245,8 +1254,8 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
                 ),
               _Row(
                 icon: Icons.tune,
-                label: 'Ovoz va tebranish',
-                sub: 'Android sozlamalarida boshqariladi',
+                label: 'Chaqiruv ovozi',
+                sub: 'Android sozlamalarida tanlang — signal ham shu ovozda chaladi',
                 onTap: widget.push.openSystemSettings,
               ),
             ],

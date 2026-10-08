@@ -12,20 +12,26 @@ import '../api/models.dart';
 /// until the twelve-hour expiry finally closes the call.
 const alarmMaxAge = Duration(hours: 2);
 
-/// Whether the alarm should be ringing: some call is active, recent, and not
-/// one the nurse has already silenced.
-bool shouldRing(Iterable<Call> calls, Set<int> silenced, DateTime now) =>
-    calls.any(
-      (c) =>
-          c.status == 'active' &&
-          !silenced.contains(c.callId) &&
-          c.waited(now) < alarmMaxAge,
-    );
+/// The calls the alarm should be ringing for: active, recent, and not ones the
+/// nurse has already silenced.
+Set<int> ringingIds(Iterable<Call> calls, Set<int> silenced, DateTime now) => {
+  for (final c in calls)
+    if (c.status == 'active' &&
+        !silenced.contains(c.callId) &&
+        c.waited(now) < alarmMaxAge)
+      c.callId,
+};
 
-/// Manages continuous alarm audio and vibration when active calls are waiting.
+bool shouldRing(Iterable<Call> calls, Set<int> silenced, DateTime now) =>
+    ringingIds(calls, silenced, now).isNotEmpty;
+
+/// Drives the native alarm (CallAlarmService on Android).
 ///
-/// Until a nurse taps "Qabul qilish" (Acknowledge) and no active calls remain,
-/// this service rings and vibrates continuously on the device's alarm channel.
+/// The alarm is a foreground service rather than something the screen owns,
+/// so it keeps ringing after the nurse leaves the app, and stops only when the
+/// calls are answered, silenced, or too old to matter. The service is told
+/// which calls it rings for: muting it from its notification mutes those calls,
+/// and a new call starts it again.
 class AlarmService {
   AlarmService._();
   static final AlarmService instance = AlarmService._();
@@ -34,27 +40,31 @@ class AlarmService {
     'uz.boos.nursecall/alarm',
   );
 
-  bool _isPlaying = false;
-  bool get isPlaying => _isPlaying;
+  Set<int> _ids = const {};
+  bool get isPlaying => _ids.isNotEmpty;
 
-  /// Starts the alarm sound loop and repeating vibration.
-  Future<void> startAlarm() async {
-    if (_isPlaying) return;
+  /// Rings for exactly [callIds]; an empty set stops it. Cheap to call on every
+  /// feed update: the platform is only told when the set changes.
+  Future<void> sync(Set<int> callIds) async {
+    if (callIds.isEmpty) return stopAlarm();
+    if (setEquals(callIds, _ids)) return;
+    // Recorded before the call, not after: if Android refuses (starting a
+    // foreground service from the background), retrying every tick would only
+    // repeat the refusal. The next change to the set tries again, and the push
+    // notification rings meanwhile.
+    _ids = Set.unmodifiable(callIds);
     try {
-      await _channel.invokeMethod('startAlarm');
-      // Only once it really started: set before the call, a failure left this
-      // true and every later start returned early, so it never rang again.
-      _isPlaying = true;
+      await _channel.invokeMethod('startAlarm', {'callIds': callIds.toList()});
     } catch (e) {
       debugPrint('Alarm start xatosi: $e');
     }
   }
 
-  /// Stops alarm sound and silences vibration immediately.
+  /// Stops the sound and vibration now.
   Future<void> stopAlarm() async {
-    if (!_isPlaying) return;
+    if (_ids.isEmpty) return;
+    _ids = const {};
     try {
-      _isPlaying = false;
       await _channel.invokeMethod('stopAlarm');
     } catch (e) {
       debugPrint('Alarm stop xatosi: $e');
