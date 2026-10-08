@@ -8,7 +8,6 @@ out what it owes and how to get unblocked.
 import html
 from datetime import datetime, timezone
 
-from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.core import billing
@@ -19,6 +18,7 @@ from app.core.config import (
     VENDOR_PHONE,
     VENDOR_TAX_ID,
 )
+from app.core.errors import NotFound
 from app.models import Clinic, Plan
 from app.repositories import clinic_repo, device_repo, plan_repo
 from app.schemas.clinic import ClinicBillingNotice, ClinicBillingOut, ClinicOut
@@ -27,7 +27,7 @@ from app.schemas.clinic import ClinicBillingNotice, ClinicBillingOut, ClinicOut
 def _facts(db: Session, clinic_id: int) -> tuple[Clinic, Plan | None, int, datetime]:
     clinic = clinic_repo.get(db, clinic_id)
     if clinic is None:
-        raise HTTPException(status_code=404, detail="Clinic not found")
+        raise NotFound("Clinic not found")
     plan = plan_repo.get(db, clinic.plan_id) if clinic.plan_id else None
     # Same grouped-count helper the superadmin clinics list uses, rather than a
     # per-request COUNT (see device_service.py).
@@ -38,7 +38,7 @@ def _facts(db: Session, clinic_id: int) -> tuple[Clinic, Plan | None, int, datet
 def get_my_clinic(db: Session, clinic_id: int) -> ClinicOut:
     clinic = clinic_repo.get(db, clinic_id)
     if clinic is None:
-        raise HTTPException(status_code=404, detail="Clinic not found")
+        raise NotFound("Clinic not found")
     return ClinicOut(
         id=clinic.id,
         name=clinic.name,
@@ -72,7 +72,7 @@ def get_billing(db: Session, clinic_id: int) -> ClinicBillingOut:
 def get_billing_notice(db: Session, clinic_id: int) -> ClinicBillingNotice:
     clinic = clinic_repo.get(db, clinic_id)
     if clinic is None:
-        raise HTTPException(status_code=404, detail="Clinic not found")
+        raise NotFound("Clinic not found")
     now = datetime.now(timezone.utc)
     return ClinicBillingNotice(
         warn=billing.needs_expiry_warning(clinic, now),

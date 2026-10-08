@@ -1,11 +1,12 @@
 import logging
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 from app.core import latency, log_redaction
 from app.core.config import ENVIRONMENT
+from app.core.errors import DomainError
 from app.database import SessionLocal
 from app.routers import (
     admin,
@@ -71,6 +72,11 @@ def health():
     return {"status": "ok"}
 
 
+def domain_error_response(_: Request, exc: DomainError) -> JSONResponse:
+    # Byte-for-byte what fastapi.HTTPException produced when services raised it.
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+
 def create_app() -> FastAPI:
     """Builds the application. Everything wired into it is listed here and nowhere else."""
     docs_enabled = ENVIRONMENT != "production"
@@ -85,6 +91,7 @@ def create_app() -> FastAPI:
     # whole system exists to keep small -- button press to nurse notified -- was
     # measured nowhere, so nothing would ever notice it getting worse.
     application.middleware("http")(latency.timing_middleware)
+    application.add_exception_handler(DomainError, domain_error_response)
 
     application.add_api_route("/health", health, methods=["GET"], include_in_schema=False)
     for module in API_ROUTERS:

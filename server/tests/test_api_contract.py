@@ -134,3 +134,12 @@ def test_the_api_contract_has_not_changed():
         "API grew (new route, model or field). If intended, regenerate with UPDATE_CONTRACT=1 "
         "and commit the snapshot."
     )
+
+
+def test_domain_errors_reach_clients_exactly_as_before(client):
+    """Services raise DomainError now instead of HTTPException; the body and status a
+    client sees must not change."""
+    res = client.post("/api/v1/calls", json={"device_id": "no-such-device", "ev1527_code": 1})
+    assert res.status_code == 401
+    assert set(res.json()) == {"detail"}
+    assert isinstance(res.json()["detail"], str)

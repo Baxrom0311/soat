@@ -22,9 +22,9 @@ The endpoint is reachable by any clinic member and is deliberately NOT billing-g
 
 import re
 
-from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.errors import Conflict, Invalid
 from app.repositories import push_token_repo
 
 # Expo's documented shapes: ExponentPushToken[...] and the newer ExpoPushToken[...].
@@ -38,7 +38,7 @@ MAX_TOKENS_PER_STAFF = 10
 def _validate(token: str) -> str:
     token = token.strip()
     if not _EXPO_TOKEN_RE.match(token):
-        raise HTTPException(status_code=422, detail="Push token formati noto'g'ri")
+        raise Invalid("Push token formati noto'g'ri")
     return token
 
 
@@ -54,13 +54,10 @@ def register_token(db: Session, *, clinic_id: int, staff_id: int, token: str) ->
         # Same device now used by a different account in the SAME clinic is a normal
         # handover (shared ward phone), so allow it; across clinics it is a hijack.
         if existing.clinic_id != clinic_id:
-            raise HTTPException(status_code=409, detail="Bu push token boshqa hisobga tegishli")
+            raise Conflict("Bu push token boshqa hisobga tegishli")
 
     if existing is None and push_token_repo.count_for_staff(db, staff_id) >= MAX_TOKENS_PER_STAFF:
-        raise HTTPException(
-            status_code=409,
-            detail=f"Bitta xodim uchun ko'pi bilan {MAX_TOKENS_PER_STAFF} qurilma ulanishi mumkin",
-        )
+        raise Conflict(f"Bitta xodim uchun ko'pi bilan {MAX_TOKENS_PER_STAFF} qurilma ulanishi mumkin")
 
     push_token_repo.upsert(db, clinic_id=clinic_id, staff_id=staff_id, token=token)
     db.commit()

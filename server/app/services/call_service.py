@@ -21,11 +21,12 @@ threadpool via run_in_threadpool so a button press can never stall the event loo
 and with it every other request and websocket -- for the duration of a bcrypt check.
 """
 
-from fastapi import BackgroundTasks, HTTPException
+from fastapi import BackgroundTasks
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 
 from app.core.config import CALL_INGEST_RATE_LIMIT_MAX, CALL_INGEST_RATE_LIMIT_WINDOW_SECONDS
+from app.core.errors import Conflict, Forbidden, NotFound, RateLimited
 from app.core.rate_limit import SlidingWindowLimiter
 from app.repositories import button_repo, call_repo, device_repo, staff_floor_repo, unassigned_repo
 from app.schemas.call import AckOut, ActiveCallOut, CallCreateOut, HistoryCallOut
@@ -64,7 +65,7 @@ def _ingest_sync(
         # does no DB work at all. 429, not a silent drop -- the ESP32 firmware
         # already retries a 429 with backoff via its offline queue, so a real press
         # is never lost, just delayed.
-        raise HTTPException(status_code=429, detail="Too many calls from this clinic, try again shortly")
+        raise RateLimited("Too many calls from this clinic, try again shortly")
 
     device_repo.touch_last_seen(db, device)
 
@@ -177,7 +178,7 @@ async def create_call_from_device(
         floor = event["call"]["floor"] if event["type"] == "new_call" else None
         manager.broadcast_soon(clinic_id, event, floor=floor)
     if out is None:
-        raise HTTPException(status_code=404, detail="Unknown code")
+        raise NotFound("Unknown code")
     if push_args is not None and background_tasks is not None:
         background_tasks.add_task(push_service.send_new_call_notifications, clinic_id, **push_args)
     return out
@@ -227,13 +228,13 @@ def _ack_sync(
 ) -> AckOut:
     call = call_repo.get(db, clinic_id, call_id)
     if call is None:
-        raise HTTPException(status_code=404, detail="Call not found")
+        raise NotFound("Call not found")
     floors = staff_floor_repo.get_visible_floors(db, staff_id, role)
     if floors is not None and call.room.floor not in floors:
-        raise HTTPException(status_code=403, detail="Call is outside your assigned floors")
+        raise Forbidden("Call is outside your assigned floors")
     if not call_repo.acknowledge_if_active(db, clinic_id, call_id, acknowledged_by=acknowledged_by):
         db.rollback()
-        raise HTTPException(status_code=409, detail="Call already acknowledged")
+        raise Conflict("Call already acknowledged")
     db.commit()
     db.refresh(call)
     return AckOut(call_id=call.id, status=call.status, acknowledged_at=call.acknowledged_at)
