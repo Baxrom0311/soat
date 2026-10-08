@@ -125,7 +125,9 @@ def count_expired_by_clinic(db: Session, *, since: datetime) -> list[tuple[int, 
     return [(clinic_id, count) for clinic_id, count in rows]
 
 
-def acknowledge_if_active(db: Session, clinic_id: int, call_id: int, *, acknowledged_by: str) -> bool:
+def acknowledge_if_active(
+    db: Session, clinic_id: int, call_id: int, *, acknowledged_by: str, staff_id: int | None = None
+) -> bool:
     """Atomic check-and-set: only flips an *active* call, so two concurrent acks can't
     both succeed (the loser sees rowcount 0 and surfaces a 409). clinic_id is required
     here too (not just in the preceding call_repo.get lookup) so correctness never
@@ -137,6 +139,7 @@ def acknowledge_if_active(db: Session, clinic_id: int, call_id: int, *, acknowle
             status=CallStatus.ACKNOWLEDGED,
             acknowledged_at=datetime.now(timezone.utc),
             acknowledged_by=acknowledged_by,
+            acknowledged_by_staff_id=staff_id,
         )
     )
     return result.rowcount == 1

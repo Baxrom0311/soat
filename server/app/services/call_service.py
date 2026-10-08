@@ -243,7 +243,9 @@ def _ack_sync(
     floors = staff_floor_repo.get_visible_floors(db, staff_id, role)
     if floors is not None and call.room.floor not in floors:
         raise Forbidden("Call is outside your assigned floors")
-    if not call_repo.acknowledge_if_active(db, clinic_id, call_id, acknowledged_by=acknowledged_by):
+    if not call_repo.acknowledge_if_active(
+        db, clinic_id, call_id, acknowledged_by=acknowledged_by, staff_id=staff_id
+    ):
         db.rollback()
         raise Conflict("Call already acknowledged")
     event_id = outbox.record(

@@ -155,3 +155,23 @@ def test_an_expired_call_is_gone_from_the_live_list(client, make_clinic, login, 
     db.commit()
 
     assert client.get("/api/v1/calls/active", headers=login(c["nurse"])).json() == []
+
+
+def test_an_ack_records_who_as_a_person_not_only_a_name(client, make_clinic, login, db):
+    c = make_clinic()
+    call_id = _press(client, c).json()["call_id"]
+    res = client.post(f"/api/v1/calls/{call_id}/ack", headers=login(c["nurse"]), json={})
+    assert res.status_code == 200
+    db.expire_all()
+    call = db.get(Call, call_id)
+    assert call.acknowledged_by_staff_id == c["nurse"].id
+    assert call.acknowledged_by == c["nurse"].name
+
+    # Removing the nurse later keeps the call and the name it was answered under.
+    name, nurse_id = c["nurse"].name, c["nurse"].id
+    admin = login(c["admin"])
+    assert client.delete(f"/api/v1/staff/{nurse_id}", headers=admin).status_code == 204
+    db.expire_all()
+    call = db.get(Call, call_id)
+    assert call.acknowledged_by_staff_id is None
+    assert call.acknowledged_by == name

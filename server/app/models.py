@@ -343,6 +343,13 @@ class Call(Base):
     )
     acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     acknowledged_by: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Who, as a row rather than a display name: names change and repeat, and per-nurse
+    # answer times need the person. acknowledged_by stays as the name at the time,
+    # which is what history screens show. NULL for calls answered before 0013 and for
+    # staff since deleted.
+    acknowledged_by_staff_id: Mapped[int | None] = mapped_column(
+        ForeignKey("staff.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     room: Mapped["Room"] = relationship()
 
