@@ -38,8 +38,6 @@ class CallMonitorService : Service() {
         // bildirishnomasining o'rnini bosib qo'yar edi.
         private const val ALERT_NOTIFICATION_OFFSET = 1000
 
-        private const val POLL_INTERVAL_MS = 5000L
-
         // Obuna holati eng ko'pi bilan kunda bir marta o'zgaradi (days_left butun
         // kunlarda), shuning uchun uni har 5 sekundda so'rash ma'nosiz tarmoq/batareya
         // sarfi bo'lardi. 720 * 5s ≈ 1 soat: kun ichida o'zgarish ~1 soat kechikish
@@ -107,6 +105,7 @@ class CallMonitorService : Service() {
         // ular baribir ekran ro'yxatida ko'rinadi.
         var firstPollDone = false
         var loopCount = 0L
+        var failures = 0
 
         while (scope.isActive) {
             // Birinchi aylanishda va keyin har ~1 soatda. fetchBillingNotice hech qachon
@@ -119,6 +118,7 @@ class CallMonitorService : Service() {
             }
             loopCount++
 
+            var unauthorized = false
             try {
                 val calls = ApiClient.fetchActiveCalls(applicationContext)
                 CallState.activeCalls.value = calls
@@ -143,16 +143,25 @@ class CallMonitorService : Service() {
                     alreadyAlerted.addAll(activeIds)
                     firstPollDone = true
                 }
+                // Boshqa hamshira qabul qilgan chaqiruv bilakda qolib ketmasin:
+                // eskirgan bildirishnoma keyingi yangisi bilan adashtiriladi.
+                cancelAlerts(PollPolicy.closedCalls(alreadyAlerted, activeIds))
                 // Yopilgan chaqiruvlar ID'larini to'plamdan chiqarib turamiz,
                 // aks holda to'plam cheksiz o'sib boradi.
                 alreadyAlerted.retainAll(activeIds)
+                failures = 0
             } catch (e: UnauthorizedException) {
+                unauthorized = true
                 CallState.status.value = ConnectionStatus.UNAUTHORIZED
                 CallState.activeCalls.value = emptyList()
+                // Sessiya tugadi: uning chaqiruvlari endi bu soatga tegishli emas.
+                cancelAlerts(alreadyAlerted.toSet())
+                alreadyAlerted.clear()
             } catch (e: Exception) {
+                failures++
                 CallState.status.value = ConnectionStatus.DISCONNECTED
             }
-            delay(POLL_INTERVAL_MS)
+            delay(PollPolicy.nextDelayMs(failures, unauthorized))
         }
     }
 
@@ -197,6 +206,12 @@ class CallMonitorService : Service() {
             .build()
 
         manager.notify(ALERT_NOTIFICATION_OFFSET + call.callId, notification)
+    }
+
+    private fun cancelAlerts(callIds: Set<Int>) {
+        if (callIds.isEmpty()) return
+        val manager = getSystemService(NotificationManager::class.java)
+        callIds.forEach { manager.cancel(ALERT_NOTIFICATION_OFFSET + it) }
     }
 
     private fun vibrate() {
