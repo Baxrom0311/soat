@@ -259,3 +259,22 @@ sababsiz jimlikka olib kelmasligi kerak:
       ishlayotganining belgisi)
 - [ ] BOOT tugmasini 5 soniya bosib turib WiFi reset + qurilma biriktiruvi
       (device_id/device_key) tozalanishini sinab ko'ring
+
+## Yangi qurilma dashboard'da chiqmayapti — tekshirish tartibi
+
+Serial monitorni oching (`pio device monitor`, 115200) va qurilmani qayta yoqing.
+Qaysi satr chiqqaniga qarab:
+
+| Serial'da | Ma'nosi | Nima qilish kerak |
+|---|---|---|
+| `WiFi'ga ulanmoqda ... portal: <nom>` dan keyin hech narsa | Qurilmada WiFi sozlanmagan, sozlash AP'si ochiq | Telefondan shu AP'ga ulanib klinika WiFi'sini kiriting |
+| `Device ID: ... (asosiy rejim)` | Qurilmaning NVS'ida **eski** device_id/key bor (oldin biriktirilgan). Oddiy upload NVS'ni o'chirmaydi | BOOT tugmasini yoqish paytida 5 s bosib turing — biriktiruv tozalanadi. Yangi firmware'da kalit 3 marta rad etilsa qurilma o'zi ham announce qiladi |
+| `Announce ... 403` | Bu chip serverda boshqa sir bilan yozilgan (flash to'liq o'chirilgan) | 24 soat kuting yoki serverda `discovered_devices`dan shu chip_id'ni o'chiring. `pio run -t erase` ishlatmang |
+| `Announce ... 422` | Firmware va server versiyasi mos emas | Ikkalasini oxirgi `main`dan yangilang |
+| `Announce ... 429` | Bitta tarmoqdan juda ko'p announce | Qurilma o'zi 60 s kutadi |
+| `Announce ... 500` | Server xatosi | Server logi; `alembic upgrade head` qo'llanganini tekshiring |
+| `Announce so'rovi muvaffaqiyatsiz` + `soat sinxronlanmagan` | NTP yopiq, TLS ishlamaydi | Tarmoqda UDP 123 portini oching |
+| `Kutish rejimida: dashboard'da chip_id=...` | Server qurilmani ko'ryapti | Superadmin → Qurilmalar → "Yangi topilgan ESP32" ro'yxatidan shu chip_id'ni biriktiring. Tasdiqlash kodi Serial'dagi `Biriktirish kodi:` satrida |
+
+Ro'yxat faqat superadmin hisobida va faqat oxirgi 5 daqiqada announce qilgan
+qurilmalar uchun ko'rinadi.
