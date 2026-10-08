@@ -77,13 +77,35 @@ static const time_t NTP_SANE_EPOCH = 1704067200;
 // (avtorizatsiyali) rejimga o'tadi.
 static const char *PROVISION_NVS_NAMESPACE = "nursecall";
 static const char *ANNOUNCE_PATH = "/api/v1/devices/announce";
-static const uint32_t ANNOUNCE_INTERVAL_MS = 5000;
+// 10s: server /announce'ni IP bo'yicha 20 so'rov/daqiqa bilan cheklaydi. 5s'da
+// bitta qurilma 12/daqiqa yuborardi -- bitta klinika tarmog'idan (bitta tashqi
+// IP) ikkita yangi ESP32 birga yoqilsa, 429 olib ro'yxatda chiqmay qolardi.
+static const uint32_t ANNOUNCE_INTERVAL_MS = 10000;
+// 429 (juda ko'p so'rov) olinganda keyingi urinish shuncha kutadi.
+static const uint32_t ANNOUNCE_BACKOFF_MS = 60000;
+// Server kalitni ketma-ket shuncha marta rad etsa (401), qurilma o'chirilgan
+// yoki qayta biriktirilishi kerak deb hisoblanadi va announce ham yuboriladi
+// (pastdagi g_keyRejectedCount izohiga qarang). Heartbeat har 60s -- ~3 daqiqa.
+static const uint8_t KEY_REJECTED_THRESHOLD = 3;
 
 static char g_chipId[13] = {0};    // 12 xonali kichik-harfli hex + '\0'
 static String g_provisioningSecret;
 static String g_deviceId;          // asosiy rejimda ishlatiladigan device_id
 static String g_deviceKey;         // asosiy rejimda ishlatiladigan device_key
 static bool g_provisioned = false; // true => asosiy (avtorizatsiyali) rejim
+// Server shu qurilmaning kalitini ketma-ket necha marta rad etdi (401).
+//
+// Eng ko'p uchraydigan "yangi qurilma chiqmayapti" holati: qurilma oldin
+// biriktirilgan, keyin dashboard'da o'chirilgan, so'ng qayta flash qilingan.
+// Oddiy `pio run -t upload` NVS'ni o'chirmaydi, shuning uchun eski
+// device_id/device_key saqlanib qoladi -- qurilma to'g'ri asosiy rejimga
+// o'tadi, server esa har so'rovni 401 bilan qaytaradi va qurilma hech qachon
+// announce yubormaydi, ya'ni "yangi qurilmalar" ro'yxatida chiqmaydi.
+//
+// Endi kalit doimiy rad etilsa, qurilma announce'ni ham yuboradi. Eski kalit
+// O'CHIRILMAYDI: server vaqtincha xato qilgan bo'lsa ham hech narsa yo'qolmaydi,
+// faqat dashboard'da qayta biriktirilsa yangi kalit olinadi.
+static uint8_t g_keyRejectedCount = 0;
 
 RCSwitch mySwitch = RCSwitch();
 
@@ -190,6 +212,7 @@ void networkTask(void *arg);
 SendResult sendCallToServer(unsigned long code, const char *pressId);
 void maybeSendHeartbeat(unsigned long nowMs);
 void sendHeartbeat();
+void noteKeyRejected();
 void enqueuePending(unsigned long code, const char *pressId);
 void dequeuePending();
 void processPendingQueue(unsigned long nowMs);
@@ -492,10 +515,12 @@ void clearProvisioningState() {
 // shu yerdan chaqiriladi).
 void pollAnnounce(unsigned long nowMs) {
   static unsigned long lastAnnounceMs = 0;
-  if (nowMs - lastAnnounceMs < ANNOUNCE_INTERVAL_MS) {
+  static uint32_t waitMs = 0; // birinchi announce darhol
+  if (nowMs - lastAnnounceMs < waitMs) {
     return;
   }
   lastAnnounceMs = nowMs;
+  waitMs = ANNOUNCE_INTERVAL_MS;
 
   if (WiFi.status() != WL_CONNECTED) {
     return;
@@ -524,6 +549,10 @@ void pollAnnounce(unsigned long nowMs) {
 
   if (httpCode <= 0) {
     Serial.printf("Announce so'rovi muvaffaqiyatsiz, xatolik: %s\n", http.errorToString(httpCode).c_str());
+    if (time(nullptr) < NTP_SANE_EPOCH) {
+      // Eng ko'p sabab: soat sinxronlanmagan, TLS sertifikatni rad etadi.
+      Serial.println("  Sabab: soat hali sinxronlanmagan (NTP 123/UDP port tarmoqda yopiq bo'lishi mumkin).");
+    }
     http.end();
     return;
   }
@@ -533,6 +562,19 @@ void pollAnnounce(unsigned long nowMs) {
 
   if (httpCode != 200) {
     Serial.printf("Announce kutilmagan javob kodi (%d): %s\n", httpCode, response.c_str());
+    // Har bir kod uchun -- nima uchun dashboard'da chiqmayotgani va nima qilish kerakligi.
+    if (httpCode == 403) {
+      Serial.println("  Sabab: bu chip serverda BOSHQA biriktirish siri bilan yozilgan (qurilma flash'i to'liq");
+      Serial.println("  o'chirilgan, NVS'dagi sir yangilangan). Eski yozuv 24 soat ko'rinmasa o'zi o'chadi;");
+      Serial.println("  tezroq kerak bo'lsa, serverdagi discovered_devices jadvalidan shu chip_id'ni o'chiring.");
+    } else if (httpCode == 422) {
+      Serial.println("  Sabab: firmware va server versiyalari mos emas -- ikkalasini ham oxirgi main'dan yangilang.");
+    } else if (httpCode == 429) {
+      Serial.println("  Sabab: shu tarmoqdan juda ko'p announce. 60 soniya kutiladi.");
+      waitMs = ANNOUNCE_BACKOFF_MS;
+    } else if (httpCode >= 500) {
+      Serial.println("  Sabab: server xatosi -- server logini tekshiring (migratsiya qo'llanmaganmi?).");
+    }
     return;
   }
 
@@ -545,7 +587,9 @@ void pollAnnounce(unsigned long nowMs) {
 
   bool claimed = resp["claimed"] | false;
   if (!claimed) {
-    Serial.println("Kutish rejimida (hali biriktirilmagan)...");
+    // Shu satr chiqsa, server qurilmani ko'ryapti: dashboard'dagi "Yangi topilgan
+    // ESP32 qurilmalari" ro'yxatida aynan shu chip_id turibdi.
+    Serial.printf("Kutish rejimida: dashboard'da chip_id=%s ni toping va biriktiring.\n", g_chipId);
     return;
   }
 
@@ -554,6 +598,13 @@ void pollAnnounce(unsigned long nowMs) {
 
   if (strlen(newDeviceId) == 0) {
     Serial.println("XATO: announce claimed=true qaytardi, lekin device_id bo'sh. Qayta urinishda davom etilmoqda.");
+    return;
+  }
+  if (strlen(newDeviceKey) == 0 && g_provisioned) {
+    // Kalit rad etilgan qurilma: server uni hali ham biriktirilgan deb biladi,
+    // lekin yangi kalit bermaydi. Eski kalit bilan davom etamiz.
+    Serial.printf("Server qurilmani %s sifatida biriktirilgan deb biladi, yangi kalit bermadi. "
+                  "Kalit mos kelmasa, dashboard'da qurilmani o'chirib qayta biriktiring.\n", newDeviceId);
     return;
   }
   if (strlen(newDeviceKey) == 0) {
@@ -582,11 +633,15 @@ void pollAnnounce(unsigned long nowMs) {
   prefs.putString("device_key", newDeviceKey);
   prefs.end();
 
+  bool wasProvisioned = g_provisioned;
   g_deviceId = newDeviceId;
   g_deviceKey = newDeviceKey;
+  g_keyRejectedCount = 0;
   g_provisioned = true;
 
   Serial.printf("Qurilma biriktirildi! device_id=%s, endi asosiy rejimda ishlayapti\n", newDeviceId);
+  // Kaliti almashtirilgan qurilmada RF qabul allaqachon yoqilgan.
+  if (wasProvisioned) return;
 
   // mySwitch.enableReceive() bu yerda (networkTask, core 0) emas -- loop()
   // (core 1) da chaqiriladi, chunki attachInterrupt() RF ISR'ni chaqirgan
@@ -683,6 +738,10 @@ void networkTask(void *arg) {
     processPendingQueue(nowMs);
     esp_task_wdt_reset();
     maybeSendHeartbeat(nowMs);
+    if (g_keyRejectedCount >= KEY_REJECTED_THRESHOLD) {
+      esp_task_wdt_reset();
+      pollAnnounce(millis());
+    }
   }
 }
 
@@ -724,6 +783,7 @@ SendResult sendCallToServer(unsigned long code, const char *pressId) {
   if (httpCode > 0) {
     String response = readCappedResponse(http);
     if (httpCode == 201) {
+      g_keyRejectedCount = 0;
       Serial.printf("OK (201): chaqiruv qabul qilindi. Javob: %s\n", response.c_str());
       result = SEND_OK;
     } else if (httpCode == 404) {
@@ -731,6 +791,7 @@ SendResult sendCallToServer(unsigned long code, const char *pressId) {
       result = SEND_PERMANENT;
     } else if (httpCode == 401) {
       Serial.printf("XATO (401): X-Device-Key noto'g'ri. Javob: %s\n", response.c_str());
+      noteKeyRejected();
       result = SEND_PERMANENT;
     } else if (httpCode >= 500 || httpCode == 429 || httpCode == 408) {
       // 429/408 — reverse-proxy/CDN'ning vaqtinchalik javoblari, retry to'g'ri.
@@ -768,6 +829,16 @@ void maybeSendHeartbeat(unsigned long nowMs) {
   sendHeartbeat();
 }
 
+// 401 sanog'i. Chegaraga yetganda networkTask announce'ni ham yubora boshlaydi --
+// qurilma dashboard'da yana "yangi topilgan" bo'lib chiqadi.
+void noteKeyRejected() {
+  if (g_keyRejectedCount < 255) ++g_keyRejectedCount;
+  if (g_keyRejectedCount == KEY_REJECTED_THRESHOLD) {
+    Serial.printf("Kalit %u marta ketma-ket rad etildi. Announce yoqildi: dashboard'da chip_id=%s ni qayta biriktiring.\n",
+                  (unsigned)KEY_REJECTED_THRESHOLD, g_chipId);
+  }
+}
+
 // Serverga "tirikman" xabarini POST qiladi — dashboard'da qurilmaning
 // online/offline holati devices.last_seen_at ustuni orqali ko'rsatiladi.
 void sendHeartbeat() {
@@ -792,7 +863,11 @@ void sendHeartbeat() {
   int httpCode = http.POST(body);
 
   if (httpCode == 200) {
+    g_keyRejectedCount = 0;
     Serial.println("Heartbeat yuborildi (200).");
+  } else if (httpCode == 401) {
+    Serial.println("Heartbeat: server kalitni rad etdi (401) -- qurilma dashboard'da o'chirilganmi?");
+    noteKeyRejected();
   } else if (httpCode > 0) {
     Serial.printf("Heartbeat kutilmagan javob kodi qaytardi (%d).\n", httpCode);
   } else {
