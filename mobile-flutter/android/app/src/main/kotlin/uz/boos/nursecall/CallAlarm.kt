@@ -266,6 +266,7 @@ class CallAlarmService : Service() {
         private const val ACTION_STOP = "uz.boos.nursecall.alarm.STOP"
         private const val ACTION_MUTE = "uz.boos.nursecall.alarm.MUTE"
         private const val EXTRA_CALL_IDS = "callIds"
+        /** Must match alarmServiceChannelId in lib/push/push_service.dart. */
         private const val SERVICE_CHANNEL_ID = "nursecall_alarm_service"
         private const val NOTIFICATION_ID = 7301
 

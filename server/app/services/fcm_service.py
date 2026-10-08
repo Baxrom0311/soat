@@ -29,6 +29,20 @@ _credentials = None
 _project_id: str | None = None
 _unavailable_reason: str | None = None
 
+# One keep-alive connection per worker thread. Without it every message paid a fresh
+# TCP + TLS handshake to fcm.googleapis.com, which is most of the ~200ms each send
+# cost -- multiplied by every nurse on the floor, on the path to a patient's alert.
+# Thread-local because push_service sends to several phones at once and
+# requests.Session is not documented as safe to share between threads.
+_local = threading.local()
+
+
+def _http() -> requests.Session:
+    session = getattr(_local, "session", None)
+    if session is None:
+        session = _local.session = requests.Session()
+    return session
+
 
 def is_configured() -> bool:
     return bool(FCM_SERVICE_ACCOUNT_FILE)
@@ -142,7 +156,7 @@ def send(token: str, *, title: str, body: str, data: dict[str, str]) -> str | No
 
     url = f"https://fcm.googleapis.com/v1/projects/{project_id}/messages:send"
     try:
-        resp = requests.post(
+        resp = _http().post(
             url,
             json=payload,
             headers={
@@ -159,8 +173,10 @@ def send(token: str, *, title: str, body: str, data: dict[str, str]) -> str | No
         return None
 
     error_code = None
+    message = ""
     try:
         err = resp.json().get("error", {})
+        message = str(err.get("message", ""))
         for detail in err.get("details", []):
             if detail.get("@type", "").endswith("FcmError"):
                 error_code = detail.get("errorCode")
@@ -168,5 +184,11 @@ def send(token: str, *, title: str, body: str, data: dict[str, str]) -> str | No
     except ValueError:
         pass
 
-    logger.warning("FCM xato: status=%s code=%s", resp.status_code, error_code)
+    logger.warning("FCM xato: status=%s code=%s %s", resp.status_code, error_code, message[:200])
+    # INVALID_ARGUMENT means a dead token only when FCM says the token is what is
+    # invalid. The same code also comes back for a malformed message -- and since the
+    # caller deletes on it, one bad payload would have unsubscribed every nurse in the
+    # clinic at once.
+    if error_code == "INVALID_ARGUMENT" and "registration token" not in message.lower():
+        return None
     return error_code

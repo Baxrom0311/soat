@@ -144,6 +144,10 @@ struct PendingCall {
   unsigned long code;
   char pressId[48];
   unsigned long firstAttemptMs;
+  // Haqiqiy vaqt (NTP). millis() qayta yuklanishda noldan boshlanadi, shuning
+  // uchun NVS'dan tiklangan chaqiruvning yoshini faqat shu orqali bilish mumkin.
+  // 0 == bosilgan paytda soat hali sinxronlanmagan edi.
+  uint32_t firstAttemptEpoch;
   uint8_t attempts;
 };
 // 8 -> 32: bir necha daqiqalik tarmoq uzilishida 8+ bemor chaqirsa, eng eski
@@ -153,6 +157,23 @@ static const size_t PENDING_QUEUE_SIZE = 32;
 static PendingCall pendingQueue[PENDING_QUEUE_SIZE];
 static size_t pendingHead = 0;  // eng eski yozuv indeksi
 static size_t pendingCount = 0;
+
+// Navbat NVS'ga ham yoziladi. Avval u faqat RAM'da edi: tarmoq uzilgan paytda
+// qurilma qayta yuklansa (WiFi stack qotib watchdog otsa yoki tok o'chsa --
+// ikkalasi ham aynan uzilish paytida bo'ladigan narsa), navbatdagi har bir
+// bemor chaqiruvi izsiz yo'qolardi.
+static const char *PENDING_NVS_KEY = "pending";
+struct StoredPending {
+  uint32_t code;
+  uint32_t firstAttemptEpoch;
+  char pressId[48];
+};
+
+// Tarmoq qaytganda navbat bitta o'tishda shuncha chaqiruvgacha bo'shatiladi.
+// Avval har RETRY_INTERVAL_MS'da faqat bittasi yuborilardi: uzilish paytida
+// 10 bemor chaqirgan bo'lsa, oxirgisi tarmoq tiklangandan keyin ham ~50
+// soniya kutardi.
+static const int PENDING_DRAIN_PER_PASS = 8;
 
 void checkWiFiFactoryReset();
 void connectToWiFi();
@@ -172,6 +193,9 @@ void sendHeartbeat();
 void enqueuePending(unsigned long code, const char *pressId);
 void dequeuePending();
 void processPendingQueue(unsigned long nowMs);
+void savePendingQueue();
+void loadPendingQueue();
+uint32_t saneEpochNow();
 
 void setup() {
   Serial.begin(115200);
@@ -200,6 +224,9 @@ void setup() {
 
   connectToWiFi();
   syncTimeWithNtp();
+
+  // NTP'dan keyin: tiklangan chaqiruvlarning yoshini hisoblash uchun soat kerak.
+  if (g_provisioned) loadPendingQueue();
 
   callQueue = xQueueCreate(CALL_QUEUE_DEPTH, sizeof(QueuedPress));
   // Tarmoq ishlari core 0'da (WiFi stack ham shu yerda), loop() core 1'da qoladi.
@@ -490,7 +517,9 @@ void pollAnnounce(unsigned long nowMs) {
   String body;
   serializeJson(doc, body);
 
-  Serial.printf("Announce: POST %s -> %s\n", url.c_str(), body.c_str());
+  // Tana logga yozilmaydi: unda provisioning_secret bor, u esa qurilmani
+  // biriktirish huquqini beradi. Serial portga ulangan har kim uni ko'rardi.
+  Serial.printf("Announce: POST %s (chip_id=%s)\n", url.c_str(), g_chipId);
   int httpCode = http.POST(body);
 
   if (httpCode <= 0) {
@@ -786,8 +815,10 @@ void enqueuePending(unsigned long code, const char *pressId) {
   pendingQueue[tail].code = code;
   snprintf(pendingQueue[tail].pressId, sizeof(pendingQueue[tail].pressId), "%s", pressId);
   pendingQueue[tail].firstAttemptMs = millis();
+  pendingQueue[tail].firstAttemptEpoch = saneEpochNow();
   pendingQueue[tail].attempts = 1;
   pendingCount++;
+  savePendingQueue();
 
   Serial.printf("Kod %lu offline navbatga qo'shildi (navbatda %u ta).\n", code, (unsigned)pendingCount);
 }
@@ -818,6 +849,7 @@ void processPendingQueue(unsigned long nowMs) {
   lastRetryMs = nowMs;
 
   // Eskirgan yozuvlarni tashlab yuborish.
+  bool changed = false;
   while (pendingCount > 0) {
     PendingCall &oldest = pendingQueue[pendingHead];
     if (nowMs - oldest.firstAttemptMs < (unsigned long)PENDING_MAX_AGE_MS) {
@@ -826,22 +858,118 @@ void processPendingQueue(unsigned long nowMs) {
     Serial.printf("OGOHLANTIRISH: kod %lu %u urinishdan keyin ham yuborilmadi (%lu ms eskirdi), tashlab yuborildi.\n",
                   oldest.code, oldest.attempts, nowMs - oldest.firstAttemptMs);
     dequeuePending();
+    changed = true;
   }
 
-  if (pendingCount == 0 || WiFi.status() != WL_CONNECTED) {
-    return;
-  }
+  for (int sent = 0; sent < PENDING_DRAIN_PER_PASS; sent++) {
+    if (pendingCount == 0 || WiFi.status() != WL_CONNECTED) {
+      break;
+    }
+    // Yangi bosilish kutib turgan bo'lsa, u eski navbatdan oldin ketadi:
+    // hozir chaqirayotgan bemor eng muhimi.
+    if (sent > 0 && uxQueueMessagesWaiting(callQueue) > 0) {
+      break;
+    }
 
-  PendingCall &oldest = pendingQueue[pendingHead];
-  oldest.attempts++;
-  Serial.printf("Navbatdagi chaqiruvni qayta yuborish (urinish %u): kod=%lu\n",
-                oldest.attempts, oldest.code);
+    PendingCall &oldest = pendingQueue[pendingHead];
+    oldest.attempts++;
+    Serial.printf("Navbatdagi chaqiruvni qayta yuborish (urinish %u): kod=%lu\n",
+                  oldest.attempts, oldest.code);
 
-  esp_task_wdt_reset();
-  SendResult result = sendCallToServer(oldest.code, oldest.pressId);
-  if (result != SEND_RETRYABLE) {
+    esp_task_wdt_reset();
+    SendResult result = sendCallToServer(oldest.code, oldest.pressId);
+    esp_task_wdt_reset();
+    if (result == SEND_RETRYABLE) {
+      break;  // tarmoq hali tayyor emas -- keyingi RETRY_INTERVAL_MS'da
+    }
     // Muvaffaqiyat yoki doimiy xato (401/404) — ikkalasida ham navbatdan
     // chiqadi, qayta urinish hech narsani o'zgartirmaydi.
     dequeuePending();
+    changed = true;
   }
+
+  if (changed) {
+    savePendingQueue();
+  }
+}
+
+// NTP bilan sinxronlangan bo'lsa hozirgi Unix vaqti, aks holda 0.
+uint32_t saneEpochNow() {
+  time_t now = time(nullptr);
+  return now >= NTP_SANE_EPOCH ? (uint32_t)now : 0;
+}
+
+// Navbatni (eng eskisidan boshlab) NVS'ga bitta blob qilib yozadi. Faqat navbat
+// o'zgarganda chaqiriladi -- oddiy kunda bu hech qachon sodir bo'lmaydi, shuning
+// uchun flash eskirishi ahamiyatsiz.
+void savePendingQueue() {
+  static StoredPending buf[PENDING_QUEUE_SIZE];
+  for (size_t i = 0; i < pendingCount; i++) {
+    const PendingCall &p = pendingQueue[(pendingHead + i) % PENDING_QUEUE_SIZE];
+    buf[i].code = (uint32_t)p.code;
+    buf[i].firstAttemptEpoch = p.firstAttemptEpoch;
+    memcpy(buf[i].pressId, p.pressId, sizeof(buf[i].pressId));
+  }
+  Preferences prefs;
+  if (!prefs.begin(PROVISION_NVS_NAMESPACE, false)) {
+    return;
+  }
+  if (pendingCount == 0) {
+    prefs.remove(PENDING_NVS_KEY);
+  } else {
+    prefs.putBytes(PENDING_NVS_KEY, buf, pendingCount * sizeof(StoredPending));
+  }
+  prefs.end();
+}
+
+// Boot'da: oldingi ishga tushishdan qolgan, hali eskirmagan chaqiruvlarni
+// navbatga qaytaradi. Yoshini aniqlab bo'lmaydiganlari (soat o'shanda yoki hozir
+// sinxronlanmagan) tashlab yuboriladi -- yarim soatdan keyin yetib kelgan
+// chaqiruv hamshirani faqat chalg'itadi. press_id saqlangani uchun server
+// avval yetib borganlarini qayta yaratmaydi.
+void loadPendingQueue() {
+  static StoredPending buf[PENDING_QUEUE_SIZE];
+  Preferences prefs;
+  if (!prefs.begin(PROVISION_NVS_NAMESPACE, true)) {
+    return;
+  }
+  size_t bytes = prefs.getBytesLength(PENDING_NVS_KEY);
+  size_t n = 0;
+  if (bytes > 0 && bytes % sizeof(StoredPending) == 0 && bytes <= sizeof(buf)) {
+    n = prefs.getBytes(PENDING_NVS_KEY, buf, bytes) / sizeof(StoredPending);
+  }
+  prefs.end();
+  if (n == 0) {
+    return;
+  }
+
+  uint32_t nowEpoch = saneEpochNow();
+  unsigned long nowMs = millis();
+  size_t restored = 0;
+  for (size_t i = 0; i < n && pendingCount < PENDING_QUEUE_SIZE; i++) {
+    const StoredPending &sp = buf[i];
+    if (nowEpoch == 0 || sp.firstAttemptEpoch == 0 || sp.firstAttemptEpoch > nowEpoch) {
+      continue;
+    }
+    uint32_t ageSec = nowEpoch - sp.firstAttemptEpoch;
+    if (ageSec >= (uint32_t)(PENDING_MAX_AGE_MS / 1000)) {
+      continue;
+    }
+    unsigned long ageMs = (unsigned long)ageSec * 1000UL;
+    size_t tail = (pendingHead + pendingCount) % PENDING_QUEUE_SIZE;
+    PendingCall &p = pendingQueue[tail];
+    p.code = sp.code;
+    memcpy(p.pressId, sp.pressId, sizeof(p.pressId));
+    p.pressId[sizeof(p.pressId) - 1] = '\0';
+    // Unsigned ayirma: ageMs > nowMs bo'lsa ham `nowMs - firstAttemptMs` to'g'ri
+    // yoshni beradi (processPendingQueue shunday hisoblaydi).
+    p.firstAttemptMs = nowMs - ageMs;
+    p.firstAttemptEpoch = sp.firstAttemptEpoch;
+    p.attempts = 1;
+    pendingCount++;
+    restored++;
+  }
+  Serial.printf("NVS'dan %u ta yuborilmagan chaqiruv tiklandi (%u tasi eskirgan/yoshi noma'lum).\n",
+                (unsigned)restored, (unsigned)(n - restored));
+  savePendingQueue();
 }

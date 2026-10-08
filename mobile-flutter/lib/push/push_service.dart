@@ -108,6 +108,32 @@ Future<bool> _belongsToSession(Map<String, dynamic> data) async {
   }
 }
 
+/// Must match SERVICE_CHANNEL_ID in CallAlarm.kt.
+const String alarmServiceChannelId = 'nursecall_alarm_service';
+
+/// Whether CallAlarmService is ringing right now, read from the notification
+/// it must show while it does.
+///
+/// The background isolate has no line to the activity's method channel, but it
+/// can list this app's notifications, and the service's own sits there exactly
+/// while it rings. With the service already ringing, an insistent push on top
+/// of it made two alarms sound at once; the service picks the new call up from
+/// the feed, so the push only needs to appear, not to ring.
+Future<bool> alarmServiceRinging(FlutterLocalNotificationsPlugin local) async {
+  try {
+    final active =
+        await local
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >()
+            ?.getActiveNotifications() ??
+        const <ActiveNotification>[];
+    return active.any((n) => n.channelId == alarmServiceChannelId);
+  } catch (_) {
+    return false; // when unsure, ring: a duplicate sound beats a silent call
+  }
+}
+
 /// Runs in its own isolate when a message arrives and the app is not in the
 /// foreground. Must be a top-level function — Android looks it up by name.
 @pragma('vm:entry-point')
@@ -143,7 +169,7 @@ Future<void> handleBackgroundMessage(RemoteMessage message) async {
         room.hashCode,
     title: message.data['title'] ?? 'Xona $room chaqirdi!',
     body: message.data['body'] ?? (floor == null ? null : '$floor-qavat'),
-    notificationDetails: _callDetails(),
+    notificationDetails: _callDetails(silent: await alarmServiceRinging(local)),
     payload: message.data['call_id']?.toString(),
   );
 }
