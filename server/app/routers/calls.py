@@ -62,8 +62,12 @@ async def acknowledge_call(
     db: Session = Depends(get_db),
 ):
     acknowledged_by = user.name or user.email
-    out = await call_service.acknowledge_call(
-        db, user.clinic_id, call_id, acknowledged_by=acknowledged_by, staff_id=user.staff_id, role=user.role
+    return await call_service.acknowledge_call(
+        db,
+        user.clinic_id,
+        call_id,
+        acknowledged_by=acknowledged_by,
+        staff_id=user.staff_id,
+        role=user.role,
+        background_tasks=background_tasks,
     )
-    background_tasks.add_task(call_service.push_service.send_ack_notifications, user.clinic_id, call_id)
-    return out

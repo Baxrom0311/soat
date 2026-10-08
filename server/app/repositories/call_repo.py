@@ -96,12 +96,19 @@ def expire_stale(db: Session, *, older_than: datetime) -> int:
     figure in the product is computed from acknowledged_at, so an expired call is
     excluded from them by construction rather than by every caller remembering to.
     """
-    result = db.execute(
+    return len(expire_stale_returning(db, older_than=older_than))
+
+
+def expire_stale_returning(db: Session, *, older_than: datetime) -> list[tuple[int, int]]:
+    """expire_stale, returning (call_id, clinic_id) of each call it closed so the
+    caller can tell the screens and phones still showing them."""
+    rows = db.execute(
         update(Call)
         .where(Call.status == CallStatus.ACTIVE, Call.created_at < older_than)
         .values(status=CallStatus.EXPIRED)
-    )
-    return result.rowcount
+        .returning(Call.id, Call.clinic_id)
+    ).all()
+    return [(call_id, clinic_id) for call_id, clinic_id in rows]
 
 
 def count_expired_by_clinic(db: Session, *, since: datetime) -> list[tuple[int, int]]:

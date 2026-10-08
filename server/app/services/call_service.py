@@ -28,9 +28,9 @@ from sqlalchemy.orm import Session
 from app.core.config import CALL_INGEST_RATE_LIMIT_MAX, CALL_INGEST_RATE_LIMIT_WINDOW_SECONDS
 from app.core.errors import Conflict, Forbidden, NotFound, RateLimited
 from app.core.rate_limit import SlidingWindowLimiter
+from app.realtime import outbox
 from app.repositories import button_repo, call_repo, device_repo, staff_floor_repo, unassigned_repo
 from app.schemas.call import AckOut, ActiveCallOut, CallCreateOut, HistoryCallOut
-from app.services import push_service
 from app.services.device_service import authenticate_device, check_device_auth_rate
 from app.ws_manager import manager
 
@@ -50,8 +50,8 @@ def _ingest_sync(
     ev1527_code: int,
     press_id: str | None,
     client_ip: str = "unknown",
-) -> tuple[CallCreateOut | None, int, dict | None, dict | None]:
-    """All blocking work for one ingestion. Returns (out, clinic_id, ws_event, push_args);
+) -> tuple[CallCreateOut | None, int, dict | None, int | None]:
+    """All blocking work for one ingestion. Returns (out, clinic_id, ws_event, push_event_id);
     out None means unknown code -> the async wrapper broadcasts ws_event then raises 404."""
     # Before authenticate_device on purpose: verifying the key is a ~230ms bcrypt, and
     # this endpoint is unauthenticated, so an IP-keyed ceiling has to come first or a
@@ -75,7 +75,7 @@ def _ingest_sync(
         signal = unassigned_repo.record_sighting(
             db, device.clinic_id, device_pk=device.id, ev1527_code=ev1527_code
         )
-        db.commit()
+        db.flush()
         db.refresh(signal)
         event = {
             "type": "unassigned_signal",
@@ -88,6 +88,8 @@ def _ingest_sync(
                 "seen_count": signal.seen_count,
             },
         }
+        outbox.record(db, device.clinic_id, event)
+        db.commit()
         return None, device.clinic_id, event, None
 
     button, room = match
@@ -130,7 +132,7 @@ def _ingest_sync(
         return out, device.clinic_id, None, None
 
     call = call_repo.create(db, device.clinic_id, room_id=room.id, device_id=device.id, press_id=press_id)
-    db.commit()
+    db.flush()
     db.refresh(call)
 
     out = CallCreateOut(
@@ -146,8 +148,17 @@ def _ingest_sync(
             "status": call.status,
         },
     }
-    push_args = {"call_id": call.id, "room_number": room.room_number, "floor": room.floor}
-    return out, device.clinic_id, event, push_args
+    # In the same transaction as the call: if the push is lost with this process, the
+    # sweeper still finds it pending and sends it.
+    event_id = outbox.record(
+        db,
+        device.clinic_id,
+        event,
+        floor=room.floor,
+        push={"kind": "new_call", "call_id": call.id, "room_number": room.room_number, "floor": room.floor},
+    )
+    db.commit()
+    return out, device.clinic_id, event, event_id
 
 
 async def create_call_from_device(
@@ -160,7 +171,7 @@ async def create_call_from_device(
     background_tasks: BackgroundTasks | None = None,
     client_ip: str = "unknown",
 ) -> CallCreateOut:
-    out, clinic_id, event, push_args = await run_in_threadpool(
+    out, clinic_id, event, push_event_id = await run_in_threadpool(
         _ingest_sync,
         db,
         device_id=device_id,
@@ -179,8 +190,8 @@ async def create_call_from_device(
         manager.broadcast_soon(clinic_id, event, floor=floor)
     if out is None:
         raise NotFound("Unknown code")
-    if push_args is not None and background_tasks is not None:
-        background_tasks.add_task(push_service.send_new_call_notifications, clinic_id, **push_args)
+    if push_event_id is not None and background_tasks is not None:
+        background_tasks.add_task(outbox.deliver_push, push_event_id)
     return out
 
 
@@ -225,7 +236,7 @@ def call_history(
 
 def _ack_sync(
     db: Session, clinic_id: int, call_id: int, *, acknowledged_by: str, staff_id: int, role: str
-) -> AckOut:
+) -> tuple[AckOut, int]:
     call = call_repo.get(db, clinic_id, call_id)
     if call is None:
         raise NotFound("Call not found")
@@ -235,16 +246,29 @@ def _ack_sync(
     if not call_repo.acknowledge_if_active(db, clinic_id, call_id, acknowledged_by=acknowledged_by):
         db.rollback()
         raise Conflict("Call already acknowledged")
+    event_id = outbox.record(
+        db, clinic_id, {"type": "ack", "call_id": call_id}, push={"kind": "cancel", "call_id": call_id}
+    )
     db.commit()
     db.refresh(call)
-    return AckOut(call_id=call.id, status=call.status, acknowledged_at=call.acknowledged_at)
+    return AckOut(call_id=call.id, status=call.status, acknowledged_at=call.acknowledged_at), event_id
 
 
 async def acknowledge_call(
-    db: Session, clinic_id: int, call_id: int, *, acknowledged_by: str, staff_id: int, role: str
+    db: Session,
+    clinic_id: int,
+    call_id: int,
+    *,
+    acknowledged_by: str,
+    staff_id: int,
+    role: str,
+    background_tasks: BackgroundTasks | None = None,
 ) -> AckOut:
-    out = await run_in_threadpool(
+    out, event_id = await run_in_threadpool(
         _ack_sync, db, clinic_id, call_id, acknowledged_by=acknowledged_by, staff_id=staff_id, role=role
     )
     manager.broadcast_soon(clinic_id, {"type": "ack", "call_id": out.call_id})
+    if background_tasks is not None:
+        # Silences the alert on phones, including ones asleep in the background.
+        background_tasks.add_task(outbox.deliver_push, event_id)
     return out

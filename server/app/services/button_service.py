@@ -3,6 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.errors import Conflict, NotFound
+from app.realtime import outbox
 from app.repositories import button_repo, room_repo, unassigned_repo
 from app.schemas.button import ButtonOut
 from app.ws_manager import manager
@@ -36,6 +37,7 @@ def _create_button_sync(db: Session, clinic_id: int, *, room_id: int, ev1527_cod
 
     # clear the pending "unknown signal" entry now that it's mapped to a room
     unassigned_repo.delete_by_code(db, clinic_id, ev1527_code)
+    outbox.record(db, clinic_id, {"type": "unassigned_removed", "ev1527_code": ev1527_code})
     db.commit()
     db.refresh(button)
     return ButtonOut(

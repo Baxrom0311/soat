@@ -1,4 +1,6 @@
 import logging
+import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -8,6 +10,7 @@ from app.core import latency, log_redaction
 from app.core.config import ENVIRONMENT
 from app.core.errors import DomainError
 from app.database import SessionLocal
+from app.realtime.dispatcher import dispatcher
 from app.routers import (
     admin,
     auth,
@@ -77,10 +80,25 @@ def domain_error_response(_: Request, exc: DomainError) -> JSONResponse:
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    # REALTIME_DISPATCHER=0 runs without the cross-process listener and push sweeper,
+    # e.g. a one-off maintenance process importing the app.
+    enabled = os.getenv("REALTIME_DISPATCHER", "1") != "0"
+    if enabled:
+        await dispatcher.start()
+    try:
+        yield
+    finally:
+        if enabled:
+            await dispatcher.stop()
+
+
 def create_app() -> FastAPI:
     """Builds the application. Everything wired into it is listed here and nowhere else."""
     docs_enabled = ENVIRONMENT != "production"
     application = FastAPI(
+        lifespan=lifespan,
         title="Nurse Call Backend (multi-tenant)",
         docs_url="/docs" if docs_enabled else None,
         redoc_url="/redoc" if docs_enabled else None,
