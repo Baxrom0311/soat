@@ -9,6 +9,7 @@ venv/
 server/.env
 server/server.log
 server/*.log
+.coverage
 
 # --- Node / Expo (mobile-app/, web-dashboard/) ---
 node_modules/

@@ -7,6 +7,7 @@ from app.enums import StaffRole
 from app.models import Staff
 from app.repositories import push_token_repo, staff_floor_repo, staff_repo
 from app.services.session_service import revoke_staff_sessions
+from app.ws_manager import manager
 
 
 def list_staff(db: Session, clinic_id: int) -> list[Staff]:
@@ -25,6 +26,8 @@ def create_staff(
 ) -> Staff:
     if role not in (StaffRole.ADMIN, StaffRole.NURSE):
         raise HTTPException(status_code=422, detail="role must be 'admin' or 'nurse'")
+    if len(password) < 8:
+        raise HTTPException(status_code=422, detail="Password must be at least 8 characters")
     if staff_repo.get_by_email(db, email):
         raise HTTPException(status_code=409, detail="Email already registered")
 
@@ -90,6 +93,8 @@ def update_staff(
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=409, detail="Email already registered") from None
+    # After the commit, so the revalidation it triggers reads the new role/floors.
+    manager.mark_staff_dirty(staff.id)
     db.refresh(staff)
     return staff
 
@@ -108,3 +113,4 @@ def delete_staff(db: Session, clinic_id: int, staff_id: int, *, requester_staff_
     push_token_repo.delete_all_for_staff(db, staff.id)
     staff_repo.delete(db, staff)
     db.commit()
+    manager.mark_staff_dirty(staff_id)

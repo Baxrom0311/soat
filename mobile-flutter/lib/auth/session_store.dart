@@ -7,35 +7,38 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../api/client.dart';
 import '../api/models.dart';
 
-/// Holds information about an account previously signed in on this device.
+/// An account previously signed in on this device: who, never how.
+///
+/// The password is deliberately not kept. These are shared ward phones, and a
+/// stored password lets anyone holding the phone sign in as any nurse on the list
+/// -- which makes "who acknowledged this call" worthless, and outlives the
+/// session revocation a password change is supposed to bring.
 class SavedAccount {
   const SavedAccount({
     required this.email,
     required this.name,
     required this.role,
-    this.savedPassword,
     required this.lastUsed,
   });
 
   final String email;
   final String name;
   final String role;
-  final String? savedPassword;
   final DateTime lastUsed;
 
   Map<String, dynamic> toJson() => {
     'email': email,
     'name': name,
     'role': role,
-    if (savedPassword != null) 'saved_password': savedPassword,
     'last_used': lastUsed.toIso8601String(),
   };
 
+  /// Ignores `saved_password` written by builds before 3.0.1; restore() then
+  /// rewrites the list without it.
   factory SavedAccount.fromJson(Map<String, dynamic> j) => SavedAccount(
     email: j['email'] as String? ?? '',
     name: j['name'] as String? ?? '',
     role: j['role'] as String? ?? 'nurse',
-    savedPassword: j['saved_password'] as String?,
     lastUsed:
         DateTime.tryParse(j['last_used'] as String? ?? '') ?? DateTime.now(),
   );
@@ -102,11 +105,18 @@ class SessionStore extends ChangeNotifier {
     try {
       final savedRaw = await _storage.read(key: _savedAccountsKey);
       if (savedRaw != null) {
-        final list = (jsonDecode(savedRaw) as List<dynamic>?)
+        final raw = jsonDecode(savedRaw) as List<dynamic>?;
+        final list = raw
             ?.map((e) => SavedAccount.fromJson(e as Map<String, dynamic>))
             .toList();
         if (list != null) {
           _savedAccounts = list..sort((a, b) => b.lastUsed.compareTo(a.lastUsed));
+        }
+        // Older builds stored each account's password here. Rewrite the list
+        // without them the first time this build starts.
+        if (raw != null &&
+            raw.any((e) => (e as Map).containsKey('saved_password'))) {
+          await _writeSavedAccounts();
         }
       }
     } catch (_) {}
@@ -142,7 +152,6 @@ class SessionStore extends ChangeNotifier {
             email: email,
             name: s.name,
             role: s.role,
-            savedPassword: password,
             lastUsed: DateTime.now(),
           ),
         );
@@ -159,25 +168,22 @@ class SessionStore extends ChangeNotifier {
     if (_savedAccounts.length > 6) {
       _savedAccounts = _savedAccounts.sublist(0, 6);
     }
-    await _store(
-      () => _storage.write(
-        key: _savedAccountsKey,
-        value: jsonEncode(_savedAccounts.map((a) => a.toJson()).toList()),
-      ),
-    );
+    await _writeSavedAccounts();
     notifyListeners();
   }
+
+  Future<void> _writeSavedAccounts() => _store(
+    () => _storage.write(
+      key: _savedAccountsKey,
+      value: jsonEncode(_savedAccounts.map((a) => a.toJson()).toList()),
+    ),
+  );
 
   Future<void> removeSavedAccount(String email) async {
     _savedAccounts.removeWhere(
       (a) => a.email.toLowerCase() == email.toLowerCase(),
     );
-    await _store(
-      () => _storage.write(
-        key: _savedAccountsKey,
-        value: jsonEncode(_savedAccounts.map((a) => a.toJson()).toList()),
-      ),
-    );
+    await _writeSavedAccounts();
     notifyListeners();
   }
 

@@ -7,7 +7,7 @@ from the device row itself during authentication. Every other lookup is clinic-s
 
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.models import Clinic, Device
@@ -104,6 +104,18 @@ def clear_pending_key(db: Session, device: Device) -> None:
     """Scrubs the plaintext key once the delivery window has closed, so it doesn't
     linger in the DB indefinitely after it's no longer supposed to be retrievable."""
     device.pending_key_plaintext = None
+
+
+def clear_expired_pending_keys(db: Session, *, claimed_before: datetime) -> int:
+    """Scrubs every plaintext key whose delivery window has closed. clear_pending_key
+    only runs when the device announces again after its window, so a device that took
+    its key and never asked again left the plaintext in the table indefinitely."""
+    result = db.execute(
+        update(Device)
+        .where(Device.pending_key_plaintext.is_not(None), Device.created_at < claimed_before)
+        .values(pending_key_plaintext=None)
+    )
+    return result.rowcount or 0
 
 
 def delete(db: Session, device: Device) -> None:

@@ -74,7 +74,9 @@ async def ws_calls(websocket: WebSocket, token: str | None = None):
             return None
         return current[0].role, current[1]
 
-    manager.register(websocket, user.clinic_id, role=user.role, floors=floors, validate=validate)
+    manager.register(
+        websocket, user.clinic_id, role=user.role, floors=floors, validate=validate, staff_id=user.staff_id
+    )
     try:
         while True:
             with suppress(asyncio.TimeoutError):

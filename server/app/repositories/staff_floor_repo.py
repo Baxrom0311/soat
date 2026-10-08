@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.enums import StaffRole
 from app.models import Staff, StaffFloorAssignment
+from app.ws_manager import manager
 
 
 def list_floors_by_staff(db: Session, staff_id: int) -> list[int]:
@@ -29,6 +30,8 @@ def set_floors(db: Session, staff_id: int, floors: list[int]) -> None:
     for floor in sorted(set(floors)):
         db.add(StaffFloorAssignment(staff_id=staff_id, floor=floor))
     db.flush()
+    # The single place floors change, so the single place open sockets learn about it.
+    manager.mark_staff_dirty(staff_id)
 
 
 def get_visible_floors(db: Session, staff_id: int, role: str) -> list[int] | None:

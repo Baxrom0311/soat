@@ -72,4 +72,31 @@ void main() {
     expect(api.accessToken, isNull);
     api.close();
   });
+
+  test('saved accounts never keep a password, and old ones are scrubbed', () async {
+    FlutterSecureStorage.setMockInitialValues({
+      'nursecall.saved_accounts':
+          '[{"email":"a@x.uz","name":"A","role":"nurse",'
+          '"saved_password":"secret1","last_used":"2026-10-01T08:00:00"}]',
+    });
+    final api = ApiClient(
+      httpClient: MockClient(
+        (_) async => http.Response(
+          '{"access_token":"t","role":"nurse","name":"B"}',
+          200,
+        ),
+      ),
+    );
+    final store = SessionStore(api);
+    await store.restore();
+    await store.signIn('b@x.uz', 'secret2');
+
+    final stored = await const FlutterSecureStorage().read(
+      key: 'nursecall.saved_accounts',
+    );
+    expect(store.savedAccounts.map((a) => a.email), ['b@x.uz', 'a@x.uz']);
+    expect(stored, isNot(contains('secret1')));
+    expect(stored, isNot(contains('secret2')));
+    expect(stored, isNot(contains('saved_password')));
+  });
 }

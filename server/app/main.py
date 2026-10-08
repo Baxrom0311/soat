@@ -157,9 +157,34 @@ def download_watch_app():
     return response
 
 
+# The dashboard keeps a 90-day bearer token in localStorage, so any script injected into
+# the page could read it. This policy is what stops an injected script from running or
+# from sending what it read anywhere but this origin. Inline <script> is forbidden
+# (the theme bootstrap lives in theme-init.js for that reason); inline style stays
+# allowed because React's style={...} props are inline styles.
+DASHBOARD_CSP = "; ".join(
+    [
+        "default-src 'self'",
+        "script-src 'self'",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "font-src 'self' https://fonts.gstatic.com",
+        "img-src 'self' data: blob:",
+        # 'self' covers same-origin ws/wss in current browsers; wss: keeps older Safari working.
+        "connect-src 'self' wss:",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "frame-ancestors 'none'",
+        "form-action 'self'",
+    ]
+)
+
+
 def _serve_dashboard() -> FileResponse:
     response = FileResponse(DASHBOARD_DIR / "index.html")
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Content-Security-Policy"] = DASHBOARD_CSP
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "same-origin"
     return response
 
 
