@@ -11,6 +11,8 @@ import '../push/push_service.dart';
 import '../settings/settings_store.dart';
 import '../theme/app_icons.dart';
 import '../theme/tokens.dart';
+import '../desktop/desktop.dart';
+import '../desktop/desktop_alarm.dart';
 import '../wear/wear_service.dart';
 import 'alarm_service.dart';
 import 'call_card.dart';
@@ -84,7 +86,7 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
     final calls = widget.feed.calls;
     _silenced.retainWhere((id) => calls.any((c) => c.callId == id));
     final ids = ringingIds(calls, _silenced, DateTime.now());
-    AlarmService.instance.sync(ids);
+    AlarmService.instance.sync(ids, calls: calls);
     // In the background the feed runs only to learn when to stop ringing: once
     // nothing rings, it stops too, and the push path takes over again.
     if (_backgrounded && ids.isEmpty && widget.feed.isRunning) {
@@ -121,7 +123,9 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
       // the first a nurse would know of it is the login screen mid-shift.
       widget.sessions.renew();
       _syncAlarm();
-    } else if (state == AppLifecycleState.paused) {
+    } else if (state == AppLifecycleState.paused && !isDesktop) {
+      // Not on the desk build: there is no push to take over, so a minimised
+      // window has to keep listening or the ward PC goes deaf.
       _backgrounded = true;
       // Leaving the app used to silence a waiting call. Now the alarm keeps
       // ringing (it is a foreground service), and the feed keeps running while
@@ -1218,6 +1222,25 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+        if (isDesktop)
+          _Section(
+            title: 'Signal',
+            children: [
+              _Row(
+                icon: Icons.computer,
+                tint: p.accentOk,
+                label: 'Bu kompyuter chaqiruvda signal beradi',
+                sub: 'Oyna kichraytirilgan bo‘lsa ham — faqat dasturni yopmang',
+              ),
+              _Row(
+                icon: Icons.volume_up,
+                label: 'Signal ovozini sinash',
+                sub: 'Eshitilmasa, kompyuter ovozi va karnayni tekshiring',
+                onTap: () => desktopAlarm?.test(),
+              ),
+            ],
+          )
+        else
         _Section(
           title: 'Bildirishnomalar',
           children: [
@@ -1298,6 +1321,8 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
             ],
           ),
         ],
+        // A PC at the nurses' station has no watch to pair with.
+        if (!isDesktop) ...[
         const SizedBox(height: 16),
         _Section(
           title: 'Palata soati',
@@ -1330,6 +1355,7 @@ class _ProfileTabState extends State<_ProfileTab> with WidgetsBindingObserver {
             ],
           ],
         ),
+        ],
         const SizedBox(height: 16),
         _Section(
           title: 'Hisob',

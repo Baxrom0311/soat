@@ -1,0 +1,116 @@
+# Builds the Windows installer for the nurses' station PCs: NurseCall-Setup-<version>.exe.
+#
+# Every run uploads the installer as a workflow artifact (Actions -> this run ->
+# Artifacts). Pushing a tag named desktop-v<version> also attaches it to a GitHub
+# release of that name, which is the link to hand a clinic.
+#
+# The build needs Windows and Visual Studio, so it cannot run anywhere else; the
+# Dart side is already covered by the `mobile` job in ci.yml.
+
+name: Windows desktop
+
+on:
+  push:
+    branches: [main]
+    tags: ["desktop-v*"]
+    paths:
+      - "mobile-flutter/**"
+      - ".github/workflows/windows-desktop.yml"
+  pull_request:
+    paths:
+      - "mobile-flutter/**"
+      - ".github/workflows/windows-desktop.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: windows-desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write # only used to attach the installer to a desktop-v* release
+
+jobs:
+  build:
+    name: Windows installer
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: mobile-flutter
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Version
+        id: version
+        # The version the phones carry, without the Android build number.
+        run: |
+          $line = Select-String -Path pubspec.yaml -Pattern '^version:\s*([0-9.]+)' | Select-Object -First 1
+          $version = $line.Matches[0].Groups[1].Value
+          "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "NurseCall $version"
+
+      - run: flutter pub get
+
+      - name: Build
+        run: flutter build windows --release
+
+      - name: Bundle the Visual C++ runtime
+        # A freshly installed Windows does not necessarily have it, and without it
+        # the app does not start at all -- it fails with a missing-DLL box that a
+        # ward PC's user cannot do anything about. Shipping the three DLLs beside
+        # the exe is Microsoft's supported "app-local" deployment.
+        run: |
+          $release = "build\windows\x64\runner\Release"
+          foreach ($dll in "msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll") {
+            Copy-Item "$env:WINDIR\System32\$dll" $release
+          }
+          Get-ChildItem $release | Format-Table Name, Length
+
+      - name: Starts and stays up
+        # The cheapest check that matters: the exe launches on a clean Windows
+        # and is still running ten seconds later -- no missing DLL, no crash in a
+        # plugin's native code at startup.
+        run: |
+          $exe = Resolve-Path "build\windows\x64\runner\Release\nursecall.exe"
+          $p = Start-Process -FilePath $exe -PassThru
+          Start-Sleep -Seconds 10
+          if ($p.HasExited) {
+            Write-Error "nursecall.exe exited during startup with code $($p.ExitCode)"
+            exit 1
+          }
+          Stop-Process -Id $p.Id -Force
+          Write-Host "nursecall.exe started and stayed up"
+
+      - name: Installer
+        run: |
+          if (-not (Get-Command iscc -ErrorAction SilentlyContinue)) {
+            $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6"
+            if (-not (Test-Path "$iscc\ISCC.exe")) {
+              choco install innosetup -y --no-progress
+            }
+            $env:PATH = "$iscc;$env:PATH"
+          }
+          iscc /Qp `
+            "/DAppVersion=${{ steps.version.outputs.version }}" `
+            "/DSourceDir=$(Resolve-Path build\windows\x64\runner\Release)" `
+            "/O$PWD\windows\installer\dist" `
+            windows\installer\nursecall.iss
+          Get-ChildItem windows\installer\dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NurseCall-Setup-${{ steps.version.outputs.version }}
+          path: mobile-flutter/windows/installer/dist/*.exe
+          if-no-files-found: error
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/desktop-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: mobile-flutter/windows/installer/dist/*.exe
+          generate_release_notes: true

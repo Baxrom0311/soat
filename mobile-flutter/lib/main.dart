@@ -6,7 +6,11 @@ import 'api/client.dart';
 import 'auth/welcome_screen.dart';
 import 'auth/session_store.dart';
 import 'calls/calls_feed.dart';
+import 'calls/alarm_service.dart';
 import 'calls/calls_screen.dart';
+import 'desktop/desktop.dart';
+import 'desktop/desktop_alarm.dart';
+import 'desktop/desktop_window.dart';
 import 'settings/settings_store.dart';
 import 'wear/wear_service.dart';
 import 'push/push_service.dart';
@@ -14,8 +18,18 @@ import 'splash/video_splash_screen.dart';
 import 'theme/app_icons.dart';
 import 'theme/tokens.dart';
 
-void main() {
+/// Lets the Windows close button show its dialog over whatever screen is open.
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (isDesktop) {
+    await DesktopWindow(navigatorKey).init();
+    final alarm = DesktopAlarm();
+    await alarm.init();
+    AlarmService.instance.backend = alarm;
+    desktopAlarm = alarm;
+  }
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(statusBarColor: Colors.transparent),
@@ -65,6 +79,7 @@ class _NurseCallAppState extends State<NurseCallApp> {
       await Future.wait([_push.unregister(), _wear.signOutWatch()]);
     };
     _watchRetry = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (isDesktop) return;
       final token = _sessions.session?.accessToken;
       if (token != null && !_wear.state.tokenSent) _wear.sendToken(token);
     });
@@ -98,18 +113,23 @@ class _NurseCallAppState extends State<NurseCallApp> {
     final token = _sessions.session?.accessToken;
     if (token != _watchToken) {
       _watchToken = token;
-      if (token != null) _wear.sendToken(token);
+      if (token != null && !isDesktop) _wear.sendToken(token);
     }
     if (token != null && !_feed.isRunning) {
       _feed.start(token: token);
     }
-    _push.setWanted(token != null && _settings.loaded && _settings.pushEnabled);
+    // No push on Windows: the desk build hears calls over the live socket and
+    // rings itself, so there is no Firebase token to register.
+    _push.setWanted(
+      !isDesktop && token != null && _settings.loaded && _settings.pushEnabled,
+    );
     if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'NurseCall',
       debugShowCheckedModeBanner: false,
       theme: T.theme(Brightness.light),
@@ -163,8 +183,6 @@ class _Splash extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const Scaffold(
     backgroundColor: T.page,
-    body: Center(
-      child: AppLogo(size: 64, withGlow: true),
-    ),
+    body: Center(child: AppLogo(size: 64, withGlow: true)),
   );
 }
