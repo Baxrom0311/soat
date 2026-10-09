@@ -5,48 +5,233 @@
     <!--
         Brushes come from WpfTokens (NurseCall.Core's Tokens.cs, converted
         once at static-init), not hardcoded here, so the palette lives in
-        exactly one place.
+        exactly one place. Hover/pressed feedback is Opacity rather than a
+        second colour per state — it reads correctly against every brush
+        in the palette without having to invent a tint for each one.
     -->
+
     <Style x:Key="WindowChrome" TargetType="Window">
         <Setter Property="Background" Value="{x:Static theme:WpfTokens.PageBrush}" />
         <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="TextElement.Foreground" Value="{x:Static theme:WpfTokens.Text1Brush}" />
     </Style>
 
+    <!-- A single side-rail item. Selection is a plain bool set from code
+         (MainWindow swaps it when the tab changes); there is no WPF
+         "selected button" concept to lean on, so this is deliberately a
+         Border + content rather than a ToggleButton, which would fight the
+         click handler over who owns the checked state. -->
     <Style x:Key="NavButton" TargetType="Button">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Foreground" Value="{x:Static theme:WpfTokens.Text3Brush}" />
-        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="Padding" Value="20,13" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                    <Border x:Name="Bg" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
                         <ContentPresenter />
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Opacity" Value="0.75" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bg" Property="Opacity" Value="0.55" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
 
+    <!-- Filled, high-emphasis action — "Kirish", "Qo'shish", the
+         acknowledge slab. Opacity-based hover/press, same reasoning as
+         NavButton. -->
     <Style x:Key="PrimaryButton" TargetType="Button">
         <Setter Property="Background" Value="{x:Static theme:WpfTokens.AccentBrush}" />
         <Setter Property="Foreground" Value="White" />
-        <Setter Property="Padding" Value="16,10" />
+        <Setter Property="Padding" Value="18,11" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="13.5" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                    <Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="9"
+                            Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Opacity" Value="0.88" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bg" Property="Opacity" Value="0.72" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Bg" Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <!-- Outlined, low-emphasis action — "O'chirish", "Saqlash" next to a
+         row, the sign-out button. A bordered chip rather than PrimaryButton's
+         solid fill, so a list of rows does not read as a wall of equally
+         loud buttons. -->
+    <Style x:Key="OutlineButton" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{x:Static theme:WpfTokens.BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="12,6" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bg" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Opacity" Value="0.65" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bg" Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Text-only action with no border or fill at all — "O'chirish" or
+         "Saqlash" hanging off the end of a list row, where even
+         OutlineButton's border would be one outline too many among a dozen
+         rows. Foreground is set per-use (red for destructive, accent for
+         everything else); this style only supplies the shape and the
+         hover/press feedback. -->
+    <Style x:Key="GhostButton" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="10,5" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           TextElement.Foreground="{TemplateBinding Foreground}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Opacity" Value="0.65" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bg" Property="Opacity" Value="0.4" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- A small pill toggle — the floor filter ("Barchasi", "2-qavat").
+         Background/Foreground/BorderBrush are all left to the caller (the
+         selected chip is tinted, the rest are not), so only shape and
+         feedback live here. -->
+    <Style x:Key="Chip" TargetType="Button">
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="12,5" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bg" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="999" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Opacity" Value="0.8" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bg" Property="Opacity" Value="0.6" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Clickable row (a profile menu item, an admin list row). Hover lifts
+         it very slightly — just enough to say "this responds to a click"
+         without the row visibly jumping. -->
+    <Style x:Key="RowHover" TargetType="Border">
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Opacity" Value="0.85" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="TextBox">
+        <Setter Property="Background" Value="{x:Static theme:WpfTokens.CardBrush}" />
+        <Setter Property="Foreground" Value="{x:Static theme:WpfTokens.Text1Brush}" />
+        <Setter Property="BorderBrush" Value="{x:Static theme:WpfTokens.BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="CaretBrush" Value="{x:Static theme:WpfTokens.Text1Brush}" />
+    </Style>
+
+    <Style TargetType="ComboBox">
+        <Setter Property="Background" Value="{x:Static theme:WpfTokens.CardBrush}" />
+        <Setter Property="Foreground" Value="{x:Static theme:WpfTokens.Text1Brush}" />
+        <Setter Property="BorderBrush" Value="{x:Static theme:WpfTokens.BorderBrush}" />
+        <Setter Property="Padding" Value="8,6" />
+    </Style>
+
+    <!-- Without these two, a ListView's rows and headers fall back to the
+         OS theme's own (light-background-assuming) colours — history rows
+         would render in dark text on this app's dark page, unreadable
+         rather than merely plain. -->
+    <Style TargetType="ListView">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <Style TargetType="ListViewItem">
+        <Setter Property="Foreground" Value="{x:Static theme:WpfTokens.Text1Brush}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Padding" Value="6,8" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{x:Static theme:WpfTokens.CardBrush}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="GridViewColumnHeader">
+        <Setter Property="Background" Value="{x:Static theme:WpfTokens.CardBrush}" />
+        <Setter Property="Foreground" Value="{x:Static theme:WpfTokens.Text3Brush}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Padding" Value="8,8" />
+        <Setter Property="BorderBrush" Value="{x:Static theme:WpfTokens.BorderBrush}" />
+        <Setter Property="BorderThickness" Value="0,0,0,1" />
     </Style>
 
 </ResourceDictionary>

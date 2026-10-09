@@ -43,7 +43,7 @@ namespace NurseCall.History
 
         private void Build(System.Collections.Generic.List<HistoryCall> rows)
         {
-            var list = new ListView { BorderThickness = new Thickness(0), Background = WpfTokens.PageBrush };
+            var list = new ListView();
             var view = new GridView();
             view.Columns.Add(new GridViewColumn { Header = "Xona", DisplayMemberBinding = new System.Windows.Data.Binding("RoomNumber"), Width = 90 });
             view.Columns.Add(new GridViewColumn { Header = "Qavat", DisplayMemberBinding = new System.Windows.Data.Binding("Floor"), Width = 60 });

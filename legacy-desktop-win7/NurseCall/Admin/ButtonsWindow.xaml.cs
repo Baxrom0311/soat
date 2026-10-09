@@ -86,7 +86,7 @@ namespace NurseCall.Admin
 
         private Border UnassignedRow(UnassignedSignal s)
         {
-            var border = Card();
+            var border = UiHelpers.Card();
             var grid = new Grid();
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -119,16 +119,16 @@ namespace NurseCall.Admin
 
         private Border PairedRow(ButtonPairing b)
         {
-            var border = Card();
+            var border = UiHelpers.Card();
             var grid = new Grid();
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             grid.Children.Add(new TextBlock
             {
                 Text = $"Kod {b.Code} → {b.RoomNumber} ({b.Floor}-qavat)",
-                Foreground = WpfTokens.Text1Brush, VerticalAlignment = VerticalAlignment.Center,
+                Foreground = WpfTokens.Text1Brush, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center,
             });
-            var del = new Button { Content = "O'chirish", Foreground = WpfTokens.RedBrush, Background = System.Windows.Media.Brushes.Transparent, BorderThickness = new Thickness(0), Cursor = System.Windows.Input.Cursors.Hand };
+            var del = UiHelpers.GhostButton(this, "O'chirish", WpfTokens.RedBrush);
             del.Click += async (s, e) =>
             {
                 if (MessageBox.Show(this, "Bu biriktiruv o'chirilsinmi?", "Tasdiqlang", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
@@ -140,11 +140,5 @@ namespace NurseCall.Admin
             border.Child = grid;
             return border;
         }
-
-        private static Border Card() => new Border
-        {
-            Background = WpfTokens.CardBrush, BorderBrush = WpfTokens.BorderBrush, BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 8, 12, 8), Margin = new Thickness(0, 0, 0, 6),
-        };
     }
 }

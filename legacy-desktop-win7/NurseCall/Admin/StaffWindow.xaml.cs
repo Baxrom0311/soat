@@ -28,18 +28,18 @@ namespace NurseCall.Admin
         {
             var outer = new DockPanel();
 
-            var form = new StackPanel { Margin = new Thickness(0, 0, 0, 12) };
-            var row1 = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
-            _name = new TextBox { Width = 140, Margin = new Thickness(0, 0, 6, 0) };
-            _email = new TextBox { Width = 180, Margin = new Thickness(0, 0, 6, 0) };
+            var form = new StackPanel();
+            var row1 = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
+            _name = new TextBox { Width = 150, Margin = new Thickness(0, 0, 10, 0) };
+            _email = new TextBox { Width = 190, Margin = new Thickness(0, 0, 10, 0) };
             row1.Children.Add(Labeled("Ism", _name));
             row1.Children.Add(Labeled("Email", _email));
             form.Children.Add(row1);
 
-            var row2 = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
-            _password = new TextBox { Width = 140, Margin = new Thickness(0, 0, 6, 0) };
-            _role = new ComboBox { Width = 100, Margin = new Thickness(0, 0, 6, 0), ItemsSource = new[] { "nurse", "admin" }, SelectedIndex = 0 };
-            _floors = new TextBox { Width = 100, Margin = new Thickness(0, 0, 6, 0), ToolTip = "masalan: 1,2 (bo'sh = barcha qavatlar)" };
+            var row2 = new StackPanel { Orientation = Orientation.Horizontal };
+            _password = new TextBox { Width = 150, Margin = new Thickness(0, 0, 10, 0) };
+            _role = new ComboBox { Width = 110, Margin = new Thickness(0, 0, 10, 0), ItemsSource = new[] { "nurse", "admin" }, SelectedIndex = 0 };
+            _floors = new TextBox { Width = 110, Margin = new Thickness(0, 0, 10, 0), ToolTip = "masalan: 1,2 (bo'sh = barcha qavatlar)" };
             row2.Children.Add(Labeled("Parol", _password));
             row2.Children.Add(Labeled("Rol", _role));
             row2.Children.Add(Labeled("Qavatlar", _floors));
@@ -48,11 +48,21 @@ namespace NurseCall.Admin
             row2.Children.Add(add);
             form.Children.Add(row2);
 
-            _error = new TextBlock { Foreground = WpfTokens.RedBrush, Visibility = Visibility.Collapsed };
+            _error = new TextBlock { Foreground = WpfTokens.RedBrush, Margin = new Thickness(0, 10, 0, 0), Visibility = Visibility.Collapsed, TextWrapping = TextWrapping.Wrap };
             form.Children.Add(_error);
 
-            DockPanel.SetDock(form, Dock.Top);
-            outer.Children.Add(form);
+            var formCard = new Border
+            {
+                Background = WpfTokens.CardBrush,
+                BorderBrush = WpfTokens.BorderBrush,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(14),
+                Margin = new Thickness(0, 0, 0, 16),
+                Child = form,
+            };
+            DockPanel.SetDock(formCard, Dock.Top);
+            outer.Children.Add(formCard);
 
             _list = new StackPanel();
             outer.Children.Add(new ScrollViewer { Content = _list, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
@@ -62,8 +72,8 @@ namespace NurseCall.Admin
 
         private static StackPanel Labeled(string label, Control input)
         {
-            var p = new StackPanel();
-            p.Children.Add(new TextBlock { Text = label, FontSize = 11, Foreground = WpfTokens.Text3Brush });
+            var p = new StackPanel { Margin = new Thickness(0, 0, 10, 0) };
+            p.Children.Add(new TextBlock { Text = label, FontSize = 11, Foreground = WpfTokens.Text3Brush, Margin = new Thickness(2, 0, 0, 4) });
             p.Children.Add(input);
             return p;
         }
@@ -84,11 +94,7 @@ namespace NurseCall.Admin
 
         private Border Row(Staff person)
         {
-            var border = new Border
-            {
-                Background = WpfTokens.CardBrush, BorderBrush = WpfTokens.BorderBrush, BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 8, 12, 8), Margin = new Thickness(0, 0, 0, 6),
-            };
+            var border = UiHelpers.Card();
             var grid = new Grid();
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -104,18 +110,19 @@ namespace NurseCall.Admin
             Grid.SetColumn(left, 0);
             grid.Children.Add(left);
 
-            var floorsEdit = new TextBox { Width = 80, Margin = new Thickness(8, 0, 8, 0), Text = string.Join(",", person.Floors), ToolTip = "Qavatlar (bo'sh = barchasi)" };
-            var save = new Button { Content = "Saqlash", Background = System.Windows.Media.Brushes.Transparent, Foreground = WpfTokens.AccentBrush, BorderThickness = new Thickness(0), Cursor = System.Windows.Input.Cursors.Hand };
+            var floorsEdit = new TextBox { Width = 80, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 8, 0), Text = string.Join(",", person.Floors), ToolTip = "Qavatlar (bo'sh = barchasi)" };
+            var save = UiHelpers.GhostButton(this, "Saqlash", WpfTokens.AccentBrush);
             save.Click += async (s, e) =>
             {
                 var floors = ParseFloors(floorsEdit.Text);
                 try { await _api.SetStaffFloorsAsync(person.Id, floors).ConfigureAwait(true); await ReloadAsync(); }
                 catch { MessageBox.Show(this, "Saqlanmadi"); }
             };
-            var right = new StackPanel { Orientation = Orientation.Horizontal };
+            var right = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
             right.Children.Add(floorsEdit);
             right.Children.Add(save);
-            var del = new Button { Content = "O'chirish", Foreground = WpfTokens.RedBrush, Background = System.Windows.Media.Brushes.Transparent, BorderThickness = new Thickness(0), Margin = new Thickness(8, 0, 0, 0), Cursor = System.Windows.Input.Cursors.Hand };
+            var del = UiHelpers.GhostButton(this, "O'chirish", WpfTokens.RedBrush);
+            del.Margin = new Thickness(4, 0, 0, 0);
             del.Click += async (s, e) =>
             {
                 if (MessageBox.Show(this, $"{person.Name} o'chirilsinmi?", "Tasdiqlang", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;

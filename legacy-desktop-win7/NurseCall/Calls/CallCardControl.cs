@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
 using NurseCall.Core;
 using NurseCall.Theme;
@@ -33,6 +34,7 @@ namespace NurseCall.Calls
             Margin = new Thickness(0, 0, 0, 14);
             Padding = new Thickness(16);
             BorderThickness = new Thickness(1);
+            Effect = UiHelpers.Elevation();
 
             var step = AgeStep.Compute(call.Waited(now));
             var style = WpfTokens.StepBrushes(step);
@@ -99,15 +101,53 @@ namespace NurseCall.Calls
             {
                 Content = _ackLabel,
                 Margin = new Thickness(0, 16, 0, 0),
-                Height = 44,
-                Background = style.ButtonFrom,
+                Height = 46,
+                Background = style.ButtonGradient(),
                 BorderThickness = new Thickness(0),
                 Cursor = System.Windows.Input.Cursors.Hand,
+                Template = AckButtonTemplate(),
             };
             _ackButton.Click += (s, e) => Acknowledge?.Invoke();
             root.Children.Add(_ackButton);
 
             Child = root;
+        }
+
+        /// <summary>
+        /// Built in code (FrameworkElementFactory, not XAML/a Style
+        /// resource) because this is a plain C# class with no XAML of its
+        /// own. Without this, the button falls back to the OS's default
+        /// chrome, which paints its own face over most of our gradient --
+        /// on the one button this whole app exists to make someone press.
+        /// </summary>
+        private static ControlTemplate AckButtonTemplate()
+        {
+            var border = new FrameworkElementFactory(typeof(Border), "Bg");
+            border.SetBinding(Border.BackgroundProperty, new Binding("Background") { RelativeSource = RelativeSource.TemplatedParent });
+            border.SetValue(Border.CornerRadiusProperty, new CornerRadius(12));
+
+            var content = new FrameworkElementFactory(typeof(ContentPresenter));
+            content.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            content.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+            border.AppendChild(content);
+
+            var template = new ControlTemplate(typeof(Button)) { VisualTree = border };
+            template.Triggers.Add(new Trigger
+            {
+                Property = Button.IsMouseOverProperty, Value = true,
+                Setters = { new Setter(UIElement.OpacityProperty, 0.88, "Bg") },
+            });
+            template.Triggers.Add(new Trigger
+            {
+                Property = Button.IsPressedProperty, Value = true,
+                Setters = { new Setter(UIElement.OpacityProperty, 0.7, "Bg") },
+            });
+            template.Triggers.Add(new Trigger
+            {
+                Property = Button.IsEnabledProperty, Value = false,
+                Setters = { new Setter(UIElement.OpacityProperty, 0.5, "Bg") },
+            });
+            return template;
         }
 
         /// <summary>Refreshes just the running clock -- called every second by the owning panel, not a full rebuild.</summary>

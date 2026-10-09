@@ -100,6 +100,7 @@ namespace NurseCall.Admin
                 CornerRadius = new CornerRadius(10),
                 Padding = new Thickness(14, 10, 14, 10),
                 Margin = new Thickness(0, 0, 0, 8),
+                Effect = UiHelpers.Elevation(),
             };
             var grid = new Grid();
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });

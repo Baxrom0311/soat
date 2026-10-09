@@ -1,3 +1,4 @@
+using System.Windows;
 using System.Windows.Media;
 using NurseCall.Core;
 
@@ -26,12 +27,13 @@ namespace NurseCall.Theme
         public readonly struct CallStepBrushes
         {
             public CallStepBrushes(SolidColorBrush card, SolidColorBrush border, SolidColorBrush accent,
-                SolidColorBrush buttonFrom, SolidColorBrush buttonTo, SolidColorBrush buttonInk)
+                SolidColorBrush buttonFrom, SolidColorBrush buttonVia, SolidColorBrush buttonTo, SolidColorBrush buttonInk)
             {
                 Card = card;
                 Border = border;
                 Accent = accent;
                 ButtonFrom = buttonFrom;
+                ButtonVia = buttonVia;
                 ButtonTo = buttonTo;
                 ButtonInk = buttonInk;
             }
@@ -40,8 +42,25 @@ namespace NurseCall.Theme
             public SolidColorBrush Border { get; }
             public SolidColorBrush Accent { get; }
             public SolidColorBrush ButtonFrom { get; }
+            public SolidColorBrush ButtonVia { get; }
             public SolidColorBrush ButtonTo { get; }
             public SolidColorBrush ButtonInk { get; }
+
+            /// <summary>
+            /// The same three-stop sweep call_card.dart paints its
+            /// acknowledge button with (buttonFrom -> buttonVia -> buttonTo,
+            /// left to right) -- a flat single colour read as noticeably
+            /// flatter/cheaper on this, the one button the whole app exists
+            /// to make someone press.
+            /// </summary>
+            public LinearGradientBrush ButtonGradient()
+            {
+                var g = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 0) };
+                g.GradientStops.Add(new GradientStop(ButtonFrom.Color, 0.0));
+                g.GradientStops.Add(new GradientStop(ButtonVia.Color, 0.5));
+                g.GradientStops.Add(new GradientStop(ButtonTo.Color, 1.0));
+                return g;
+            }
         }
 
         /// <summary>Step 1/2/3 brushes, built on demand from <see cref="Tokens.Step"/> rather than cached per-step.</summary>
@@ -50,7 +69,7 @@ namespace NurseCall.Theme
             var s = Tokens.Step(step);
             return new CallStepBrushes(
                 Brush(s.Card), Brush(s.Border), Brush(s.Accent),
-                Brush(s.ButtonFrom), Brush(s.ButtonTo), Brush(s.ButtonInk));
+                Brush(s.ButtonFrom), Brush(s.ButtonVia), Brush(s.ButtonTo), Brush(s.ButtonInk));
         }
     }
 }

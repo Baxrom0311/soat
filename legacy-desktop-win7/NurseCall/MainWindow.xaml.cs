@@ -34,8 +34,8 @@ namespace NurseCall
         private int _tab;
 
         private Grid _shell = null!;
-        private StackPanel _navCalls = null!;
-        private StackPanel _navProfile = null!;
+        private Border _navCalls = null!;
+        private Border _navProfile = null!;
         private ContentControl _content = null!;
         private WrapPanel _cardsPanel = null!;
         private TextBlock _clinicLabel = null!;
@@ -76,6 +76,16 @@ namespace NurseCall
             var nav = new StackPanel { Background = WpfTokens.CardBrush };
             Grid.SetColumn(nav, 0);
 
+            var brand = new TextBlock
+            {
+                Text = "NurseCall",
+                FontSize = 16,
+                FontWeight = FontWeights.Bold,
+                Foreground = WpfTokens.Text1Brush,
+                Margin = new Thickness(20, 20, 20, 24),
+            };
+            nav.Children.Add(brand);
+
             _navCalls = NavItem("Chaqiruvlar", () => ShowTab(0));
             _navProfile = NavItem("Profil", () => ShowTab(1));
             nav.Children.Add(_navCalls);
@@ -93,22 +103,47 @@ namespace NurseCall
             Root.Children.Add(_shell);
         }
 
-        private StackPanel NavItem(string label, Action onClick)
+        /// <summary>
+        /// A side-rail row: a 3px accent strip (shown only when selected) +
+        /// the label button. The strip is a separate element from the
+        /// button's own background so "which tab is active" reads instantly
+        /// at a glance, the way a real desktop app's rail does -- a plain
+        /// NavButton with no selection feedback at all was one of the
+        /// "doesn't feel finished" gaps in the first pass.
+        /// </summary>
+        private Border NavItem(string label, Action onClick)
         {
-            var button = new Button
-            {
-                Content = label,
-                Style = (Style)FindResource("NavButton"),
-            };
+            var button = new Button { Content = label, Style = (Style)FindResource("NavButton") };
             button.Click += (s, e) => onClick();
-            var panel = new StackPanel();
-            panel.Children.Add(button);
-            return panel;
+
+            var row = new Grid();
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            var strip = new Border { Background = WpfTokens.AccentBrush, Visibility = Visibility.Collapsed, Tag = "strip" };
+            Grid.SetColumn(strip, 0);
+            row.Children.Add(strip);
+            Grid.SetColumn(button, 1);
+            row.Children.Add(button);
+
+            return new Border { Child = row, Tag = button };
+        }
+
+        private void SetSelected(Border navItem, bool selected)
+        {
+            var row = (Grid)navItem.Child;
+            var strip = (Border)row.Children[0];
+            var button = (Button)navItem.Tag;
+            strip.Visibility = selected ? Visibility.Visible : Visibility.Collapsed;
+            navItem.Background = selected ? WpfTokens.Brush(Tokens.Sky950) : Brushes.Transparent;
+            button.Foreground = selected ? WpfTokens.AccentBrush : WpfTokens.Text3Brush;
+            button.FontWeight = selected ? FontWeights.Bold : FontWeights.Normal;
         }
 
         private void ShowTab(int tab)
         {
             _tab = tab;
+            SetSelected(_navCalls, tab == 0);
+            SetSelected(_navProfile, tab == 1);
             _content.Content = tab == 0 ? BuildCallsTab() : BuildProfileTab();
         }
 
@@ -176,10 +211,33 @@ namespace NurseCall
             var scroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
             _cardsPanel = new WrapPanel { Margin = new Thickness(20, 8, 20, 8) };
             scroll.Content = _cardsPanel;
+            // Window resize changes how many columns fit; SizeChanged is
+            // what makes that actually responsive instead of the first
+            // version's flat 400px per card, which just clipped at the
+            // window's own 640px minimum width.
+            scroll.SizeChanged += (s, e) => ResizeCards();
             column.Children.Add(scroll);
 
             RefreshCallsView();
             return column;
+        }
+
+        /// <summary>
+        /// One column at the window's minimum width, more as it widens --
+        /// each card targets ~380px but never drops below 300 (where the
+        /// room number and timer start crowding) or grows past 480 (where a
+        /// lone card on an ultra-wide monitor would look stretched rather
+        /// than merely large).
+        /// </summary>
+        private void ResizeCards()
+        {
+            if (_cardsPanel == null || _cards.Count == 0) return;
+            var available = _cardsPanel.ActualWidth;
+            if (available <= 0) return;
+            const double target = 380, spacing = 16, min = 300, max = 480;
+            var columns = Math.Max(1, (int)((available + spacing) / (target + spacing)));
+            var width = Math.Min(max, Math.Max(min, (available - (columns - 1) * spacing) / columns));
+            foreach (var card in _cards.Values) card.Width = width;
         }
 
         /// <summary>Calls only still-visible cards -- a floor filter hides the rest without discarding the feed's own list.</summary>
@@ -230,7 +288,7 @@ namespace NurseCall
                 {
                     if (!_cards.TryGetValue(call.CallId, out var card))
                     {
-                        card = new CallCardControl(call, _feed.Now) { Width = 400 };
+                        card = new CallCardControl(call, _feed.Now);
                         card.Acknowledge += () => _ = AcknowledgeAsync(call.CallId);
                         _cards[call.CallId] = card;
                         _cardsPanel.Children.Add(card);
@@ -238,6 +296,9 @@ namespace NurseCall
                     card.Tick(_feed.Now);
                     card.SetBusy(_busyCallId == call.CallId);
                 }
+                // Deferred: ActualWidth right after adding children to the
+                // panel still reflects the layout pass before this one.
+                Dispatcher.BeginInvoke(new Action(ResizeCards), DispatcherPriority.Loaded);
             }
 
             if (_statsText != null)
@@ -265,10 +326,10 @@ namespace NurseCall
             {
                 Content = label,
                 Margin = new Thickness(0, 0, 8, 0),
-                Padding = new Thickness(10, 4, 10, 4),
+                Style = (Style)FindResource("Chip"),
                 Background = _floorFilter == floor ? WpfTokens.AccentBrush : WpfTokens.CardBrush,
                 Foreground = _floorFilter == floor ? Brushes.White : WpfTokens.Text3Brush,
-                BorderBrush = WpfTokens.BorderBrush,
+                BorderBrush = _floorFilter == floor ? WpfTokens.AccentBrush : WpfTokens.BorderBrush,
             };
             b.Click += (s, e) => { _floorFilter = floor; RefreshCallsView(); };
             return b;
@@ -348,11 +409,8 @@ namespace NurseCall
             {
                 Content = "Chiqish",
                 Margin = new Thickness(0, 24, 0, 0),
-                Padding = new Thickness(16, 10, 16, 10),
-                Background = WpfTokens.CardBrush,
+                Style = (Style)FindResource("OutlineButton"),
                 Foreground = WpfTokens.RedBrush,
-                BorderBrush = WpfTokens.BorderBrush,
-                BorderThickness = new Thickness(1),
                 HorizontalAlignment = HorizontalAlignment.Left,
             };
             signOut.Click += (s, e) =>
@@ -378,20 +436,27 @@ namespace NurseCall
 
         private Border ProfileRow(string label, string sub, Action? onClick)
         {
-            var border = new Border
-            {
-                Background = WpfTokens.CardBrush,
-                BorderBrush = WpfTokens.BorderBrush,
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(8),
-                Padding = new Thickness(14, 10, 14, 10),
-                Margin = new Thickness(0, 0, 0, 8),
-                Cursor = onClick == null ? System.Windows.Input.Cursors.Arrow : System.Windows.Input.Cursors.Hand,
-            };
+            var border = UiHelpers.Card();
+            border.Cursor = onClick == null ? System.Windows.Input.Cursors.Arrow : System.Windows.Input.Cursors.Hand;
+            if (onClick != null) border.Style = (Style)FindResource("RowHover");
+
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
             var stack = new StackPanel();
             stack.Children.Add(new TextBlock { Text = label, Foreground = WpfTokens.Text1Brush, FontWeight = FontWeights.SemiBold });
             stack.Children.Add(new TextBlock { Text = sub, Foreground = WpfTokens.Text3Brush, FontSize = 12, Margin = new Thickness(0, 2, 0, 0) });
-            border.Child = stack;
+            grid.Children.Add(stack);
+
+            if (onClick != null)
+            {
+                var chevron = new TextBlock { Text = "›", Foreground = WpfTokens.Text3Brush, FontSize = 18, VerticalAlignment = VerticalAlignment.Center };
+                Grid.SetColumn(chevron, 1);
+                grid.Children.Add(chevron);
+            }
+
+            border.Child = grid;
             if (onClick != null) border.MouseLeftButtonUp += (s, e) => onClick();
             return border;
         }
