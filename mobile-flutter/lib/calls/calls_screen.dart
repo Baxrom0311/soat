@@ -22,8 +22,11 @@ import 'shift_stats.dart';
 
 /// The nurse's screen, transcribed from the approved design.
 ///
-/// Laid out inside a 430px-wide column as the design is, so the proportions
-/// hold on a tablet at the nurses' station as well as on a phone.
+/// On a phone or tablet, laid out inside a 430px-wide column as the design
+/// is, so the proportions hold either way. The Windows desk build (see
+/// [isDesktop] below in `build()`) uses a different shell entirely: a side
+/// rail instead of a bottom bar, and the calls list free to use the window's
+/// actual width rather than this same narrow column stretched across it.
 class CallsScreen extends StatefulWidget {
   const CallsScreen({
     super.key,
@@ -165,6 +168,57 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
     final feed = widget.feed;
     final session = widget.sessions.session;
 
+    final profileTab = _ProfileTab(
+      session: session,
+      stats: feed.stats,
+      clinicName: feed.clinicName,
+      settings: widget.settings,
+      push: widget.push,
+      api: widget.api,
+      wear: widget.wear,
+      onSignOut: () async {
+        await AlarmService.instance.stopAlarm();
+        await widget.sessions.signOut();
+      },
+    );
+
+    // The phone layout below is a fixed 430px column with a bottom tab bar --
+    // right for a screen you hold in one hand. A desk PC is held in neither
+    // hand and its window is rarely that narrow, so stretching the same
+    // column across it just widens the margins; it reads as the phone app
+    // behind glass rather than a desktop one. The desktop shell instead gives
+    // the calls list the width to show several waiting patients side by side
+    // and swaps the thumb-reach bottom bar for a side rail, which is where a
+    // mouse-driven app keeps navigation.
+    if (isDesktop) {
+      return Scaffold(
+        backgroundColor: p.page,
+        body: SafeArea(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _DesktopNavRail(
+                index: _tab,
+                badge: feed.calls.length,
+                onSelect: (i) => setState(() => _tab = i),
+              ),
+              VerticalDivider(width: 1, thickness: 1, color: p.border),
+              Expanded(
+                child: _tab == 0
+                    ? _callsTab(feed, session)
+                    : Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 640),
+                          child: profileTab,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: p.page,
       body: SafeArea(
@@ -172,21 +226,7 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 430),
-            child: _tab == 0
-                ? _callsTab(feed, session)
-                : _ProfileTab(
-                    session: session,
-                    stats: feed.stats,
-                    clinicName: feed.clinicName,
-                    settings: widget.settings,
-                    push: widget.push,
-                    api: widget.api,
-                    wear: widget.wear,
-                    onSignOut: () async {
-                      await AlarmService.instance.stopAlarm();
-                      await widget.sessions.signOut();
-                    },
-                  ),
+            child: _tab == 0 ? _callsTab(feed, session) : profileTab,
           ),
         ),
       ),
@@ -308,6 +348,37 @@ class _CallsScreenState extends State<CallsScreen> with WidgetsBindingObserver {
               ? const Center(child: CircularProgressIndicator())
               : _visible.isEmpty
               ? const _Empty()
+              : isDesktop
+              ? SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Several waiting patients side by side, not one phone
+                      // column stretched across the window: a wide monitor
+                      // has room to show more at a glance, which is the
+                      // whole point of a bigger screen at the nurses' desk.
+                      Wrap(
+                        spacing: 16,
+                        children: [
+                          for (final c in _visible)
+                            SizedBox(
+                              width: 400,
+                              child: CallCard(
+                                call: c,
+                                now: feed.now,
+                                busy: _busyCallId == c.callId,
+                                onAcknowledge: () => _ack(c),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      _StatsStrip(stats: feed.stats),
+                    ],
+                  ),
+                )
               : RefreshIndicator(
                   onRefresh: feed.refresh,
                   backgroundColor: p.card,
@@ -788,6 +859,62 @@ class _Empty extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The desktop build's side rail -- the mouse-driven equivalent of
+/// [_BottomNav]'s thumb-reach bottom bar. Same two destinations, same badge,
+/// laid out for a pointer and a wide window instead of a thumb and a narrow
+/// one.
+class _DesktopNavRail extends StatelessWidget {
+  const _DesktopNavRail({
+    required this.index,
+    required this.badge,
+    required this.onSelect,
+  });
+
+  final int index;
+  final int badge;
+  final ValueChanged<int> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    return Container(
+      color: p.navBar,
+      child: NavigationRail(
+        selectedIndex: index,
+        onDestinationSelected: onSelect,
+        extended: true,
+        minExtendedWidth: 184,
+        backgroundColor: p.navBar,
+        useIndicator: true,
+        indicatorColor: T.sky400.withValues(alpha: 0.15),
+        selectedIconTheme: const IconThemeData(color: T.sky400),
+        unselectedIconTheme: IconThemeData(color: T.slate500),
+        selectedLabelTextStyle: const TextStyle(
+          color: T.sky400,
+          fontWeight: FontWeight.w700,
+        ),
+        unselectedLabelTextStyle: TextStyle(color: T.slate500),
+        destinations: [
+          NavigationRailDestination(
+            icon: badge > 0
+                ? Badge(
+                    label: Text('$badge'),
+                    backgroundColor: T.red600,
+                    child: const Icon(Icons.notifications_active_rounded),
+                  )
+                : const Icon(Icons.notifications_active_rounded),
+            label: const Text('Chaqiruvlar'),
+          ),
+          const NavigationRailDestination(
+            icon: Icon(Icons.person_rounded),
+            label: Text('Profil'),
+          ),
+        ],
       ),
     );
   }
