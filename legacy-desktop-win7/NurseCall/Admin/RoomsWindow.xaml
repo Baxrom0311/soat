@@ -1,0 +1,9 @@
+<Window x:Class="NurseCall.Admin.RoomsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Xonalar"
+        Width="480" Height="560"
+        WindowStartupLocation="CenterOwner"
+        Style="{StaticResource WindowChrome}">
+    <Grid x:Name="Root" Margin="16" />
+</Window>

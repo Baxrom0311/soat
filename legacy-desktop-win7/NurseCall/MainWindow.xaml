@@ -1,0 +1,10 @@
+<Window x:Class="NurseCall.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="NurseCall"
+        Width="1100" Height="720"
+        MinWidth="640" MinHeight="480"
+        WindowStartupLocation="CenterScreen"
+        Style="{StaticResource WindowChrome}">
+    <Grid x:Name="Root" />
+</Window>

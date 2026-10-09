@@ -74,3 +74,8 @@ design-stitch/*.png
 !design-stitch/icon-source/
 backups_from_server/
 *.psd
+
+# legacy-desktop-win7 (.NET)
+legacy-desktop-win7/**/bin/
+legacy-desktop-win7/**/obj/
+legacy-desktop-win7/installer/dist/

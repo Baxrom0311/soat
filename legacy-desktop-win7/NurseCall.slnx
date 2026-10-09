@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="NurseCall.Core/NurseCall.Core.csproj" />
+  <Project Path="NurseCall.Tests/NurseCall.Tests.csproj" />
+  <Project Path="NurseCall/NurseCall.csproj" />
+</Solution>

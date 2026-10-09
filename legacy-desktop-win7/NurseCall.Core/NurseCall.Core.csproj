@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    net48, not netstandard or net8: this library runs inside the WPF app that
+    has to install on Windows 7 SP1, which .NET Framework 4.8 is the newest
+    thing to actually support. Builds fine cross-platform (including this Mac)
+    via the Microsoft.NETFramework.ReferenceAssemblies package below, which is
+    what makes `dotnet build`/`dotnet test` work here without Windows; running
+    the WPF project itself still needs Windows, same as the Flutter desktop
+    build needs windows-latest in CI.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>NurseCall.Core</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <!--
+    SDK-style net48 projects auto-reference the common framework assemblies
+    but not these two; HttpClient and WebSockets both live outside that
+    default set and need an explicit <Reference>.
+  -->
+  <ItemGroup>
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
+</Project>

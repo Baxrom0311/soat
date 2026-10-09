@@ -1,0 +1,118 @@
+# Builds the Windows 7-compatible installer: NurseCall-Legacy-Setup-<version>.exe.
+#
+# A second desktop client alongside windows-desktop.yml's Flutter build, for
+# the PCs that cannot take that one (Flutter's Windows embedder requires
+# Windows 10+). See legacy-desktop-win7/ and the plan it was built from.
+#
+# net48 (WPF) needs Windows to build at all -- the SDK itself refuses UseWPF
+# off Windows -- so, same as the Flutter workflow, this cannot run anywhere
+# but windows-latest.
+
+name: Legacy desktop (Windows 7)
+
+on:
+  push:
+    branches: [main]
+    tags: ["legacy-desktop-v*"]
+    paths:
+      - "legacy-desktop-win7/**"
+      - ".github/workflows/legacy-desktop.yml"
+  pull_request:
+    paths:
+      - "legacy-desktop-win7/**"
+      - ".github/workflows/legacy-desktop.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: legacy-desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Legacy Windows installer
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: legacy-desktop-win7
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Version
+        id: version
+        run: |
+          $version = "1.0.${{ github.run_number }}"
+          "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "NurseCall (legacy) $version"
+
+      - name: Restore
+        run: dotnet restore
+
+      # Core + Tests are plain .NET libraries -- they build and run on any
+      # OS. The WPF app does not: it is built and smoke-tested separately
+      # below, on Windows only.
+      - name: Core logic tests
+        run: dotnet test NurseCall.Tests/NurseCall.Tests.csproj -c Release
+
+      - name: Build the WPF app
+        # Plain `build`, not `publish`: net48 is Windows-only by nature and
+        # framework-dependent (it needs .NET Framework 4.8 already on the
+        # machine, same as the installer's own check requires), so there is
+        # no self-contained/runtime-identifier story to opt into the way
+        # there is for .NET Core -- the ordinary build output already is
+        # the thing to ship.
+        run: dotnet build NurseCall/NurseCall.csproj -c Release -p:Version=${{ steps.version.outputs.version }}
+
+      - name: Starts and stays up
+        # The cheapest check that matters: the exe launches on a clean
+        # Windows runner and is still running five seconds later. It will
+        # hit the login window and sit there (no real clinic credentials in
+        # CI) -- the point is proving no missing-assembly or startup
+        # exception, not exercising a login.
+        run: |
+          $exe = Resolve-Path "NurseCall\bin\Release\net48\NurseCall.exe"
+          $p = Start-Process -FilePath $exe -PassThru
+          Start-Sleep -Seconds 5
+          if ($p.HasExited) {
+            Write-Error "NurseCall.exe exited during startup with code $($p.ExitCode)"
+            exit 1
+          }
+          Stop-Process -Id $p.Id -Force
+          Write-Host "NurseCall.exe started and stayed up"
+
+      - name: Installer
+        run: |
+          if (-not (Get-Command iscc -ErrorAction SilentlyContinue)) {
+            $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6"
+            if (-not (Test-Path "$iscc\ISCC.exe")) {
+              choco install innosetup -y --no-progress
+            }
+            $env:PATH = "$iscc;$env:PATH"
+          }
+          iscc /Qp `
+            "/DAppVersion=${{ steps.version.outputs.version }}" `
+            "/DSourceDir=$(Resolve-Path NurseCall\bin\Release\net48)" `
+            "/O$PWD\installer\dist" `
+            installer\nursecall-legacy.iss
+          Get-ChildItem installer\dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NurseCall-Legacy-Setup-${{ steps.version.outputs.version }}
+          path: legacy-desktop-win7/installer/dist/*.exe
+          if-no-files-found: error
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/legacy-desktop-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: legacy-desktop-win7/installer/dist/*.exe
+          generate_release_notes: true

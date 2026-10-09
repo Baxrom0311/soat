@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    WPF, net48: only buildable on Windows (the SDK itself refuses UseWPF off
+    Windows), same constraint the Flutter desktop build has with
+    windows-latest in CI. net48 is the ceiling that still installs on
+    Windows 7 SP1, which is the whole reason this project exists alongside
+    the Flutter one.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>NurseCall</RootNamespace>
+    <AssemblyName>NurseCall</AssemblyName>
+    <ApplicationIcon>Assets\app_icon.ico</ApplicationIcon>
+    <!-- The version the installer stamps on the exe; Inno Setup reads its own
+         AppVersion separately from the CI workflow, same split the Flutter
+         build has between pubspec.yaml and the ISCC /DAppVersion flag. -->
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NurseCall.Core\NurseCall.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <!--
+    ProjectReference does not forward a referenced project's own framework
+    <Reference> entries on net48, so ApiClient's HttpClient usage and
+    SessionStore's DPAPI usage each need these declared again here, exactly
+    as NurseCall.Core.csproj does for the first one.
+  -->
+  <ItemGroup>
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Security" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Copied next to the exe; played with System.Media.SoundPlayer, which
+         needs a plain file path rather than an embedded resource. -->
+    <None Include="Assets\nursecall_chime.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
