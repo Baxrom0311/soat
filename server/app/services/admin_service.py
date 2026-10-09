@@ -6,7 +6,6 @@ require_superadmin."""
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from fastapi import HTTPException
 from sqlalchemy import func, literal, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -14,6 +13,7 @@ from sqlalchemy.orm import Session
 from app.core import billing
 from app.core.config import REPORT_UTC_OFFSET_HOURS
 from app.core.deps import CurrentUser
+from app.core.errors import Conflict, Invalid, NotFound
 from app.core.security import hash_password
 from app.enums import StaffRole, SubscriptionStatus, SuspensionReason
 from app.models import Button, Call, Clinic, Device, Plan, Room, Staff
@@ -242,7 +242,7 @@ def create_plan(
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="A plan with this name already exists") from None
+        raise Conflict("A plan with this name already exists") from None
     db.refresh(plan)
     return plan
 
@@ -252,7 +252,7 @@ def update_plan(
 ) -> Plan:
     plan = plan_repo.get(db, plan_id)
     if plan is None:
-        raise HTTPException(status_code=404, detail="Plan not found")
+        raise NotFound("Plan not found")
     # `changes` is already exclude_unset, so a present key was intentionally sent. Every
     # Plan column is NOT NULL, so a null is a no-op rather than a 500.
     before = {field: getattr(plan, field) for field in changes}
@@ -274,7 +274,7 @@ def update_plan(
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="A plan with this name already exists") from None
+        raise Conflict("A plan with this name already exists") from None
     db.refresh(plan)
     return plan
 
@@ -282,14 +282,11 @@ def update_plan(
 def delete_plan(db: Session, plan_id: int, *, actor: CurrentUser, ip_address: str | None = None) -> None:
     plan = plan_repo.get(db, plan_id)
     if plan is None:
-        raise HTTPException(status_code=404, detail="Plan not found")
+        raise NotFound("Plan not found")
     # Refuse to delete a plan that clinics still reference (would orphan their billing);
     # archive it instead by setting is_active=false.
     if plan_repo.count_clinics_on_plan(db, plan_id) > 0:
-        raise HTTPException(
-            status_code=409,
-            detail="Plan is assigned to clinics — archive it (is_active=false) instead of deleting",
-        )
+        raise Conflict("Plan is assigned to clinics — archive it (is_active=false) instead of deleting")
     try:
         audit_service.record(
             db,
@@ -306,9 +303,8 @@ def delete_plan(db: Session, plan_id: int, *, actor: CurrentUser, ip_address: st
         # A clinic was assigned to this plan between the count check and the delete;
         # the FK rejects it — surface the same 409 instead of a raw 500.
         db.rollback()
-        raise HTTPException(
-            status_code=409,
-            detail="Plan is assigned to clinics — archive it (is_active=false) instead of deleting",
+        raise Conflict(
+            "Plan is assigned to clinics — archive it (is_active=false) instead of deleting"
         ) from None
 
 
@@ -446,7 +442,7 @@ def update_clinic(
 ) -> AdminClinicListItem:
     clinic = clinic_repo.get(db, clinic_id)
     if clinic is None:
-        raise HTTPException(status_code=404, detail="Clinic not found")
+        raise NotFound("Clinic not found")
     before = _clinic_audit_snapshot(clinic)
 
     if name is not None:
@@ -464,11 +460,11 @@ def update_clinic(
     elif plan_id is not None:
         plan = plan_repo.get(db, plan_id)
         if plan is None:
-            raise HTTPException(status_code=404, detail="Plan not found")
+            raise NotFound("Plan not found")
         # Archived plans keep working for clinics already on them, but can't be newly
         # assigned (unless the clinic is already on this exact plan).
         if not plan.is_active and clinic.plan_id != plan_id:
-            raise HTTPException(status_code=409, detail="Plan is archived — reactivate it first")
+            raise Conflict("Plan is archived — reactivate it first")
         clinic.plan_id = plan_id
 
     if clear_custom_price:
@@ -478,10 +474,7 @@ def update_clinic(
 
     if billing_period_months is not None:
         if billing_period_months not in (1, billing.ANNUAL_PERIOD_MONTHS):
-            raise HTTPException(
-                status_code=422,
-                detail="To'lov davri faqat 1 (oylik) yoki 12 (yillik) bo'lishi mumkin",
-            )
+            raise Invalid("To'lov davri faqat 1 (oylik) yoki 12 (yillik) bo'lishi mumkin")
         clinic.billing_period_months = billing_period_months
 
     if clear_trial_end:
@@ -491,10 +484,7 @@ def update_clinic(
         # paying clinic would look armed and do nothing, since access_deadline reads
         # paid_until once the status is active.
         if clinic.subscription_status != SubscriptionStatus.TRIAL:
-            raise HTTPException(
-                status_code=422,
-                detail="Sinov muddatini faqat 'trial' holatidagi klinikaga qo'yish mumkin",
-            )
+            raise Invalid("Sinov muddatini faqat 'trial' holatidagi klinikaga qo'yish mumkin")
         clinic.trial_ends_at = trial_ends_at
 
     if clear_discount:
@@ -503,14 +493,11 @@ def update_clinic(
         clinic.discount_started_at = None
     elif discount_percent is not None or discount_months is not None:
         if discount_percent is None or discount_months is None:
-            raise HTTPException(
-                status_code=422,
-                detail="Chegirma uchun foiz va oylar sonini birga yuborish kerak",
-            )
+            raise Invalid("Chegirma uchun foiz va oylar sonini birga yuborish kerak")
         if not 1 <= discount_percent <= 100:
-            raise HTTPException(status_code=422, detail="Chegirma foizi 1 dan 100 gacha bo'lishi kerak")
+            raise Invalid("Chegirma foizi 1 dan 100 gacha bo'lishi kerak")
         if discount_months < 1:
-            raise HTTPException(status_code=422, detail="Chegirma muddati kamida 1 oy bo'lishi kerak")
+            raise Invalid("Chegirma muddati kamida 1 oy bo'lishi kerak")
         # Only (re)stamp the start when the discount is newly applied or its terms change,
         # so editing something else on the clinic doesn't silently extend the campaign.
         if (
@@ -549,12 +536,9 @@ def start_billing(
     period ahead, i.e. the first period is granted up front and the invoice follows."""
     clinic = clinic_repo.get(db, clinic_id)
     if clinic is None:
-        raise HTTPException(status_code=404, detail="Clinic not found")
+        raise NotFound("Clinic not found")
     if clinic.subscription_status != SubscriptionStatus.TRIAL:
-        raise HTTPException(
-            status_code=409,
-            detail="Klinika sinov muddatida emas — to'lovni boshlash faqat sinov holatidan mumkin",
-        )
+        raise Conflict("Klinika sinov muddatida emas — to'lovni boshlash faqat sinov holatidan mumkin")
     now = datetime.now(timezone.utc)
     before = {
         "subscription_status": clinic.subscription_status,
@@ -592,7 +576,7 @@ def create_clinic_admin(
     ip_address: str | None = None,
 ) -> Staff:
     if clinic_repo.get(db, clinic_id) is None:
-        raise HTTPException(status_code=404, detail="Clinic not found")
+        raise NotFound("Clinic not found")
     # staff_service handles the duplicate-email 409 and password hashing
     staff = staff_service.create_staff(
         db, clinic_id, email=email, password=password, role=StaffRole.ADMIN, name=name
@@ -612,7 +596,7 @@ def create_clinic_admin(
 
 def list_clinic_staff(db: Session, clinic_id: int) -> list[Staff]:
     if clinic_repo.get(db, clinic_id) is None:
-        raise HTTPException(status_code=404, detail="Clinic not found")
+        raise NotFound("Clinic not found")
     return staff_service.list_staff(db, clinic_id)
 
 
@@ -624,7 +608,7 @@ def reset_staff_password(
     same one-time-reveal pattern already used for device API keys."""
     staff = staff_repo.get(db, clinic_id, staff_id)
     if staff is None:
-        raise HTTPException(status_code=404, detail="Staff not found")
+        raise NotFound("Staff not found")
     new_password = secrets.token_urlsafe(9)
     staff.password_hash = hash_password(new_password)
     revoke_staff_sessions(db, staff.id)
@@ -672,7 +656,7 @@ def record_payment(
     # both read the same paid_until and one would overwrite the other, losing a period.
     clinic = clinic_repo.get_for_update(db, clinic_id)
     if clinic is None:
-        raise HTTPException(status_code=404, detail="Clinic not found")
+        raise NotFound("Clinic not found")
 
     now = datetime.now(timezone.utc)
     # The period comes from the clinic's own configuration; an explicit body value is
@@ -686,13 +670,12 @@ def record_payment(
         # A typo'd figure would otherwise be stored as gospel and quietly corrupt the
         # revenue record; a genuine part payment sets allow_amount_mismatch instead.
         if expected is not None and amount != expected:
-            raise HTTPException(
-                status_code=422,
-                detail=(
+            raise Invalid(
+                (
                     f"Summa mos kelmadi: klinika uchun kutilgan summa {expected}, "
                     f"yuborilgani {amount}. Qasddan boshqa summa kiritmoqchi bo'lsangiz, "
                     "allow_amount_mismatch=true yuboring"
-                ),
+                )
             )
 
     # Extend from the later of "now" and the current paid-through date, so paying early
@@ -752,7 +735,7 @@ def record_payment(
 
 def list_payments(db: Session, clinic_id: int) -> list[PaymentOut]:
     if clinic_repo.get(db, clinic_id) is None:
-        raise HTTPException(status_code=404, detail="Clinic not found")
+        raise NotFound("Clinic not found")
     return [PaymentOut.model_validate(p) for p in payment_repo.list_by_clinic(db, clinic_id)]
 
 
@@ -787,7 +770,7 @@ def update_fleet_device_floor(
 ) -> AdminDeviceOut:
     device = device_repo.get_by_id(db, device_pk)
     if device is None:
-        raise HTTPException(status_code=404, detail="Device not found")
+        raise NotFound("Device not found")
     clinic = clinic_repo.get(db, device.clinic_id)
     before_floor = device.floor
     device.floor = floor
@@ -820,7 +803,7 @@ def delete_fleet_device(
 ) -> None:
     device = device_repo.get_by_id(db, device_pk)
     if device is None:
-        raise HTTPException(status_code=404, detail="Device not found")
+        raise NotFound("Device not found")
     audit_service.record(
         db,
         actor,
@@ -844,7 +827,7 @@ def register_fleet_device(
     ip_address: str | None = None,
 ) -> tuple[Device, str]:
     if clinic_repo.get(db, clinic_id) is None:
-        raise HTTPException(status_code=404, detail="Clinic not found")
+        raise NotFound("Clinic not found")
     # device_service handles key generation/hashing and the duplicate device_id 409, and
     # commits its own transaction
     device, plaintext_key = device_service.register_device(db, clinic_id, device_id=device_id, floor=floor)

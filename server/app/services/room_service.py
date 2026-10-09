@@ -1,7 +1,7 @@
-from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.errors import Conflict, NotFound
 from app.models import Room
 from app.repositories import room_repo
 
@@ -16,9 +16,7 @@ def create_room(db: Session, clinic_id: int, *, room_number: str, floor: int) ->
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
-            status_code=409, detail="This room number already exists in this clinic"
-        ) from None
+        raise Conflict("This room number already exists in this clinic") from None
     db.refresh(room)
     return room
 
@@ -28,7 +26,7 @@ def update_room(
 ) -> Room:
     room = room_repo.get(db, clinic_id, room_id)
     if room is None:
-        raise HTTPException(status_code=404, detail="Room not found")
+        raise NotFound("Room not found")
     if room_number is not None:
         room.room_number = room_number
     if floor is not None:
@@ -37,9 +35,7 @@ def update_room(
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
-            status_code=409, detail="This room number already exists in this clinic"
-        ) from None
+        raise Conflict("This room number already exists in this clinic") from None
     db.refresh(room)
     return room
 
@@ -47,6 +43,6 @@ def update_room(
 def delete_room(db: Session, clinic_id: int, room_id: int) -> None:
     room = room_repo.get(db, clinic_id, room_id)
     if room is None:
-        raise HTTPException(status_code=404, detail="Room not found")
+        raise NotFound("Room not found")
     room_repo.delete(db, room)
     db.commit()

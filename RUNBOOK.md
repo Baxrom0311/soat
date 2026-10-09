@@ -183,7 +183,7 @@ Bular ataylab ochiq — unutilgani uchun emas.
 - **`JWT_SECRET_OLD` serverda hali turibdi.** Git tarixiga sizib chiqqan eski imzolash kaliti hamon qabul qilinadi, aks holda hamma hamshira va soat bir zumda login ekraniga tushardi. Yopish: `.env` dan o'sha satrni olib tashlab, `systemctl restart nursecall-api`. Klinikalarga oldindan aytish kerak.
 - **Git tarixida prod baza dumpi bor** (`2b62c93`). Repo yopiq. Tozalash `git filter-repo` talab qiladi va 95 ta commit hashini o'zgartiradi.
 - **Backupning ikkala nusxasi ham bitta DigitalOcean akkauntida.** Akkaunt yopilsa, ikkalasi birga ketadi.
-- **Server bitta jarayonda ishlaydi** — WebSocket ulanishlari xotirada saqlanadi, shuning uchun ikkinchi worker qo'shib bo'lmaydi.
+- **Server bitta jarayonda ishlaydi.** WebSocket hodisalari endi `outbox_events` + Postgres LISTEN/NOTIFY orqali har bir jarayonga yetadi (migratsiya 0012), lekin rate limiterlar hali jarayon xotirasida. Ikkinchi worker qo'shilsa, har bir limit ikki baravar bo'ladi. Unit fayli: `server/deploy/nursecall-api.service`.
 - **ESP32 proshivkasi testsiz** va masofadan yangilanmaydi — har bir qurilmaga borish kerak.
 - **Server bitta vCPU da.** Yuk o'lchangan paytda `load average` 2.5–4 edi. Ikkinchi yadro qo'shish DigitalOcean'da bir necha daqiqalik ish va eng arzon yaxshilanish.
 

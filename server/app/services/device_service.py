@@ -1,11 +1,11 @@
 import logging
 from datetime import datetime, timedelta, timezone
 
-from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import DEVICE_ONLINE_WINDOW_SECONDS
+from app.core.errors import Conflict, Invalid, NotFound, RateLimited, Unauthorized
 from app.core.rate_limit import SlidingWindowLimiter
 from app.core.security import generate_device_key, hash_device_key, verify_device_key
 from app.models import Device
@@ -44,9 +44,7 @@ def check_device_auth_rate(client_ip: str) -> None:
     Raises 429, which the ESP32 firmware already treats as retryable (it queues and
     retries with backoff), so a genuine press is delayed rather than lost."""
     if not _device_auth_limiter.check(client_ip):
-        raise HTTPException(
-            status_code=429, detail="Too many device requests from this address, retry shortly"
-        )
+        raise RateLimited("Too many device requests from this address, retry shortly")
 
 
 def online_cutoff() -> datetime:
@@ -76,7 +74,7 @@ def list_devices(db: Session, clinic_id: int) -> list[DeviceOut]:
 def update_device_floor(db: Session, clinic_id: int, device_pk: int, *, floor: int) -> DeviceOut:
     device = device_repo.get(db, clinic_id, device_pk)
     if device is None:
-        raise HTTPException(status_code=404, detail="Device not found")
+        raise NotFound("Device not found")
     device.floor = floor
     db.commit()
     db.refresh(device)
@@ -110,9 +108,7 @@ def register_device(
         or len(device_id) > 29
         or not all(c.isascii() and (c.isalnum() or c in "-_") for c in device_id)
     ):
-        raise HTTPException(
-            status_code=422, detail="device_id: 1-29 ASCII letters, digits, hyphen or underscore"
-        )
+        raise Invalid("device_id: 1-29 ASCII letters, digits, hyphen or underscore")
     plaintext_key = generate_device_key()
     try:
         # the repo flushes on create, so the duplicate-key error can surface here too
@@ -128,7 +124,7 @@ def register_device(
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="device_id already registered") from None
+        raise Conflict("device_id already registered") from None
     db.refresh(device)
     return device, plaintext_key
 
@@ -158,7 +154,7 @@ def authenticate_device(db: Session, *, device_id: str, plaintext_key: str | Non
     # costs the same as a wrong key rather than returning early.
     key_ok, should_rehash = verify_device_key(plaintext_key or "", stored_hash)
     if device is None or not plaintext_key or not key_ok:
-        raise HTTPException(status_code=401, detail="Invalid device key")
+        raise Unauthorized("Invalid device key")
 
     if should_rehash:
         # Best-effort: a failed upgrade must never fail the call it rode in on. The
@@ -185,6 +181,6 @@ def heartbeat(db: Session, *, device_id: str, plaintext_key: str | None, client_
 def delete_device(db: Session, clinic_id: int, device_pk: int) -> None:
     device = device_repo.get(db, clinic_id, device_pk)
     if device is None:
-        raise HTTPException(status_code=404, detail="Device not found")
+        raise NotFound("Device not found")
     device_repo.delete(db, device)
     db.commit()

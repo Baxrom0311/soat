@@ -34,6 +34,7 @@ from app.core.config import CALL_EXPIRE_HOURS, KEY_DELIVERY_WINDOW_MINUTES  # no
 from app.database import SessionLocal  # noqa: E402
 from app.enums import CallStatus  # noqa: E402
 from app.models import Call, Clinic, Room  # noqa: E402
+from app.realtime import outbox  # noqa: E402
 from app.repositories import call_repo, device_repo  # noqa: E402
 
 logger = logging.getLogger("jobs.expire_stale_calls")
@@ -66,7 +67,19 @@ def run(dry_run: bool = False) -> int:
                 print(f"  {clinic}: xona {room} — {hours} soat kutgan")
             return 0
 
-        closed = call_repo.expire_stale(db, older_than=cutoff)
+        expired = call_repo.expire_stale_returning(db, older_than=cutoff)
+        for call_id, clinic_id in expired:
+            # Tells every open board to drop the call and every phone to stop ringing
+            # for it -- previously both kept showing it until the next manual reload.
+            # Sent as "ack" so clients already in the field act on it; "status" tells
+            # newer ones what actually happened.
+            outbox.record(
+                db,
+                clinic_id,
+                {"type": "ack", "call_id": call_id, "status": CallStatus.EXPIRED.value},
+                push={"kind": "cancel", "call_id": call_id},
+            )
+        closed = len(expired)
         # Piggybacked housekeeping: provisioning keys still stored in plaintext after
         # their delivery window. Not worth a timer of its own.
         device_repo.clear_expired_pending_keys(

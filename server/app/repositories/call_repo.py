@@ -96,12 +96,19 @@ def expire_stale(db: Session, *, older_than: datetime) -> int:
     figure in the product is computed from acknowledged_at, so an expired call is
     excluded from them by construction rather than by every caller remembering to.
     """
-    result = db.execute(
+    return len(expire_stale_returning(db, older_than=older_than))
+
+
+def expire_stale_returning(db: Session, *, older_than: datetime) -> list[tuple[int, int]]:
+    """expire_stale, returning (call_id, clinic_id) of each call it closed so the
+    caller can tell the screens and phones still showing them."""
+    rows = db.execute(
         update(Call)
         .where(Call.status == CallStatus.ACTIVE, Call.created_at < older_than)
         .values(status=CallStatus.EXPIRED)
-    )
-    return result.rowcount
+        .returning(Call.id, Call.clinic_id)
+    ).all()
+    return [(call_id, clinic_id) for call_id, clinic_id in rows]
 
 
 def count_expired_by_clinic(db: Session, *, since: datetime) -> list[tuple[int, int]]:
@@ -118,7 +125,9 @@ def count_expired_by_clinic(db: Session, *, since: datetime) -> list[tuple[int, 
     return [(clinic_id, count) for clinic_id, count in rows]
 
 
-def acknowledge_if_active(db: Session, clinic_id: int, call_id: int, *, acknowledged_by: str) -> bool:
+def acknowledge_if_active(
+    db: Session, clinic_id: int, call_id: int, *, acknowledged_by: str, staff_id: int | None = None
+) -> bool:
     """Atomic check-and-set: only flips an *active* call, so two concurrent acks can't
     both succeed (the loser sees rowcount 0 and surfaces a 409). clinic_id is required
     here too (not just in the preceding call_repo.get lookup) so correctness never
@@ -130,6 +139,7 @@ def acknowledge_if_active(db: Session, clinic_id: int, call_id: int, *, acknowle
             status=CallStatus.ACKNOWLEDGED,
             acknowledged_at=datetime.now(timezone.utc),
             acknowledged_by=acknowledged_by,
+            acknowledged_by_staff_id=staff_id,
         )
     )
     return result.rowcount == 1

@@ -1,6 +1,6 @@
-from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.errors import NotFound
 from app.repositories import unassigned_repo
 from app.schemas.button import UnassignedSignalOut
 
@@ -23,7 +23,7 @@ def list_unassigned(db: Session, clinic_id: int) -> list[UnassignedSignalOut]:
 def delete_unassigned(db: Session, clinic_id: int, signal_id: int) -> None:
     deleted = unassigned_repo.delete_by_id(db, clinic_id, signal_id)
     if not deleted:
-        raise HTTPException(status_code=404, detail="Signal not found")
+        raise NotFound("Signal not found")
 
 
 def clear_all_unassigned(db: Session, clinic_id: int) -> int:

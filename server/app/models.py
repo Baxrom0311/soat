@@ -343,6 +343,13 @@ class Call(Base):
     )
     acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     acknowledged_by: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Who, as a row rather than a display name: names change and repeat, and per-nurse
+    # answer times need the person. acknowledged_by stays as the name at the time,
+    # which is what history screens show. NULL for calls answered before 0013 and for
+    # staff since deleted.
+    acknowledged_by_staff_id: Mapped[int | None] = mapped_column(
+        ForeignKey("staff.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     room: Mapped["Room"] = relationship()
 
@@ -388,4 +395,42 @@ class AuditLog(Base):
     ip_address: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
+    )
+
+
+class OutboxEvent(Base):
+    """A live event, written in the same transaction as the change it announces.
+
+    Two jobs. Realtime: committing the row fires a Postgres NOTIFY, so every API process
+    -- and a background job, which has no sockets of its own -- reaches every connected
+    screen. Push: the row stays pending until a phone notification for it has been
+    sent, so a restart between the commit and the push no longer loses the alert.
+    """
+
+    __tablename__ = "outbox_events"
+    __table_args__ = (
+        # The sweeper's only query: recent rows whose push has not gone out.
+        Index(
+            "ix_outbox_events_push_due",
+            "created_at",
+            postgresql_where="push IS NOT NULL AND push_done_at IS NULL",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    clinic_id: Mapped[int] = mapped_column(ForeignKey("clinics.id", ondelete="CASCADE"), nullable=False)
+    # The websocket message exactly as screens receive it, and the floor that scopes it.
+    message: Mapped[dict] = mapped_column(JSON, nullable=False)
+    floor: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Which process wrote it; that process already broadcast it to its own sockets.
+    origin: Mapped[str] = mapped_column(String, nullable=False)
+    # What to send to phones, or NULL for screen-only events.
+    # none_as_null: Python None must be SQL NULL, not JSON 'null', or the partial index
+    # and the sweeper's `push IS NOT NULL` would treat screen-only events as pending.
+    push: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    push_claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    push_done_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    push_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )

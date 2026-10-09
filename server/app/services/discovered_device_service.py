@@ -14,7 +14,6 @@ import hmac
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.config import (
@@ -23,6 +22,7 @@ from app.core.config import (
     DISCOVERED_DEVICE_ONLINE_WINDOW_SECONDS,
     KEY_DELIVERY_WINDOW_MINUTES,
 )
+from app.core.errors import Conflict, Forbidden, NotFound, RateLimited
 from app.core.rate_limit import SlidingWindowLimiter
 from app.repositories import clinic_repo, device_repo, discovered_device_repo
 from app.schemas.device import AnnounceOut, ClaimDeviceOut, DiscoveredDeviceOut
@@ -37,7 +37,7 @@ _announce_limiter = SlidingWindowLimiter(
 
 def _check_announce_rate(client_ip: str) -> None:
     if not _announce_limiter.check(client_ip):
-        raise HTTPException(status_code=429, detail="Too many announce requests, try again later")
+        raise RateLimited("Too many announce requests, try again later")
 
 
 def announce(db: Session, *, chip_id: str, client_ip: str, provisioning_secret: str) -> AnnounceOut:
@@ -55,7 +55,7 @@ def announce(db: Session, *, chip_id: str, client_ip: str, provisioning_secret: 
     )
     if row is None:
         db.rollback()
-        raise HTTPException(status_code=403, detail="Provisioning proof rejected")
+        raise Forbidden("Provisioning proof rejected")
     db.commit()
 
     device = device_repo.get_by_chip_id(db, chip_id)
@@ -98,17 +98,17 @@ def claim(
 ) -> ClaimDeviceOut:
     discovered = discovered_device_repo.get_by_chip_id(db, chip_id)
     if discovered is None:
-        raise HTTPException(status_code=404, detail="Discovered device not found")
+        raise NotFound("Discovered device not found")
     if not discovered.provisioning_secret_hash or not hmac.compare_digest(
         discovered.provisioning_secret_hash[:12], pairing_code.strip().lower()
     ):
-        raise HTTPException(status_code=403, detail="Qurilmadagi tasdiqlash kodi mos emas")
+        raise Forbidden("Qurilmadagi tasdiqlash kodi mos emas")
     if discovered.claimed_device_id is not None:
-        raise HTTPException(status_code=409, detail="Device already claimed")
+        raise Conflict("Device already claimed")
     if device_repo.get_by_chip_id(db, chip_id) is not None:
-        raise HTTPException(status_code=409, detail="Chip already bound to a device")
+        raise Conflict("Chip already bound to a device")
     if clinic_repo.get(db, clinic_id) is None:
-        raise HTTPException(status_code=404, detail="Clinic not found")
+        raise NotFound("Clinic not found")
 
     # The auto-generated suffix must NOT embed any part of chip_id: chip_id is the
     # secret needed to steal a device's key via /announce (see the security window
