@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
+import '../calls/alarm_service.dart';
 import '../theme/tokens.dart';
 
 /// Window behaviour for the Windows desk build.
 ///
-/// The one rule that matters: closing the window must not quietly stop the
-/// alarm. On a phone the push path rings whatever the app is doing; on a PC
-/// this process *is* the alarm, so the close button asks first and offers to
-/// minimise instead.
+/// Two rules matter. Closing the window must not quietly stop the alarm: on a
+/// phone the push path rings whatever the app is doing; on a PC this process
+/// *is* the alarm, so the close button asks first and offers to minimise
+/// instead. And while a call is ringing, the window must not just look
+/// frontmost -- it must actually hold input focus, or the nurse's first click
+/// on Tasdiqlash only re-focuses the window (Windows' own anti-focus-stealing
+/// behaviour) and the tap itself is lost, which reads as the button being
+/// unresponsive at the one moment it matters most.
 class DesktopWindow with WindowListener {
   DesktopWindow(this.navigatorKey);
 
@@ -55,6 +60,18 @@ class DesktopWindow with WindowListener {
       await windowManager.destroy();
     } else if (quit == false) {
       await windowManager.minimize();
+    }
+  }
+
+  @override
+  Future<void> onWindowBlur() async {
+    // setAlwaysOnTop keeps the window visually frontmost, but a click on some
+    // other app still takes OS input focus away from it silently -- nothing
+    // else notices. If a call is still ringing, pull focus straight back so
+    // the very next click lands on the button instead of merely refocusing
+    // the window.
+    if (AlarmService.instance.isPlaying) {
+      await windowManager.focus();
     }
   }
 }

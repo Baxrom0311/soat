@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # versionName+versionCode. The code must stay above the Expo build's 4, or Android
 # refuses the install as a downgrade and says only "App not installed". 2.0.0 marks the
 # generation change; the server's forced-update check reads the code, not the name.
-version: 3.0.3+18
+version: 3.0.4+19
 
 environment:
   sdk: ^3.10.8
