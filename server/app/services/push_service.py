@@ -190,6 +190,16 @@ def _send_fcm(
     multicast. A failure on one nurse's phone never stops the message reaching the
     others. The DB session is only touched here, on this thread, after the sends.
     """
+    if not tokens:
+        # Nothing to send -- most commonly a clinic where every signed-in
+        # client is the legacy desktop app (no push registration at all) or
+        # a brand-new test clinic with no mobile logins yet. Falling through
+        # to the branch below would build a ThreadPoolExecutor sized to
+        # len(tokens), i.e. max_workers=0, which raises ValueError and was
+        # taking the whole acknowledge-notification step down with it on
+        # every single ack for such a clinic.
+        return
+
     if not fcm_service.is_configured():
         logger.warning(
             "FCM tokens registered for clinic_id=%s but FCM is not configured -- %d nurse(s) "

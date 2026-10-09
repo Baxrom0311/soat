@@ -74,6 +74,41 @@ def test_ack_uses_authenticated_name_and_sends_cancellation(client, make_clinic,
     assert cancelled == [(c["clinic"].id, call_id)]
 
 
+def test_send_fcm_survives_a_clinic_with_no_push_tokens(db, monkeypatch):
+    """A clinic where nobody has a registered push token -- every signed-in
+    client is the legacy desktop app, or it is a brand-new test clinic --
+    must not make the push step raise.
+
+    _send_fcm's token-count branch was `if len == 1: ... else:
+    ThreadPoolExecutor(max_workers=min(FCM_PARALLEL_SENDS, len(tokens)))`,
+    which is max_workers=0 and raises ValueError when tokens is empty.
+    ThreadPoolExecutor validates max_workers in __init__, before it even
+    looks at whether there is work to do -- an empty list of futures to
+    map over does not save it.
+
+    Calling the public send_ack_notifications/send_new_call_notifications
+    would not have caught this: both wrap the whole call in their own
+    try/except Exception, which swallows the crash and makes this bug
+    invisible to any test (or production log line) that only checks the
+    HTTP response -- it genuinely did return 200, every time, while quietly
+    never clearing the notification. _send_fcm is called directly here to
+    reach the actual crash.
+
+    FCM is deliberately unconfigured everywhere else in this suite
+    (conftest.py sets FCM_SERVICE_ACCOUNT_FILE=""), which is exactly why
+    this never got caught in CI either: is_configured() short-circuits
+    _send_fcm before it reaches the crashing branch, so it must be forced
+    to True here or this test would pass against the old buggy code too.
+    """
+    import app.services.fcm_service as fcm_service_module
+
+    monkeypatch.setattr(fcm_service_module, "is_configured", lambda: True)
+
+    push_service._send_fcm(
+        db, [], title="", body="", data={"type": "ack", "call_id": 1}, clinic_id=1, call_id=1
+    )
+
+
 def test_ack_cannot_bypass_floor_assignment(client, make_clinic, login, db):
     c = make_clinic(floor=2)
     call_id = press(client, c)
